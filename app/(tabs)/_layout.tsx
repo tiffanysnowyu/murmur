@@ -114,7 +114,7 @@ export default function TabLayout() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create({  
   barBg: {
     flex: 1,
     backgroundColor: '#fff',

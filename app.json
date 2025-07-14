@@ -4,7 +4,7 @@
     "slug": "murmur",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/house.png",
     "scheme": "murmur",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,

@@ -13,6 +13,8 @@ import {
   Text,
   ImageSourcePropType,
 } from 'react-native';
+import { useFonts } from 'expo-font';
+import { useRouter } from 'expo-router';
 
 const { width: screenWidth } = Dimensions.get('window');
 const IMAGE_RATIO = 812 / 375;
@@ -34,6 +36,11 @@ const BUTTON_HEIGHT  = 56;       // adjust to your PNG’s height
 const FADE_EASING    = Easing.inOut(Easing.ease);
 
 export default function AnimatedWave() {
+  const router = useRouter();
+  const [fontsLoaded] = useFonts({
+    'SF-Pro-Display-Medium': require('@/assets/fonts/SF-Pro-Display-Medium.otf'),
+  });
+
   const fade = useRef(new Animated.Value(0)).current;
   const currentIndex = useRef(0);
   const [, tick]   = useState(0);
@@ -80,12 +87,12 @@ export default function AnimatedWave() {
         resizeMode="contain"
       />
 
-      {/* Check button */}
+      {/* Check button
       <TouchableOpacity
         style={styles.checkWrapper}
         activeOpacity={0.8}
         onPress={() => {
-          /* your check handler */
+          router.push('../chat');
         }}
       >
         <ImageBackground
@@ -95,7 +102,7 @@ export default function AnimatedWave() {
         >
           <Text style={styles.checkText}>Check</Text>
         </ImageBackground>
-      </TouchableOpacity>
+      </TouchableOpacity> */}
     </View>
   );
 }
@@ -122,10 +129,13 @@ const styles = StyleSheet.create({
     height: BUTTON_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
+    // borderWidth: 1,
+    // borderColor: 'black',
   },
   checkText: {
+    fontFamily: 'SF-Pro-Display-Medium',
     fontSize: 24,
-    fontWeight: '500',        // “Medium” weight
+    fontWeight: 'medium', // “Medium” weight
     letterSpacing: -1.1,
     color: '#32535F',
   },
