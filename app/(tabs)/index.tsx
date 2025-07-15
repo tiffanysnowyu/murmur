@@ -13,6 +13,7 @@ import {
   Text,
   ImageSourcePropType,
 } from 'react-native';
+import { Link } from 'expo-router';
 
 const { width: screenWidth } = Dimensions.get('window');
 const IMAGE_RATIO = 812 / 375;
@@ -81,21 +82,23 @@ export default function AnimatedWave() {
       />
 
       {/* Check button */}
-      <TouchableOpacity
-        style={styles.checkWrapper}
-        activeOpacity={0.8}
-        onPress={() => {
-          /* your check handler */
-        }}
-      >
-        <ImageBackground
-          source={require('@/assets/images/check_button.png')}
-          style={styles.checkImage}
-          imageStyle={styles.checkImage}
+      <Link href="./chat" asChild>
+        <TouchableOpacity
+          style={styles.checkWrapper}
+          activeOpacity={0.8}
+          onPress={() => {
+            /* your check handler */
+          }}
         >
-          <Text style={styles.checkText}>Check</Text>
+          <ImageBackground
+            source={require('@/assets/images/check_button.png')}
+            style={styles.checkImage}
+            imageStyle={styles.checkImage}
+          >
+            <Text style={styles.checkText}>Check</Text>
         </ImageBackground>
-      </TouchableOpacity>
+        </TouchableOpacity>
+      </Link>
     </View>
   );
 }
