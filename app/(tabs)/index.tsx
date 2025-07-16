@@ -144,11 +144,11 @@ const styles = StyleSheet.create({
   },
   checkBg: {
     position: 'absolute',
-    bottom: NAV_BAR_HEIGHT + BUTTON_OFFSET - 250,
+    bottom: NAV_BAR_HEIGHT + BUTTON_OFFSET - 300,
     alignSelf: 'center',
-    width: BUTTON_WIDTH + 200,
-    height: BUTTON_HEIGHT + 500,
-    marginLeft: -100,
+    width: BUTTON_WIDTH + 300,
+    height: BUTTON_HEIGHT + 600,
+    marginLeft: -25,
     zIndex: 1, // Behind the button (underneath)
   },
   blurImage: {
