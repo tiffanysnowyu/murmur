@@ -82,7 +82,7 @@ export default function AnimatedWave() {
       />
 
       {/* Check button */}
-      <Link href="./chat" asChild>
+      <Link href="./chooseinput" asChild>
         <TouchableOpacity
           style={styles.checkWrapper}
           activeOpacity={0.8}
