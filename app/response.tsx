@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 
-const OPENAI_API_KEY = process.env.EXPO_PUBLIC_OPENAI_API_KEY || '';
+const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
 
 export default function ResponsePage() {
   const { claim, text, mode } = useLocalSearchParams();
@@ -20,91 +20,145 @@ export default function ResponsePage() {
   const [analysisStep, setAnalysisStep] = useState('');
   const [showAnalysisButton, setShowAnalysisButton] = useState(false);
 
-  // Get the text from parameters - no need to decode since we're not using URL encoding
+  // Get the text from parameters
   const inputText = (claim || text) as string;
   const currentMode = mode as string;
   const isAnalyzeMode = currentMode === 'analyze' || currentMode !== 'summarize';
   const isSummaryMode = currentMode === 'summarize';
 
+  // Debug API key
+  useEffect(() => {
+    console.log('Claude API Key exists:', !!CLAUDE_API_KEY);
+    console.log('Claude API Key starts with sk-ant:', CLAUDE_API_KEY.startsWith('sk-ant'));
+  }, []);
+
   const getSystemPrompt = (mode: string) => {
     if (mode === 'summarize') {
-      return `You are an expert content summarizer. Provide a clear, concise summary of the article focusing on:
+      return `You are an expert content analyzer with web search capabilities. When given article URLs, excerpts, or headlines:
 
-1. KEY FINDINGS: Main points and conclusions
-2. METHODOLOGY: How the research was conducted (if applicable)
-3. CONTEXT: Important background information
-4. CREDIBILITY: Source reliability and any limitations
+1. If given a URL: Fetch and analyze the full article
+2. If given an excerpt or headline: Use web search to find the original full article
+3. If you can't access the article (paywall): Find alternative reliable sources about the same topic
+
+TASK: Provide a clear, comprehensive summary including:
+- KEY FINDINGS: Main points and conclusions from the article
+- METHODOLOGY: How any research was conducted (if applicable)  
+- CONTEXT: Important background information and credibility assessment
+- FULL STORY: What the complete article says beyond just the headline
 
 Keep the summary factual and balanced. Highlight any concerning claims that might warrant further fact-checking.
 
-Format as a clean, readable summary with clear headings.`;
+Format as a clean, readable summary with clear headings. If you found the article through search, mention that.`;
     } else {
-      return `You are an expert fact-checker and health analyst. Analyze content using this exact format:
+      return `You are an expert fact-checker and health analyst with web search capabilities. 
+
+For headlines, claims, or excerpts, use web search to:
+1. Find recent, credible sources about the topic
+2. Look for the original studies or reports mentioned
+3. Check multiple reliable sources for verification
+4. If given an excerpt, try to find the original article it came from
 
 REQUIRED OUTPUT FORMAT - Use this exact structure:
 
 **What's true:**
-[List factual, accurate aspects based on your knowledge]
+[List factual, accurate aspects based on current research and credible sources]
 
 **What's misleading:**
 [List any misleading, false, exaggerated, or out-of-context aspects]
 
 **What you can do:**
 [Provide SPECIFIC, ACTIONABLE steps the person can take. Include:
-- Specific brands, products, or alternatives to consider
-- Concrete actions they can take immediately  
-- Specific places to shop or what to look for
+- Specific brands, products, or alternatives to consider (e.g., "Buy California-grown rice like Lundberg or Kokuho Rose")
+- Concrete actions they can take immediately (e.g., "Rinse rice 3 times, cook with 6:1 water ratio")
+- Specific places to shop or what to look for on labels
 - Practical lifestyle modifications
 - Both short-term and long-term actionable strategies
 Make these suggestions concrete and implementable, not just general advice]
 
 **Citations and sources:**
-[Reference credible sources from your knowledge base. Include source names and note that you cannot provide live links]
+[Include specific, credible sources you found through web search with publication dates when available]
 
-Focus on anxiety relief and practical guidance.`;
+Focus on anxiety relief and practical guidance with current, verified information.`;
     }
   };
 
-  const analyzeContentWithOpenAI = async (contentText: string, analysisMode: string) => {
+  const analyzeContentWithClaude = async (contentText: string, analysisMode: string) => {
     setLoading(true);
     setError('');
     setResponse('');
     
-    const stepText = analysisMode === 'summarize' ? 'Summarizing article...' : 'Analyzing content...';
+    const stepText = analysisMode === 'summarize' ? 'Summarizing article...' : 'Searching for current information...';
     setAnalysisStep(stepText);
 
     try {
+      // Check if API key exists
+      if (!CLAUDE_API_KEY) {
+        throw new Error('Claude API key not found. Please add EXPO_PUBLIC_CLAUDE_API_KEY to your .env file');
+      }
+
+      if (!CLAUDE_API_KEY.startsWith('sk-ant-')) {
+        throw new Error('Invalid Claude API key format. Key should start with sk-ant-');
+      }
+
       const systemPrompt = getSystemPrompt(analysisMode);
       const userPrompt = analysisMode === 'summarize' 
-        ? `Please summarize this article: "${contentText}"`
-        : `Analyze this content and provide specific actionable advice in the "What you can do" section: "${contentText}"`;
+        ? `Please analyze this content. If it's a URL, fetch the article. If it's an excerpt or headline, search for and find the original full article. Content: "${contentText}"`
+        : `Please analyze this content. Use web search to find current, credible information about this topic and provide specific actionable advice: "${contentText}"`;
 
-      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+      setAnalysisStep(analysisMode === 'summarize' ? 'Analyzing content...' : 'Finding reliable sources...');
+
+      console.log('Making request to Claude API...');
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
+          'x-api-key': CLAUDE_API_KEY,
           'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'gpt-4',
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 4000,
+          system: systemPrompt,
           messages: [
-            {
-              role: 'system',
-              content: systemPrompt
-            },
             {
               role: 'user',
               content: userPrompt
             }
-          ],
-          temperature: 0.3,
+          ]
         }),
       });
 
-      const data = await res.json();
-      console.log('🔍 OpenAI response:', JSON.stringify(data, null, 2));
+      console.log('Response status:', res.status);
 
-      const reply = data.choices?.[0]?.message?.content?.trim();
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error('Claude API Error Response:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          throw new Error(`Claude API Error (${res.status}): ${errorText}`);
+        }
+        
+        throw new Error(`Claude API Error: ${errorData.error?.message || errorData.message || 'Unknown error'}`);
+      }
+
+      const data = await res.json();
+      console.log('🔍 Claude response:', JSON.stringify(data, null, 2));
+
+      setAnalysisStep('Generating comprehensive analysis...');
+
+      // Handle Claude's response format
+      let reply = '';
+      if (data.content && Array.isArray(data.content) && data.content.length > 0) {
+        // Get the text content from Claude's response
+        const textContent = data.content.find((item: any) => item.type === 'text');
+        if (textContent && textContent.text) {
+          reply = textContent.text.trim();
+        }
+      }
 
       if (reply) {
         setResponse(reply);
@@ -114,11 +168,12 @@ Focus on anxiety relief and practical guidance.`;
           setShowAnalysisButton(true);
         }
       } else {
-        setError('No response received from AI.');
+        console.error('No text content found in response:', data);
+        setError('No response received from Claude.');
       }
     } catch (err) {
-      console.error('❌ OpenAI API error:', err);
-      setError('Error contacting AI service. Please try again.');
+      console.error('❌ Claude API error:', err);
+      setError(`Error contacting Claude API: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setAnalysisStep('');
     } finally {
       setLoading(false);
@@ -128,20 +183,20 @@ Focus on anxiety relief and practical guidance.`;
   useEffect(() => {
     if (inputText && typeof inputText === 'string') {
       const analysisMode = currentMode || 'analyze';
-      analyzeContentWithOpenAI(inputText, analysisMode);
+      analyzeContentWithClaude(inputText, analysisMode);
     }
   }, [inputText, currentMode]);
 
   const handleRetry = () => {
     if (inputText && typeof inputText === 'string') {
       const analysisMode = currentMode || 'analyze';
-      analyzeContentWithOpenAI(inputText, analysisMode);
+      analyzeContentWithClaude(inputText, analysisMode);
     }
   };
 
   const handleAnalyzeClaims = () => {
     if (inputText && typeof inputText === 'string') {
-      analyzeContentWithOpenAI(inputText, 'analyze');
+      analyzeContentWithClaude(inputText, 'analyze');
       setShowAnalysisButton(false);
     }
   };

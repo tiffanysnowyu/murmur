@@ -37,9 +37,9 @@ export default function TextPage() {
 
   const getPlaceholder = () => {
     if (mode === 'summarize') {
-      return "Paste the full article text here...";
+      return "Paste an article URL, headline, or any paragraph/excerpt from the article - I'll find and analyze the full story...";
     } else {
-      return "Paste a headline, article excerpt, or type any health claim you want fact-checked...";
+      return "Paste a headline, claim, or any health statement you want fact-checked...";
     }
   };
 

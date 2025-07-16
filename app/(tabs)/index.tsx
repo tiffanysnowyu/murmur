@@ -21,23 +21,23 @@ const screenHeight = screenWidth * IMAGE_RATIO;
 
 // Frames for your cross‐fade wave (you already had these)
 const frames: ImageSourcePropType[] = [
-  require('@/assets/animation_frames/frame_1.png'),
-  require('@/assets/animation_frames/frame_3.png'),
+  require('@/assets/animation_frames/frame_8.png'),
   require('@/assets/animation_frames/frame_5.png'),
+  require('@/assets/animation_frames/frame_7.png'),
 ];
 
 const DURATION       = 800; // ms per fade
 const PAUSE          =   0;
 const NAV_BAR_HEIGHT = 76;
 const BUTTON_OFFSET  = 126;      // px above nav bar
-const BUTTON_WIDTH   = 200;      // adjust to your PNG’s width
-const BUTTON_HEIGHT  = 56;       // adjust to your PNG’s height
+const BUTTON_WIDTH   = 200;      // adjust to your PNG's width
+const BUTTON_HEIGHT  = 56;       // adjust to your PNG's height
 const FADE_EASING    = Easing.inOut(Easing.ease);
 
 export default function AnimatedWave() {
   const fade = useRef(new Animated.Value(0)).current;
   const currentIndex = useRef(0);
-  const [, tick]   = useState(0);
+  const [, tick] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   },
   checkText: {
     fontSize: 24,
-    fontWeight: '500',        // “Medium” weight
+    fontWeight: '500',        // "Medium" weight
     letterSpacing: -1.1,
     color: '#32535F',
   },
