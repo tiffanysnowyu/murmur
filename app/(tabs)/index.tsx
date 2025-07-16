@@ -1,5 +1,4 @@
 // app/(tabs)/index.tsx
-
 import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -81,7 +80,23 @@ export default function AnimatedWave() {
         resizeMode="contain"
       />
 
-      {/* Check button */}
+      {/* Blur effects positioned behind button */}
+      <View style={styles.checkBlur}>
+        <Image
+          source={require('@/assets/images/check_button_blur.png')}
+          style={styles.blurImage}
+          resizeMode="contain"
+        />
+      </View>
+      <View style={styles.checkBg}>
+        <Image
+          source={require('@/assets/images/check_button_bg.png')}
+          style={styles.blurImage}
+          resizeMode="contain"
+        />
+      </View>
+
+      {/* Check button - your exact original code */}
       <Link href="./chooseinput" asChild>
         <TouchableOpacity
           style={styles.checkWrapper}
@@ -115,10 +130,37 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  checkBlur: {
+    position: 'absolute',
+    bottom: NAV_BAR_HEIGHT + BUTTON_OFFSET - 150, // Lower to extend more below
+    alignSelf: 'center',
+    width: BUTTON_WIDTH, // Much wider for dramatic effect
+    height: BUTTON_HEIGHT + 250, // Much taller for dramatic effect
+    marginLeft: -120, // Shift more to the left
+    zIndex: 3, // ON TOP of the button
+    pointerEvents: 'none', // Don't block button touches
+    // borderWidth: 1,
+    // borderColor: 'red',
+  },
+  checkBg: {
+    position: 'absolute',
+    bottom: NAV_BAR_HEIGHT + BUTTON_OFFSET - 250,
+    alignSelf: 'center',
+    width: BUTTON_WIDTH + 200,
+    height: BUTTON_HEIGHT + 500,
+    marginLeft: -100,
+    zIndex: 1, // Behind the button (underneath)
+  },
+  blurImage: {
+    width: '100%',
+    height: '100%',
+    opacity: 1, // Make sure it's fully opaque
+  },
   checkWrapper: {
     position: 'absolute',
     bottom: NAV_BAR_HEIGHT + BUTTON_OFFSET, // 76 + 126 = 202px
     alignSelf: 'center',
+    zIndex: 2, // Between background and blur
   },
   checkImage: {
     width: BUTTON_WIDTH,
