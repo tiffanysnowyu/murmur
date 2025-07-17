@@ -18,15 +18,29 @@ const { width: screenWidth } = Dimensions.get('window');
 const IMAGE_RATIO = 812 / 375;
 const screenHeight = screenWidth * IMAGE_RATIO;
 
-// Frames for your cross‐fade wave (you already had these)
+// Add any number of frames here - the animation will automatically adapt
 const frames: ImageSourcePropType[] = [
-  require('@/assets/animation_frames/frame_8.png'),
+  require('@/assets/animation_frames/frame_1.png'),
+  require('@/assets/animation_frames/frame_2.png'),
+  require('@/assets/animation_frames/frame_3.png'),
+  require('@/assets/animation_frames/frame_4.png'),
   require('@/assets/animation_frames/frame_5.png'),
+  require('@/assets/animation_frames/frame_6.png'),
   require('@/assets/animation_frames/frame_7.png'),
 ];
 
-const DURATION       = 800; // ms per fade
-const PAUSE          =   0;
+// Custom durations for each frame position
+const frameDurations = [
+  600,
+  700,
+  700,
+  1200,
+  700,
+  800,
+  600,
+];
+
+const PAUSE          = 0;
 const NAV_BAR_HEIGHT = 76;
 const BUTTON_OFFSET  = 126;      // px above nav bar
 const BUTTON_WIDTH   = 200;      // adjust to your PNG's width
@@ -36,34 +50,47 @@ const FADE_EASING    = Easing.inOut(Easing.ease);
 export default function AnimatedWave() {
   const fade = useRef(new Animated.Value(0)).current;
   const currentIndex = useRef(0);
-  const [, tick] = useState(0);
+  const [renderIndex, setRenderIndex] = useState(0);
 
   useEffect(() => {
     let mounted = true;
+    let animationTimeout: NodeJS.Timeout;
+    
     const loop = () => {
       if (!mounted) return;
-      const next = (currentIndex.current + 1) % frames.length;
+      
+      // Get the current frame's duration
+      const currentDuration = frameDurations[currentIndex.current] * 1.2;
+      
       fade.setValue(0);
       Animated.timing(fade, {
         toValue: 1,
-        duration: DURATION,
+        duration: currentDuration,
         easing: FADE_EASING,
         useNativeDriver: true,
       }).start(() => {
         if (!mounted) return;
-        currentIndex.current = next;
-        tick((t) => t + 1);
-        setTimeout(loop, PAUSE);
+        
+        // Update the index after animation completes
+        currentIndex.current = (currentIndex.current + 1) % frames.length;
+        setRenderIndex(currentIndex.current);
+        
+        // Small delay before next loop to prevent flicker
+        animationTimeout = setTimeout(loop, PAUSE);
       });
     };
-    loop();
+    
+    // Initial delay to show first frame
+    animationTimeout = setTimeout(loop, 100);
+    
     return () => {
       mounted = false;
+      if (animationTimeout) clearTimeout(animationTimeout);
       fade.stopAnimation();
     };
-  }, []);
+  }, [fade]);
 
-  const baseIdx = currentIndex.current;
+  const baseIdx = renderIndex;
   const nextIdx = (baseIdx + 1) % frames.length;
 
   return (
@@ -111,7 +138,7 @@ export default function AnimatedWave() {
             imageStyle={styles.checkImage}
           >
             <Text style={styles.checkText}>Check</Text>
-        </ImageBackground>
+          </ImageBackground>
         </TouchableOpacity>
       </Link>
     </View>

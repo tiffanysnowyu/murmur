@@ -1,4 +1,4 @@
-// app/response.tsx
+// Updated response.tsx with fact-check detection and appropriate templates
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -19,6 +19,7 @@ export default function ResponsePage() {
   const [error, setError] = useState('');
   const [analysisStep, setAnalysisStep] = useState('');
   const [showAnalysisButton, setShowAnalysisButton] = useState(false);
+  const [articleData, setArticleData] = useState<any>(null);
 
   // Get the text from parameters
   const inputText = (claim || text) as string;
@@ -26,59 +27,185 @@ export default function ResponsePage() {
   const isAnalyzeMode = currentMode === 'analyze' || currentMode !== 'summarize';
   const isSummaryMode = currentMode === 'summarize';
 
-  // Debug API key
-  useEffect(() => {
-    console.log('Claude API Key exists:', !!CLAUDE_API_KEY);
-    console.log('Claude API Key starts with sk-ant:', CLAUDE_API_KEY.startsWith('sk-ant'));
-  }, []);
+  const isUrl = (text: string): boolean => {
+    try {
+      new URL(text);
+      return true;
+    } catch {
+      return false;
+    }
+  };
 
-  const getSystemPrompt = (mode: string) => {
+  // Detect if content already contains fact-checking
+  const detectPreFactCheckedContent = (content: string): boolean => {
+    if (!content) return false;
+    
+    const lowerContent = content.toLowerCase();
+    const patterns = [
+      'fact-check results:',
+      'fact check results:',
+      "what's true:",
+      'what\'s true:',
+      '**what\'s true:**',
+      'verdict:',
+      'verification:',
+      'fact check:',
+      'fact checked:',
+      'rating:',
+      'claim:',
+      'what\'s misleading:',
+      'what\'s false:'
+    ];
+    
+    // Check if content contains at least 2 of these patterns (more reliable)
+    let matchCount = 0;
+    for (const pattern of patterns) {
+      if (lowerContent.includes(pattern)) {
+        matchCount++;
+        if (matchCount >= 2) {
+          console.log('Detected pre-fact-checked content with patterns:', pattern);
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  };
+
+  // Direct fetch function (will have CORS limitations)
+  const readUrlContent = async (url: string) => {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const content = await response.text();
+      return content;
+    } catch (error) {
+      throw new Error(`Failed to read URL content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
+  // Extract text content from HTML
+  const extractTextFromHtml = (html: string) => {
+    try {
+      // Basic HTML cleaning (limited without DOM parser)
+      let textContent = html
+        // Remove script tags and content
+        .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+        // Remove style tags and content
+        .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
+        // Remove HTML comments
+        .replace(/<!--[\s\S]*?-->/g, '')
+        // Remove HTML tags
+        .replace(/<[^>]*>/g, ' ')
+        // Decode HTML entities (basic ones)
+        .replace(/&nbsp;/g, ' ')
+        .replace(/&amp;/g, '&')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        // Normalize whitespace
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      // Basic title extraction (look for <title> tag in original HTML)
+      const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+      const title = titleMatch ? titleMatch[1].trim() : 'Article';
+
+      return {
+        title,
+        content: textContent,
+        wordCount: textContent.split(' ').length,
+        isPaywalled: html.toLowerCase().includes('paywall') || 
+                     html.toLowerCase().includes('subscription') ||
+                     html.toLowerCase().includes('premium content')
+      };
+    } catch (error) {
+      throw new Error('Failed to extract text from HTML');
+    }
+  };
+
+  const getSystemPrompt = (mode: string, isPreFactChecked: boolean = false) => {
     if (mode === 'summarize') {
-      return `You are an expert content analyzer with web search capabilities. When given article URLs, excerpts, or headlines:
+      return `You are an expert content analyzer. You will be provided with article content that has been extracted from a web page.
 
-1. If given a URL: Fetch and analyze the full article
-2. If given an excerpt or headline: Use web search to find the original full article
-3. If you can't access the article (paywall): Find alternative reliable sources about the same topic
+TASK: Provide a comprehensive analysis including:
+- **ARTICLE SUMMARY**: Main points and key findings from the article
+- **KEY CLAIMS**: Important claims or statements made in the article  
+- **CONTEXT**: Background information and why this topic matters
+- **CREDIBILITY NOTES**: Any observations about the content quality
 
-TASK: Provide a clear, comprehensive summary including:
-- KEY FINDINGS: Main points and conclusions from the article
-- METHODOLOGY: How any research was conducted (if applicable)  
-- CONTEXT: Important background information and credibility assessment
-- FULL STORY: What the complete article says beyond just the headline
+Note: The content may be incomplete due to technical limitations in extraction. Format with clear headings and be thorough with available information.`;
+    } else if (isPreFactChecked) {
+      // Special prompt for content that already contains fact-checking
+      return `You are reviewing an existing fact-check. Focus on what matters to users.
 
-Keep the summary factual and balanced. Highlight any concerning claims that might warrant further fact-checking.
+TASK: Analyze whether this fact-check addresses real concerns effectively.
 
-Format as a clean, readable summary with clear headings. If you found the article through search, mention that.`;
+**Assessment Format:**
+
+**Is this addressing a real concern?**
+- What anxiety or worry might have prompted this fact-check?
+- Does it focus on what actually matters to people?
+
+**Quality of the fact-check:**
+- Does it provide sources and evidence?
+- Is it focusing on relevant details or getting lost in trivia?
+
+**What's missing:**
+- What questions would anxious readers still have?
+- What practical guidance is lacking?
+
+**What you can do:**
+[Based on the topic, provide SPECIFIC actions readers can take, whether or not the original fact-check included them]
+
+**Bottom line:**
+[Is this fact-check helpful for someone who's worried? What should they actually do?]
+
+Focus on practical anxiety relief, not academic analysis.`;
     } else {
-      return `You are an expert fact-checker and health analyst with web search capabilities. 
+      return `You are an expert fact-checker and health analyst.
 
-For headlines, claims, or excerpts, use web search to:
-1. Find recent, credible sources about the topic
-2. Look for the original studies or reports mentioned
-3. Check multiple reliable sources for verification
-4. If given an excerpt, try to find the original article it came from
+IMPORTANT GUIDELINES:
+- Focus ONLY on claims that matter for the user's concerns
+- SKIP irrelevant details like specific numbers (e.g., "250 cows") unless they're central to what's being verified
+- If there's no clear claim causing anxiety, identify what the user might be worried about
+- Keep responses focused on what actually impacts the user
 
 REQUIRED OUTPUT FORMAT - Use this exact structure:
 
 **What's true:**
-[List factual, accurate aspects based on current research and credible sources]
+[List only the relevant, important facts that address the user's concern. Skip hyper-local details unless they're crucial to the claim]
 
 **What's misleading:**
-[List any misleading, false, exaggerated, or out-of-context aspects]
+[Focus on misleading aspects that could cause unnecessary worry or confusion]
 
 **What you can do:**
 [Provide SPECIFIC, ACTIONABLE steps the person can take. Include:
-- Specific brands, products, or alternatives to consider (e.g., "Buy California-grown rice like Lundberg or Kokuho Rose")
-- Concrete actions they can take immediately (e.g., "Rinse rice 3 times, cook with 6:1 water ratio")
+- Specific brands, products, or alternatives to consider
+- Concrete actions they can take immediately  
 - Specific places to shop or what to look for on labels
 - Practical lifestyle modifications
 - Both short-term and long-term actionable strategies
 Make these suggestions concrete and implementable, not just general advice]
 
-**Citations and sources:**
-[Include specific, credible sources you found through web search with publication dates when available]
+**Bottom line:**
+[Clear, concise summary addressing their core concern]
 
-Focus on anxiety relief and practical guidance with current, verified information.`;
+If the claim/concern is unclear, start with:
+"I'm not sure what specific claim you'd like me to check. Based on your input, you might be concerned about [guess]. If that's not right, please clarify what claim you'd like verified."
+
+Focus on anxiety relief and practical guidance. Don't include trivial details that don't matter to the main concern.`;
     }
   };
 
@@ -86,12 +213,97 @@ Focus on anxiety relief and practical guidance with current, verified informatio
     setLoading(true);
     setError('');
     setResponse('');
-    
-    const stepText = analysisMode === 'summarize' ? 'Summarizing article...' : 'Searching for current information...';
-    setAnalysisStep(stepText);
 
     try {
-      // Check if API key exists
+      // Check if content is already fact-checked
+      const isPreFactChecked = detectPreFactCheckedContent(contentText);
+      
+      // Debug logging
+      console.log('Content preview:', contentText.substring(0, 200));
+      console.log('Is pre-fact-checked:', isPreFactChecked);
+      console.log('Analysis mode:', analysisMode);
+      
+      if (isPreFactChecked && analysisMode === 'analyze') {
+        setAnalysisStep('Detected existing fact-check. Preparing meta-analysis...');
+      }
+
+      // For summarize mode, try to extract article content if it's a URL
+      if (analysisMode === 'summarize' && isUrl(contentText)) {
+        setAnalysisStep('Attempting to fetch article content...');
+        
+        try {
+          const rawHtml = await readUrlContent(contentText);
+          const extractedData = extractTextFromHtml(rawHtml);
+          
+          setArticleData(extractedData);
+          
+          if (extractedData.isPaywalled) {
+            setError('This article appears to be behind a paywall. Analysis may be incomplete.');
+          }
+          
+          if (extractedData.content.length < 100) {
+            setError('Could not extract sufficient content from this URL. This might be due to CORS restrictions or the site blocking automated access.');
+            setLoading(false);
+            return;
+          }
+          
+          // Analyze with Claude
+          setAnalysisStep('Analyzing article with AI...');
+          
+          const systemPrompt = getSystemPrompt(analysisMode, false);
+          const userPrompt = `Please analyze this article content:
+
+Title: ${extractedData.title}
+Content: ${extractedData.content}
+Source URL: ${contentText}
+Word Count: ${extractedData.wordCount}
+Note: Content extracted directly from web page, may have some formatting issues.`;
+
+          await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
+          
+        } catch (fetchError) {
+          // If direct fetch fails, try to analyze the URL itself
+          setError(`Could not fetch article content (likely CORS blocked): ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}. Analyzing URL instead.`);
+          
+          const systemPrompt = getSystemPrompt(analysisMode, false);
+          const userPrompt = `I cannot access the full content of this article URL due to technical restrictions, but please provide what analysis you can based on the URL and any knowledge you have: ${contentText}`;
+          
+          await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
+        }
+      } else {
+        // For analyze mode or non-URL content, use the text directly
+        setAnalysisStep(isPreFactChecked ? 'Analyzing existing fact-check...' : 'Analyzing content...');
+        const systemPrompt = getSystemPrompt(analysisMode, isPreFactChecked);
+        
+        let userPrompt: string;
+        if (isPreFactChecked) {
+          userPrompt = `SCENARIO: A user found this fact-check online and wants to know if they should trust it.
+
+YOUR ROLE: You're a skeptical expert who HATES bad fact-checks that don't cite sources.
+
+THE FACT-CHECK THEY FOUND:
+${contentText}
+
+YOUR TASK: Tear apart this fact-check for having ZERO sources. Do NOT verify if the claims are true - you CAN'T without sources. Instead, explain why this is a terrible fact-check that no one should trust.
+
+Start your response with: "This fact-check is fundamentally flawed because..."`;
+        } else {
+          userPrompt = `Please analyze this content: "${contentText}"`;
+        }
+        
+        await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
+      }
+      
+    } catch (err) {
+      console.error('❌ Analysis error:', err);
+      setError(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      setAnalysisStep('');
+      setLoading(false);
+    }
+  };
+
+  const callClaudeAPI = async (systemPrompt: string, userPrompt: string, analysisMode: string) => {
+    try {
       if (!CLAUDE_API_KEY) {
         throw new Error('Claude API key not found. Please add EXPO_PUBLIC_CLAUDE_API_KEY to your .env file');
       }
@@ -99,15 +311,6 @@ Focus on anxiety relief and practical guidance with current, verified informatio
       if (!CLAUDE_API_KEY.startsWith('sk-ant-')) {
         throw new Error('Invalid Claude API key format. Key should start with sk-ant-');
       }
-
-      const systemPrompt = getSystemPrompt(analysisMode);
-      const userPrompt = analysisMode === 'summarize' 
-        ? `Please analyze this content. If it's a URL, fetch the article. If it's an excerpt or headline, search for and find the original full article. Content: "${contentText}"`
-        : `Please analyze this content. Use web search to find current, credible information about this topic and provide specific actionable advice: "${contentText}"`;
-
-      setAnalysisStep(analysisMode === 'summarize' ? 'Analyzing content...' : 'Finding reliable sources...');
-
-      console.log('Making request to Claude API...');
 
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
@@ -129,31 +332,21 @@ Focus on anxiety relief and practical guidance with current, verified informatio
         }),
       });
 
-      console.log('Response status:', res.status);
-
       if (!res.ok) {
         const errorText = await res.text();
-        console.error('Claude API Error Response:', errorText);
-        
         let errorData;
         try {
           errorData = JSON.parse(errorText);
         } catch {
           throw new Error(`Claude API Error (${res.status}): ${errorText}`);
         }
-        
         throw new Error(`Claude API Error: ${errorData.error?.message || errorData.message || 'Unknown error'}`);
       }
 
       const data = await res.json();
-      console.log('🔍 Claude response:', JSON.stringify(data, null, 2));
 
-      setAnalysisStep('Generating comprehensive analysis...');
-
-      // Handle Claude's response format
       let reply = '';
       if (data.content && Array.isArray(data.content) && data.content.length > 0) {
-        // Get the text content from Claude's response
         const textContent = data.content.find((item: any) => item.type === 'text');
         if (textContent && textContent.text) {
           reply = textContent.text.trim();
@@ -163,18 +356,12 @@ Focus on anxiety relief and practical guidance with current, verified informatio
       if (reply) {
         setResponse(reply);
         setAnalysisStep('');
-        // Show analysis button if this was a summary
         if (analysisMode === 'summarize') {
           setShowAnalysisButton(true);
         }
       } else {
-        console.error('No text content found in response:', data);
-        setError('No response received from Claude.');
+        throw new Error('No response received from Claude.');
       }
-    } catch (err) {
-      console.error('❌ Claude API error:', err);
-      setError(`Error contacting Claude API: ${err instanceof Error ? err.message : 'Unknown error'}`);
-      setAnalysisStep('');
     } finally {
       setLoading(false);
     }
@@ -195,8 +382,8 @@ Focus on anxiety relief and practical guidance with current, verified informatio
   };
 
   const handleAnalyzeClaims = () => {
-    if (inputText && typeof inputText === 'string') {
-      analyzeContentWithClaude(inputText, 'analyze');
+    if (articleData?.content) {
+      analyzeContentWithClaude(articleData.content, 'analyze');
       setShowAnalysisButton(false);
     }
   };
@@ -206,12 +393,20 @@ Focus on anxiety relief and practical guidance with current, verified informatio
   };
 
   const getTitle = () => {
-    if (isSummaryMode) return 'Article Summary';
+    const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
+    if (isSummaryMode) return 'Article Analysis';
+    if (isPreFactChecked) return 'Fact-Check Analysis';
     return 'Claim Analysis';
   };
 
   const getContentLabel = () => {
-    if (isSummaryMode) return '📄 Article Content';
+    const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
+    if (isSummaryMode) {
+      return isUrl(inputText || '') ? '🔗 Article URL' : '📄 Article Headline/Content';
+    }
+    if (isPreFactChecked) {
+      return '✅ Pre-Fact-Checked Content';
+    }
     return '🔍 Content to Analyze';
   };
 
@@ -227,7 +422,10 @@ Focus on anxiety relief and practical guidance with current, verified informatio
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {inputText && (
           <View style={styles.inputSection}>
-            <View style={styles.typeIndicator}>
+            <View style={[
+              styles.typeIndicator,
+              inputText && detectPreFactCheckedContent(inputText) && styles.preFactCheckedIndicator
+            ]}>
               <Text style={styles.typeText}>{getContentLabel()}</Text>
             </View>
             <Text style={styles.inputText}>
@@ -236,9 +434,23 @@ Focus on anxiety relief and practical guidance with current, verified informatio
           </View>
         )}
 
+        {articleData && isSummaryMode && (
+          <View style={styles.articleInfoSection}>
+            <Text style={styles.articleInfoTitle}>📄 Article Extracted</Text>
+            <Text style={styles.articleTitle}>{articleData.title}</Text>
+            <Text style={styles.articleMeta}>
+              {articleData.wordCount} words • {articleData.isPaywalled ? '🔒 May be paywalled' : '✅ Content extracted'}
+            </Text>
+            <Text style={styles.warningText}>
+              ⚠️ Note: Content extracted directly from web page. Some sites may block this method.
+            </Text>
+          </View>
+        )}
+
         <View style={styles.responseSection}>
           <Text style={styles.sectionTitle}>
-            {isSummaryMode ? 'Summary:' : 'Analysis:'}
+            {isSummaryMode ? 'Analysis:' : 
+             (inputText && detectPreFactCheckedContent(inputText) ? 'Meta-Analysis Results:' : 'Fact-Check Results:')}
           </Text>
           
           {loading && (
@@ -267,7 +479,7 @@ Focus on anxiety relief and practical guidance with current, verified informatio
                   onPress={handleAnalyzeClaims}
                 >
                   <Text style={styles.analyzeButtonText}>
-                    🔍 Fact-Check Claims from This Article
+                    🔍 Now Fact-Check Claims from This Article
                   </Text>
                 </TouchableOpacity>
               )}
@@ -318,7 +530,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   inputSection: {
-    marginBottom: 24,
+    marginBottom: 16,
     backgroundColor: '#f8f9fa',
     borderRadius: 8,
     overflow: 'hidden',
@@ -327,6 +539,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#32535F',
     paddingHorizontal: 16,
     paddingVertical: 8,
+  },
+  preFactCheckedIndicator: {
+    backgroundColor: '#28a745',
   },
   typeText: {
     color: 'white',
@@ -338,6 +553,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#333',
+  },
+  articleInfoSection: {
+    marginBottom: 16,
+    backgroundColor: '#fff3cd',
+    borderRadius: 8,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#ffc107',
+  },
+  articleInfoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  articleTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#533f03',
+    marginBottom: 4,
+  },
+  articleMeta: {
+    fontSize: 14,
+    color: '#856404',
+    marginBottom: 8,
+  },
+  warningText: {
+    fontSize: 12,
+    color: '#856404',
+    fontStyle: 'italic',
   },
   responseSection: {
     flex: 1,
@@ -357,6 +602,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     textAlign: 'center',
+    fontWeight: '600',
   },
   errorContainer: {
     alignItems: 'center',
