@@ -27,17 +27,19 @@ const frames: ImageSourcePropType[] = [
   require('@/assets/animation_frames/frame_5.png'),
   require('@/assets/animation_frames/frame_6.png'),
   require('@/assets/animation_frames/frame_7.png'),
+  require('@/assets/animation_frames/frame_8.png'),
 ];
 
 // Custom durations for each frame position
 const frameDurations = [
+  500,
   600,
   700,
   700,
   900,
   700,
   800,
-  600,
+  500,
 ];
 
 const PAUSE          = 0;
@@ -51,7 +53,6 @@ export default function AnimatedWave() {
   const fade = useRef(new Animated.Value(0)).current;
   const currentIndex = useRef(0);
   const [renderIndex, setRenderIndex] = useState(0);
-
   useEffect(() => {
     let mounted = true;
     let animationTimeout: NodeJS.Timeout;
@@ -123,6 +124,15 @@ export default function AnimatedWave() {
         />
       </View>
 
+      {/* Green blur on left side */}
+      <View style={styles.greenBlur}>
+        <Image
+          source={require('@/assets/images/blur_green.png')}
+          style={styles.blurImage}
+          resizeMode="contain"
+        />
+      </View>
+
       {/* Check button - your exact original code */}
       <Link href="./chooseinput" asChild>
         <TouchableOpacity
@@ -157,6 +167,53 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
+  menuButton: {
+    position: 'absolute',
+    top: 72,
+    right: 24,
+    zIndex: 10,
+    padding: 10,
+  },
+  hamburgerLine: {
+    width: 24,
+    height: 2,
+    backgroundColor: '#1A1A1A',
+    marginVertical: 4,
+    borderRadius: 2,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  menuContainer: {
+    position: 'absolute',
+    top: 80,
+    right: 20,
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 8,
+    elevation: 5,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    minWidth: 180,
+  },
+  menuIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  menuText: {
+    fontSize: 16,
+    color: '#1A1A1A',
+    fontWeight: '500',
+  },
   checkBlur: {
     position: 'absolute',
     bottom: NAV_BAR_HEIGHT + BUTTON_OFFSET - 150, // Lower to extend more below
@@ -177,6 +234,16 @@ const styles = StyleSheet.create({
     height: BUTTON_HEIGHT + 600,
     marginLeft: -25,
     zIndex: 1, // Behind the button (underneath)
+  },
+  greenBlur: {
+    position: 'absolute',
+    bottom: NAV_BAR_HEIGHT + BUTTON_OFFSET - 150, // Same vertical position as checkBlur
+    alignSelf: 'center',
+    width: BUTTON_WIDTH,
+    height: BUTTON_HEIGHT + 250,
+    marginLeft: -200, // Positioned to the left of the button
+    zIndex: 3, // ON TOP of the button, same as checkBlur
+    pointerEvents: 'none', // Don't block button touches
   },
   blurImage: {
     width: '100%',

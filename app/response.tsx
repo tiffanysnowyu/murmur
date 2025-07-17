@@ -1,4 +1,4 @@
-// Updated response.tsx with fact-check detection and appropriate templates
+// Updated response.tsx with save functionality
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -7,8 +7,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
+import { insightsStorage } from '../utils/insightsStorage';
 
 const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
 
@@ -20,6 +22,7 @@ export default function ResponsePage() {
   const [analysisStep, setAnalysisStep] = useState('');
   const [showAnalysisButton, setShowAnalysisButton] = useState(false);
   const [articleData, setArticleData] = useState<any>(null);
+  const [isSaved, setIsSaved] = useState(false);
 
   // Get the text from parameters
   const inputText = (claim || text) as string;
@@ -70,6 +73,27 @@ export default function ResponsePage() {
     }
     
     return false;
+  };
+
+  // Save insight to file
+  const saveInsight = async () => {
+    try {
+      const newInsight = {
+        id: Date.now().toString(),
+        claim: inputText,
+        analysis: response,
+        mode: currentMode,
+        savedAt: new Date().toISOString(),
+        title: articleData?.title || inputText.substring(0, 50) + '...',
+      };
+
+      await insightsStorage.addInsight(newInsight);
+      setIsSaved(true);
+      Alert.alert('Saved!', 'This analysis has been saved to your insights.');
+    } catch (error) {
+      console.error('Error saving insight:', error);
+      Alert.alert('Error', 'Failed to save insight.');
+    }
   };
 
   // Direct fetch function (will have CORS limitations)
@@ -417,6 +441,15 @@ Start your response with: "This fact-check is fundamentally flawed because..."`;
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
         <Text style={styles.title}>{getTitle()}</Text>
+        {response && !loading && (
+          <TouchableOpacity 
+            onPress={saveInsight} 
+            style={styles.saveButton}
+            disabled={isSaved}
+          >
+            <Text style={styles.saveButtonText}>{isSaved ? '✓' : '💾'}</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -524,6 +557,13 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     color: '#333',
+    flex: 1,
+  },
+  saveButton: {
+    padding: 8,
+  },
+  saveButtonText: {
+    fontSize: 20,
   },
   content: {
     flex: 1,

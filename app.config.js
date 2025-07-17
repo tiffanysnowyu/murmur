@@ -6,7 +6,7 @@ export default {
     slug: 'murmur',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/images/icon.png',
+    // icon: './assets/images/icon.png',
     scheme: 'murmur',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
@@ -16,7 +16,7 @@ export default {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: './assets/images/adaptive-icon.png',
+        // foregroundImage: './assets/images/adaptive-icon.png',
         backgroundColor: '#ffffff',
       },
       edgeToEdgeEnabled: true,
@@ -24,14 +24,14 @@ export default {
     web: {
       bundler: 'metro',
       output: 'static',
-      favicon: './assets/images/favicon.png',
+      // favicon: './assets/images/favicon.png',
     },
     plugins: [
       'expo-router',
       [
         'expo-splash-screen',
         {
-          image: './assets/images/splash-icon.png',
+          // image: './assets/images/splash-icon.png',
           imageWidth: 200,
           resizeMode: 'contain',
           backgroundColor: '#ffffff',
