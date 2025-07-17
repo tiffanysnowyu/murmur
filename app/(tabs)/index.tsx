@@ -34,7 +34,7 @@ const frameDurations = [
   600,
   700,
   700,
-  1200,
+  900,
   700,
   800,
   600,
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
   },
   checkText: {
     fontSize: 24,
-    fontWeight: '500',        // "Medium" weight
+    fontWeight: '500', // "Medium" weight
     letterSpacing: -1.1,
     color: '#32535F',
   },

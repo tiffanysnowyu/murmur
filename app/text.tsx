@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   input: {
-    flex: 1,
+    flex:1,
     borderWidth: 1,
     borderColor: '#ddd',
     borderRadius: 8,
