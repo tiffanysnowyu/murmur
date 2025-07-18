@@ -39,7 +39,7 @@ export default function TextPage() {
     if (mode === 'summarize') {
       return "Paste an article URL, headline, or any paragraph/excerpt from the article - I'll find and analyze the full story...";
     } else {
-      return "Paste a headline, claim, or any health statement you want fact-checked...";
+      return "Type or paste anything - headlines, articles, or questions. Any format works.";
     }
   };
 

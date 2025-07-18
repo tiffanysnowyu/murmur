@@ -1,4 +1,4 @@
-// Updated response.tsx with save functionality
+// Updated response.tsx with save functionality and Next button
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -198,38 +198,33 @@ TASK: Analyze whether this fact-check addresses real concerns effectively.
 
 Focus on practical anxiety relief, not academic analysis.`;
     } else {
-      return `You are an expert fact-checker and health analyst.
+      return `You are an expert fact-checker and health analyst. Write a calm, clear explanation of the claim using the following structure and tone:
 
-IMPORTANT GUIDELINES:
-- Focus ONLY on claims that matter for the user's concerns
-- SKIP irrelevant details like specific numbers (e.g., "250 cows") unless they're central to what's being verified
-- If there's no clear claim causing anxiety, identify what the user might be worried about
-- Keep responses focused on what actually impacts the user
+**What's misleading about the claim**
+* Explain clearly and simply what the claim gets wrong or exaggerates.
+* Avoid vague reassurances like "not all..." — instead, clarify when the risk *does* apply (e.g. "when there's a fresh cut and exposure to warm water").
+* Use plain language: avoid technical or unfamiliar words like "brackish." If a technical term is needed, define it in a friendly way.
 
-REQUIRED OUTPUT FORMAT - Use this exact structure:
+**Basic precautions anyone can take**
+* Include only low-effort actions that are effective for most healthy people.
+* If you mention hygiene or protection steps (like rinsing or showering), include *how soon*, *why*, and *what to use*.
+* Don't overstate risk — make it clear that simple steps are enough in most cases.
 
-**What's true:**
-[List only the relevant, important facts that address the user's concern. Skip hyper-local details unless they're crucial to the claim]
+**Extra precautions**
+* For people with higher risk (e.g. weakened immune systems, chronic liver disease, recent surgeries)
+* If recommending skipping something common (like raw oysters), explain *why* and *for whom*
+* Be culturally respectful: don't overgeneralize or fearmonger about common lifestyle or food habits
 
-**What's misleading:**
-[Focus on misleading aspects that could cause unnecessary worry or confusion]
+**Bottom line**
+* End with an emotionally grounding summary.
+* Remind users that they're likely safe, and that enjoying life (like swimming or eating favorite foods) is still possible with a few simple adjustments.
 
-**What you can do:**
-[Provide SPECIFIC, ACTIONABLE steps the person can take. Include:
-- Specific brands, products, or alternatives to consider
-- Concrete actions they can take immediately  
-- Specific places to shop or what to look for on labels
-- Practical lifestyle modifications
-- Both short-term and long-term actionable strategies
-Make these suggestions concrete and implementable, not just general advice]
-
-**Bottom line:**
-[Clear, concise summary addressing their core concern]
+**Other style guidance**
+* Don't use vague locations like "coastal waters" — be specific. If the risk is specific to a place like Florida, say that. If it goes beyond a specific region mentioned in the claim, mention that, too. 
+* Assume the user is smart but overwhelmed — don't dumb it down, but make it friendly.
 
 If the claim/concern is unclear, start with:
-"I'm not sure what specific claim you'd like me to check. Based on your input, you might be concerned about [guess]. If that's not right, please clarify what claim you'd like verified."
-
-Focus on anxiety relief and practical guidance. Don't include trivial details that don't matter to the main concern.`;
+"I'm not sure what specific claim you'd like me to check. Based on your input, you might be concerned about [guess]. If that's not right, please clarify what claim you'd like verified."`;
     }
   };
 
@@ -416,6 +411,10 @@ Start your response with: "This fact-check is fundamentally flawed because..."`;
     router.back();
   };
 
+  const handleNext = () => {
+    router.push('/followup');
+  };
+
   const getTitle = () => {
     const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
     if (isSummaryMode) return 'Article Analysis';
@@ -516,6 +515,13 @@ Start your response with: "This fact-check is fundamentally flawed because..."`;
                   </Text>
                 </TouchableOpacity>
               )}
+
+              <TouchableOpacity 
+                style={styles.nextButton} 
+                onPress={handleNext}
+              >
+                <Text style={styles.nextButtonText}>Next →</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -676,6 +682,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#333',
+    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
   analyzeButton: {
     backgroundColor: '#32535F',
@@ -686,6 +693,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   analyzeButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  nextButton: {
+    backgroundColor: '#4CAF50',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 20,
+    alignItems: 'center',
+  },
+  nextButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: '600',

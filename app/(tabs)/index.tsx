@@ -32,14 +32,14 @@ const frames: ImageSourcePropType[] = [
 
 // Custom durations for each frame position
 const frameDurations = [
-  500,
+  600,
   600,
   700,
   700,
   900,
-  700,
   800,
-  500,
+  800,
+  700,
 ];
 
 const PAUSE          = 0;
