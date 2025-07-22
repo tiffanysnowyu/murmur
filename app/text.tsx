@@ -1,5 +1,5 @@
 // app/text.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -8,11 +8,21 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 
 export default function TextPage() {
+  const { initialText, mode: initialMode } = useLocalSearchParams();
   const [text, setText] = useState('');
   const [mode, setMode] = useState<'analyze' | 'summarize' | null>(null);
+
+  useEffect(() => {
+    if (initialText && typeof initialText === 'string') {
+      setText(initialText);
+    }
+    if (initialMode && typeof initialMode === 'string') {
+      setMode(initialMode as 'analyze' | 'summarize');
+    }
+  }, [initialText, initialMode]);
 
   const handleAnalyze = () => {
     if (!text.trim()) {

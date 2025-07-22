@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
   Alert,
+  Platform,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
@@ -15,12 +16,14 @@ import { insightsStorage } from '../utils/insightsStorage';
 const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
 
 export default function ResponsePage() {
-  const { claim, text, mode } = useLocalSearchParams();
+  const { claim, text, mode, previousClaim } = useLocalSearchParams();
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [analysisStep, setAnalysisStep] = useState('');
   const [showAnalysisButton, setShowAnalysisButton] = useState(false);
+  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
+  const [showFollowUp, setShowFollowUp] = useState(false);
   const [articleData, setArticleData] = useState<any>(null);
   const [isSaved, setIsSaved] = useState(false);
 
@@ -99,22 +102,37 @@ export default function ResponsePage() {
   // Direct fetch function (will have CORS limitations)
   const readUrlContent = async (url: string) => {
     try {
-      const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-        }
-      });
+      // Try using a CORS proxy
+      const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+      
+      const response = await fetch(proxyUrl);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      const content = await response.text();
-      return content;
+      const data = await response.json();
+      return data.contents;
     } catch (error) {
-      throw new Error(`Failed to read URL content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // If proxy fails, try direct fetch as fallback
+      try {
+        const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const content = await response.text();
+        return content;
+      } catch (directError) {
+        throw new Error(`Failed to read URL content: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
     }
   };
 
@@ -159,7 +177,7 @@ export default function ResponsePage() {
     }
   };
 
-  const getSystemPrompt = (mode: string, isPreFactChecked: boolean = false) => {
+  const getSystemPrompt = (mode: string, isPreFactChecked: boolean = false, isFollowUp: boolean = false) => {
     if (mode === 'summarize') {
       return `You are an expert content analyzer. You will be provided with article content that has been extracted from a web page.
 
@@ -197,34 +215,168 @@ TASK: Analyze whether this fact-check addresses real concerns effectively.
 [Is this fact-check helpful for someone who's worried? What should they actually do?]
 
 Focus on practical anxiety relief, not academic analysis.`;
+    } else if (isFollowUp) {
+      return `You are an expert fact-checker and health analyst responding to a FOLLOW-UP QUESTION.
+
+IMPORTANT: The user previously received a fact-check about a specific topic and now has a follow-up concern. This is NOT a new standalone claim to fact-check - it's a specific worry related to their original question.
+
+CONTEXT AWARENESS: 
+- Always acknowledge what they originally asked about
+- Connect your response to their initial concern
+- Provide targeted reassurance for their specific follow-up worry
+
+RESPONSE FORMAT for follow-ups:
+
+**About your concern:**
+[Acknowledge their original topic and explain how this follow-up relates to it. Be specific about what they're worried about.]
+
+**Here's what you need to know:**
+[Address their specific follow-up question with facts and context. Focus on what actually applies to their situation.]
+
+**What this means for you:**
+[Practical, specific guidance that directly addresses their follow-up concern. Keep it simple and actionable.]
+
+**Bottom line:**
+[Clear, reassuring summary that ties back to their original concern and gives them confidence about what to do next.]
+
+Remember: This is about providing targeted reassurance for a specific follow-up worry, not doing a full fact-check analysis.`;
     } else {
-      return `You are an expert fact-checker and health analyst. Write a calm, clear explanation of the claim using the following structure and tone:
+      return `You are an expert fact-checker and health analyst.
 
-**What's misleading about the claim**
-* Explain clearly and simply what the claim gets wrong or exaggerates.
-* Avoid vague reassurances like "not all..." — instead, clarify when the risk *does* apply (e.g. "when there's a fresh cut and exposure to warm water").
-* Use plain language: avoid technical or unfamiliar words like "brackish." If a technical term is needed, define it in a friendly way.
+IMPORTANT: First check if the claim is political in nature.
+- If it's political but NOT directly related to environmental, climate, or public health policy, respond ONLY with:
+"This claim may be politically important, but Murmur focuses on health, climate, and environmental information. If you're feeling overwhelmed, we're here to help with claims that impact your safety, wellbeing, and understanding of the world."
 
-**Basic precautions anyone can take**
-* Include only low-effort actions that are effective for most healthy people.
-* If you mention hygiene or protection steps (like rinsing or showering), include *how soon*, *why*, and *what to use*.
-* Don't overstate risk — make it clear that simple steps are enough in most cases.
+- If it IS related to environmental, climate, or public health policy, proceed with the analysis below.
 
-**Extra precautions**
-* For people with higher risk (e.g. weakened immune systems, chronic liver disease, recent surgeries)
-* If recommending skipping something common (like raw oysters), explain *why* and *for whom*
-* Be culturally respectful: don't overgeneralize or fearmonger about common lifestyle or food habits
+For valid claims, analyze the input to determine if it's:
+1. A formal claim/headline - Look for these clear indicators:
+   - Contains quotation marks around a statement
+   - Has attribution ("According to...", "Scientists say...", "Doctors warn...")
+   - Includes specific statistics or percentages
+   - Uses sensational language ("BREAKING:", "WARNING:", exclamation points)
+   - Mentions specific dates, locations WITH claims about them
+   - Has the structure of a headline or social media post
+   
+2. A personal concern - Everything else, including:
+   - Single topics or keywords
+   - Questions
+   - Informal phrasing
+   - No clear claim structure
 
-**Bottom line**
-* End with an emotionally grounding summary.
-* Remind users that they're likely safe, and that enjoying life (like swimming or eating favorite foods) is still possible with a few simple adjustments.
+Only use "What's misleading" when there's a specific false or exaggerated claim to address. If someone just enters a topic or general concern, use "About this concern" instead.
 
-**Other style guidance**
-* Don't use vague locations like "coastal waters" — be specific. If the risk is specific to a place like Florida, say that. If it goes beyond a specific region mentioned in the claim, mention that, too. 
-* Assume the user is smart but overwhelmed — don't dumb it down, but make it friendly.
+GENERAL GUIDELINES:
+- Start with a brief, reassuring statement to put the user at ease
+- Never tell users to "avoid" things - always frame as what they SHOULD do instead
+- When discussing common activities, provide calming context and be specific about what's actually affected
+- NEVER use vague terms like "relatively rare" - be specific with reassuring statistics if needed
+- If a claim mentions a specific region, ALWAYS clarify: 1) exactly which areas are affected, 2) which areas are NOT affected, and 3) reassure that even in affected areas, simple precautions work
+- Don't personify bacteria or diseases (no "deserves respect" language)
+- Include historical perspective when relevant to show how similar concerns have been successfully managed
+- Focus on immediate, simple actions - do NOT provide complex preparedness plans for any scenario (disasters, pandemics, emergencies, etc.)
+- Focus ONLY on claims that matter for the user's concerns
+- Keep responses focused on what actually impacts the user
+
+REQUIRED OUTPUT FORMAT - Use this exact structure:
+
+[Start with 1-2 sentences of immediate reassurance about the topic - something calming and positive]
+
+**What's true:**
+[List only the relevant, important facts that address the user's concern. Skip hyper-local details unless they're crucial to the claim]
+
+**Where this applies (if location-specific):**
+[Only include if the claim involves specific regions/conditions
+- Be specific about affected areas
+- Explicitly state where it does NOT apply
+- Reassure that even in affected areas, the precautions below work well]
+
+**What's misleading:** [ONLY when there's a specific claim with false/exaggerated elements]
+[Focus on misleading aspects that could cause unnecessary worry or confusion]
+
+**About this concern:** [For topics, questions, or general worries without specific claims]
+[Address what they're actually worried about with context and reassurance
+- Explain the real situation
+- Provide perspective without being dismissive]
+
+**Putting this in perspective:**
+[When relevant, include:
+- How similar concerns have been around for years/decades
+- How people have safely managed these situations before
+- Success stories of precautions working well
+- How millions continue to safely enjoy these activities
+Keep this brief and reassuring, not dismissive]
+
+**What you can do:**
+[Basic, easy actions for most healthy people. Include:
+- Specific positive actions (not "avoid X", but "do Y instead")
+- Include timings and specifics where relevant
+- Make it clear these simple steps are enough for most people
+- Keep to immediate, simple actions only]
+
+**If you're shopping for this:**
+[ONLY include when the claim involves specific products like food, baby items, cosmetics, household products, etc.
+- Recommend the SAFEST specific products, brands, or sources
+- Be specific: "California-grown rice has lower arsenic levels" not just "choose low-arsenic rice"
+- Include where to find these products ("available at most grocery stores")
+- Mention certifications or testing when relevant ("USDA Organic," "NSF tested")
+- Keep recommendations practical and accessible
+- Focus on what TO choose, not what to avoid]
+
+**If you have certain health conditions:**
+[ONLY for immediate health/safety actions, not long-term planning
+- Only for people with weakened immune systems, chronic conditions, recent surgeries, etc.
+- Frame positively: what to choose instead, not what to avoid
+- No redundancy with the basic precautions above
+- Be specific about safe alternatives they can enjoy
+- Keep to simple, immediate actions only]
+
+**Bottom line:**
+[Clear, reassuring summary focused on empowerment and enjoying life
+- Start with reassurance about safety with precautions
+- End on a positive, action-oriented note
+- NO reminders of risks or threats
+- Focus on how simple the precautions are and how they can continue enjoying activities
+- If location-specific, emphasize that most places are unaffected]
+
+**Sources:**
+[Include 2-4 credible sources that support the key claims
+- Health organizations (CDC, WHO, local health departments)
+- Peer-reviewed studies if relevant
+- Official government health websites
+- Format as simple list without full citations]
+
+**You might be wondering:**
+[CRITICAL: Generate THREE follow-up questions that different types of anxious, health-conscious people would ask next. Each question should represent a different anxiety pattern:
+
+QUESTION 1 - The Retroactive Worrier:
+This person immediately thinks about past exposures and what they've already done. They need reassurance about previous actions. Their thoughts:
+- "But what if I already..."
+- "My kids were just there yesterday..."
+- "I've been doing this wrong for weeks..."
+- "What about that time last month when..."
+
+QUESTION 2 - The Symptom Checker:
+This person needs to know EXACTLY what to watch for and when. They'll check themselves and family members obsessively. Their thoughts:
+- "How would I know if..."
+- "What's the difference between this and normal..."
+- "How long before symptoms show..."
+- "What specific signs in my elderly parent/young child..."
+
+QUESTION 3 - The Contamination Catastrophizer:
+This person worries about bringing danger home and protecting vulnerable family. They think about transmission and safety barriers. Their thoughts:
+- "Could I contaminate my home/family..."
+- "Is it safe for my immunocompromised..."
+- "What about my pets..."
+- "Do I need to sanitize everything..."
+- "Can I still visit my elderly mother..."
+
+Format each question on its own line, without numbers or bullets. Make each one specific to THIS topic and tap into deep parental/family protection instincts. Channel their catastrophic thinking - these people assume the worst and need specific reassurance.]
 
 If the claim/concern is unclear, start with:
-"I'm not sure what specific claim you'd like me to check. Based on your input, you might be concerned about [guess]. If that's not right, please clarify what claim you'd like verified."`;
+"I'm not sure what specific claim you'd like me to check. Based on your input, you might be concerned about [guess]. If that's not right, please clarify what claim you'd like verified."
+
+Remember: Start reassuring, frame everything positively (what to do, not what to avoid), be specific about what's safe vs what needs care, end on empowerment not fear, and keep basic vs. extra precautions completely separate with no overlap.`;
     }
   };
 
@@ -269,7 +421,7 @@ If the claim/concern is unclear, start with:
           // Analyze with Claude
           setAnalysisStep('Analyzing article with AI...');
           
-          const systemPrompt = getSystemPrompt(analysisMode, false);
+          const systemPrompt = getSystemPrompt(analysisMode, false, false);
           const userPrompt = `Please analyze this article content:
 
 Title: ${extractedData.title}
@@ -281,18 +433,16 @@ Note: Content extracted directly from web page, may have some formatting issues.
           await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
           
         } catch (fetchError) {
-          // If direct fetch fails, try to analyze the URL itself
-          setError(`Could not fetch article content (likely CORS blocked): ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}. Analyzing URL instead.`);
-          
-          const systemPrompt = getSystemPrompt(analysisMode, false);
-          const userPrompt = `I cannot access the full content of this article URL due to technical restrictions, but please provide what analysis you can based on the URL and any knowledge you have: ${contentText}`;
-          
-          await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
+          // If direct fetch fails, inform user about CORS
+          setError(`Could not fetch article content (likely CORS blocked): ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}. Please copy and paste the article text instead.`);
+          setLoading(false);
+          return;
         }
       } else {
         // For analyze mode or non-URL content, use the text directly
         setAnalysisStep(isPreFactChecked ? 'Analyzing existing fact-check...' : 'Analyzing content...');
-        const systemPrompt = getSystemPrompt(analysisMode, isPreFactChecked);
+        const isFollowUpQuestion = !!previousClaim;
+        const systemPrompt = getSystemPrompt(analysisMode, isPreFactChecked, isFollowUpQuestion);
         
         let userPrompt: string;
         if (isPreFactChecked) {
@@ -306,6 +456,20 @@ ${contentText}
 YOUR TASK: Tear apart this fact-check for having ZERO sources. Do NOT verify if the claims are true - you CAN'T without sources. Instead, explain why this is a terrible fact-check that no one should trust.
 
 Start your response with: "This fact-check is fundamentally flawed because..."`;
+        } else if (previousClaim) {
+          // This is a follow-up question
+          userPrompt = `CONTEXT: A user previously asked about: "${previousClaim}"
+
+They received a fact-check analysis and now have a follow-up concern: "${contentText}"
+
+IMPORTANT: This is NOT a new standalone claim. This is a follow-up question about "${previousClaim}". 
+
+Your response should:
+1. Acknowledge this is about their original concern: "${previousClaim}"
+2. Address their specific follow-up worry: "${contentText}"
+3. Provide reassurance and practical guidance related to the original topic
+
+Please analyze this follow-up concern in the context of their original question.`;
         } else {
           userPrompt = `Please analyze this content: "${contentText}"`;
         }
@@ -378,6 +542,20 @@ Start your response with: "This fact-check is fundamentally flawed because..."`;
         if (analysisMode === 'summarize') {
           setShowAnalysisButton(true);
         }
+        
+        // Extract follow-up questions if present
+        const followUpMatch = reply.match(/\*\*You might be wondering:\*\*\s*\n(.+?)(?=\n\n|\n\*\*|$)/s);
+        if (followUpMatch) {
+          const questionsText = followUpMatch[1].trim();
+          const questions = questionsText.split('\n')
+            .map(q => q.trim())
+            .filter(q => q.length > 0 && !q.startsWith('*') && !q.match(/^question \d/i));
+          
+          if (questions.length > 0) {
+            setFollowUpQuestions(questions);
+            setShowFollowUp(true);
+          }
+        }
       } else {
         throw new Error('No response received from Claude.');
       }
@@ -408,7 +586,25 @@ Start your response with: "This fact-check is fundamentally flawed because..."`;
   };
 
   const goBack = () => {
-    router.back();
+    if (previousClaim) {
+      // If this is a follow-up, go back to the original claim's response page
+      router.push({
+        pathname: '/response',
+        params: {
+          text: previousClaim,
+          mode: currentMode
+        }
+      });
+    } else {
+      // If this is not a follow-up, go back to text input with the original text
+      router.push({
+        pathname: '/text',
+        params: {
+          initialText: inputText,
+          mode: currentMode
+        }
+      });
+    }
   };
 
   const handleNext = () => {
@@ -452,6 +648,13 @@ Start your response with: "This fact-check is fundamentally flawed because..."`;
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {previousClaim && (
+          <View style={styles.followUpFromSection}>
+            <Text style={styles.followUpFromLabel}>Follow-up to:</Text>
+            <Text style={styles.followUpFromText}>{previousClaim as string}</Text>
+          </View>
+        )}
+
         {inputText && (
           <View style={styles.inputSection}>
             <View style={[
@@ -488,7 +691,7 @@ Start your response with: "This fact-check is fundamentally flawed because..."`;
           {loading && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#32535F" />
-              <Text style={styles.loadingText}>{analysisStep}</Text>
+              <Text style={styles.loadingText}>{analysisStep || 'Analyzing...'}</Text>
             </View>
           )}
 
@@ -503,7 +706,20 @@ Start your response with: "This fact-check is fundamentally flawed because..."`;
 
           {response && !loading && (
             <View style={styles.responseContainer}>
-              <Text style={styles.responseText}>{response}</Text>
+              <Text style={styles.responseText}>
+                {response.split(/(\*\*[^*]+\*\*)/).map((part, index) => {
+                  if (part.startsWith('**') && part.endsWith('**')) {
+                    // This is a bold section - remove ** and make it bold
+                    const boldText = part.replace(/\*\*/g, '');
+                    return (
+                      <Text key={index} style={styles.boldText}>
+                        {boldText}
+                      </Text>
+                    );
+                  }
+                  return part;
+                })}
+              </Text>
               
               {showAnalysisButton && (
                 <TouchableOpacity 
@@ -514,6 +730,32 @@ Start your response with: "This fact-check is fundamentally flawed because..."`;
                     🔍 Now Fact-Check Claims from This Article
                   </Text>
                 </TouchableOpacity>
+              )}
+
+              {showFollowUp && followUpQuestions.length > 0 && (
+                <View style={styles.followUpContainer}>
+                  <Text style={styles.followUpLabel}>You might be wondering:</Text>
+                  {followUpQuestions.map((question, index) => (
+                    <TouchableOpacity 
+                      key={index}
+                      style={[styles.followUpButton, index > 0 && styles.followUpButtonSpacing]}
+                      onPress={() => {
+                        // Navigate to response page with the follow-up question
+                        router.push({
+                          pathname: '/response',
+                          params: {
+                            text: question.replace(/["""]/g, ''),
+                            mode: 'analyze',
+                            previousClaim: inputText
+                          }
+                        });
+                      }}
+                    >
+                      <Text style={styles.followUpQuestion}>{question}</Text>
+                      <Text style={styles.followUpArrow}>→</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               )}
 
               <TouchableOpacity 
@@ -574,6 +816,26 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 16,
+  },
+  followUpFromSection: {
+    marginBottom: 16,
+    backgroundColor: '#e8f4fd',
+    borderRadius: 8,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#2196F3',
+  },
+  followUpFromLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#1976D2',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  followUpFromText: {
+    fontSize: 14,
+    color: '#0D47A1',
+    fontStyle: 'italic',
   },
   inputSection: {
     marginBottom: 16,
@@ -684,6 +946,12 @@ const styles = StyleSheet.create({
     color: '#333',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
+  boldText: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#333',
+  },
   analyzeButton: {
     backgroundColor: '#32535F',
     paddingVertical: 14,
@@ -696,6 +964,45 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 16,
     fontWeight: '600',
+  },
+  followUpContainer: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: '#f0f8ff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e8f0',
+  },
+  followUpLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 8,
+    fontWeight: '500',
+  },
+  followUpButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 6,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#d0d0d0',
+  },
+  followUpButtonSpacing: {
+    marginTop: 12,
+  },
+  followUpQuestion: {
+    fontSize: 16,
+    color: '#32535F',
+    fontWeight: '500',
+    flex: 1,
+    paddingRight: 10,
+  },
+  followUpArrow: {
+    fontSize: 20,
+    color: '#32535F',
+    fontWeight: 'bold',
   },
   nextButton: {
     backgroundColor: '#4CAF50',
