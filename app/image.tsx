@@ -67,26 +67,26 @@ export default function ImagePage() {
         return;
       }
 
-      // addDebugInfo('Launching image library...');
-      // const result = await ImagePicker.launchImageLibraryAsync({
-      //   mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      //   allowsEditing: true,
-      //   aspect: [4, 3],
-      //   quality: 0.8,
-      // });
+      addDebugInfo('Launching image library...');
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
 
-      // addDebugInfo(`Image picker result: ${JSON.stringify({
-      //   canceled: result.canceled,
-      //   hasAssets: result.assets ? result.assets.length : 0
-      // })}`);
+      addDebugInfo(`Image picker result: ${JSON.stringify({
+        canceled: result.canceled,
+        hasAssets: result.assets ? result.assets.length : 0
+      })}`);
 
-      // if (!result.canceled && result.assets && result.assets[0]) {
-      //   addDebugInfo(`Selected image URI: ${result.assets[0].uri}`);
-      //   setSelectedImage(result.assets[0].uri);
-      //   await processImage(result.assets[0].uri);
-      // } else {
-      //   addDebugInfo('Image selection was canceled or failed');
-      // }
+      if (!result.canceled && result.assets && result.assets[0]) {
+        addDebugInfo(`Selected image URI: ${result.assets[0].uri}`);
+        setSelectedImage(result.assets[0].uri);
+        await processImage(result.assets[0].uri);
+      } else {
+        addDebugInfo('Image selection was canceled or failed');
+      }
     } catch (error) {
       addDebugInfo(`Image picker error: ${error}`);
       Alert.alert('Error', `Image picker failed: ${error}`);
