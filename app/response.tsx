@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
   Alert,
   Platform,
+  Modal,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
@@ -26,6 +27,7 @@ export default function ResponsePage() {
   const [showFollowUp, setShowFollowUp] = useState(false);
   const [articleData, setArticleData] = useState<any>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [showSavedModal, setShowSavedModal] = useState(false);
 
   // Get the text from parameters
   const inputText = (claim || text) as string;
@@ -92,10 +94,21 @@ export default function ResponsePage() {
 
       await insightsStorage.addInsight(newInsight);
       setIsSaved(true);
-      Alert.alert('Saved!', 'This analysis has been saved to your insights.');
+      // Don't show alert here anymore, just set the saved state
     } catch (error) {
       console.error('Error saving insight:', error);
       Alert.alert('Error', 'Failed to save insight.');
+    }
+  };
+
+  // Handle tapping the save button (checkmark when saved)
+  const handleSaveButtonPress = () => {
+    if (isSaved) {
+      // Show modal explaining it's already saved
+      setShowSavedModal(true);
+    } else {
+      // Save the insight
+      saveInsight();
     }
   };
 
@@ -236,6 +249,12 @@ RESPONSE FORMAT for follow-ups:
 **What this means for you:**
 [Practical, specific guidance that directly addresses their follow-up concern. Keep it simple and actionable.]
 
+**Sources:**
+[Include 1-2 credible sources that support the key points
+- Health organizations (CDC, WHO, local health departments)  
+- Official government health websites
+- Format as simple list without full citations]
+
 **Bottom line:**
 [Clear, reassuring summary that ties back to their original concern and gives them confidence about what to do next.]
 
@@ -277,6 +296,10 @@ GENERAL GUIDELINES:
 - Focus on immediate, simple actions - do NOT provide complex preparedness plans for any scenario (disasters, pandemics, emergencies, etc.)
 - Focus ONLY on claims that matter for the user's concerns
 - Keep responses focused on what actually impacts the user
+- Write recommendations clearly to avoid misinterpretation
+- When suggesting organic alternatives, clearly state: "Choose organic versions of produce that typically have high pesticide residues when grown conventionally"
+- Never write sentences that could be read as recommending contaminated products or environmentally or physically toxic practices
+- Be explicit about what you're trying to avoid vs. what you're recommending
 
 REQUIRED OUTPUT FORMAT - Use this exact structure:
 
@@ -292,7 +315,11 @@ REQUIRED OUTPUT FORMAT - Use this exact structure:
 - Reassure that even in affected areas, the precautions below work well]
 
 **What's misleading:** [ONLY when there's a specific claim with false/exaggerated elements]
-[Focus on misleading aspects that could cause unnecessary worry or confusion]
+[Focus ONLY on misleading aspects that cause unnecessary worry or confusion. 
+CRITICAL: Do NOT include factual information that might sound alarming, even if it's true. This section is for correcting FALSE claims that make things seem worse than they are.
+Examples of what TO include: "The headline makes it sound like this affects everyone, but it only applies to..."
+Examples of what NOT to include: True but scary facts, normal patterns that sound ominous, or accurate technical details that might worry people.
+Keep this section focused on reducing anxiety by correcting exaggerations, not adding concerning facts.]
 
 **About this concern:** [For topics, questions, or general worries without specific claims]
 [Address what they're actually worried about with context and reassurance
@@ -315,12 +342,15 @@ Keep this brief and reassuring, not dismissive]
 - Keep to immediate, simple actions only]
 
 **If you're shopping for this:**
-[ONLY include when the claim involves specific products like food, baby items, cosmetics, household products, etc.
-- Recommend the SAFEST specific products, brands, or sources
-- Be specific: "California-grown rice has lower arsenic levels" not just "choose low-arsenic rice"
-- Include where to find these products ("available at most grocery stores")
-- Mention certifications or testing when relevant ("USDA Organic," "NSF tested")
-- Keep recommendations practical and accessible
+[CRITICAL: ONLY include this section if the user is asking about what specific products to BUY or AVOID BUYING.
+INCLUDE ONLY IF the claim is directly about: food safety, baby products, cosmetics, household cleaners, supplements, toys, or other consumer goods where people need purchasing advice.
+DO NOT INCLUDE for: laws, policies, water systems, regulations, medical advice, general health topics, news events, or anything that isn't about choosing products to purchase.
+
+This section is ONLY for "what should I buy" situations - not "what's happening in the world" situations.
+
+When included:
+- Recommend specific brands, sources, or certifications
+- Include where to find these products
 - Focus on what TO choose, not what to avoid]
 
 **If you have certain health conditions:**
@@ -346,37 +376,35 @@ Keep this brief and reassuring, not dismissive]
 - Official government health websites
 - Format as simple list without full citations]
 
-**You might be wondering:**
-[CRITICAL: Generate THREE follow-up questions that different types of anxious, health-conscious people would ask next. Each question should represent a different anxiety pattern:
+**Think critically about what you're reading:**
+[CRITICAL: ONLY include this section if the claim comes from an article, social media post, or other media source that appears sensationalist, biased, or has clear motivations.
+INCLUDE ONLY IF: the content uses alarming language, comes from a source with potential bias, or appears designed to provoke strong emotions.
+DO NOT INCLUDE for: straightforward factual claims, simple questions, or neutral informational requests.
 
-QUESTION 1 - The Retroactive Worrier:
-This person immediately thinks about past exposures and what they've already done. They need reassurance about previous actions. Their thoughts:
-- "But what if I already..."
-- "My kids were just there yesterday..."
-- "I've been doing this wrong for weeks..."
-- "What about that time last month when..."
+When included, analyze this specific content:
+- WHO BENEFITS: Identify who actually gains from this particular story or interpretation being shared (media outlets getting clicks, companies selling products, political groups, etc.). Be specific to this topic.
+- WHY NOW: Explain why this specific story is trending or being shared at this moment. Is there a news cycle, political timing, or business reason?
+- WHAT'S MISSING: Point out what important context, nuance, or opposing viewpoints aren't being discussed in typical coverage of this topic.
+- THE REAL IMPACT: Compare how urgent/scary this is being made to seem versus how it actually affects people's daily lives.
 
-QUESTION 2 - The Symptom Checker:
-This person needs to know EXACTLY what to watch for and when. They'll check themselves and family members obsessively. Their thoughts:
-- "How would I know if..."
-- "What's the difference between this and normal..."
-- "How long before symptoms show..."
-- "What specific signs in my elderly parent/young child..."
-
-QUESTION 3 - The Contamination Catastrophizer:
-This person worries about bringing danger home and protecting vulnerable family. They think about transmission and safety barriers. Their thoughts:
-- "Could I contaminate my home/family..."
-- "Is it safe for my immunocompromised..."
-- "What about my pets..."
-- "Do I need to sanitize everything..."
-- "Can I still visit my elderly mother..."
+Keep it empowering - teaching them to think critically, not making them more suspicious or anxious.]
 
 Format each question on its own line, without numbers or bullets. Make each one specific to THIS topic and tap into deep parental/family protection instincts. Channel their catastrophic thinking - these people assume the worst and need specific reassurance.]
 
 If the claim/concern is unclear, start with:
 "I'm not sure what specific claim you'd like me to check. Based on your input, you might be concerned about [guess]. If that's not right, please clarify what claim you'd like verified."
 
-Remember: Start reassuring, frame everything positively (what to do, not what to avoid), be specific about what's safe vs what needs care, end on empowerment not fear, and keep basic vs. extra precautions completely separate with no overlap.`;
+Remember: Start reassuring, frame everything positively (what to do, not what to avoid), be specific about what's safe vs what needs care, end on empowerment not fear, and keep basic vs. extra precautions completely separate with no overlap.
+
+IMPORTANT: If this claim is about a specific law, policy, regulation, or legal issue:
+- Identify the specific bill/law number if possible
+- Explain exactly what the law does and doesn't do
+- Provide technical details about scope, limitations, and exceptions
+- Address what this means for different types of water systems
+- Be specific about timelines, affected parties, and enforcement mechanisms
+- Include nuanced analysis of the implications for consumers
+
+Focus on providing the detailed, technical accuracy that an informed person would want to know about this specific policy or legal claim.`;
     }
   };
 
@@ -424,11 +452,11 @@ Remember: Start reassuring, frame everything positively (what to do, not what to
           const systemPrompt = getSystemPrompt(analysisMode, false, false);
           const userPrompt = `Please analyze this article content:
 
-Title: ${extractedData.title}
-Content: ${extractedData.content}
-Source URL: ${contentText}
-Word Count: ${extractedData.wordCount}
-Note: Content extracted directly from web page, may have some formatting issues.`;
+            Title: ${extractedData.title}
+            Content: ${extractedData.content}
+            Source URL: ${contentText}
+            Word Count: ${extractedData.wordCount}
+            Note: Content extracted directly from web page, may have some formatting issues.`;
 
           await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
           
@@ -503,7 +531,7 @@ Please analyze this follow-up concern in the context of their original question.
           'anthropic-version': '2023-06-01'
         },
         body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
+          model: 'claude-opus-4-1-20250805',
           max_tokens: 4000,
           system: systemPrompt,
           messages: [
@@ -638,9 +666,8 @@ Please analyze this follow-up concern in the context of their original question.
         <Text style={styles.title}>{getTitle()}</Text>
         {response && !loading && (
           <TouchableOpacity 
-            onPress={saveInsight} 
+            onPress={handleSaveButtonPress} 
             style={styles.saveButton}
-            disabled={isSaved}
           >
             <Text style={styles.saveButtonText}>{isSaved ? '✓' : '💾'}</Text>
           </TouchableOpacity>
@@ -774,6 +801,29 @@ Please analyze this follow-up concern in the context of their original question.
           )}
         </View>
       </ScrollView>
+
+      {/* Saved Modal */}
+      <Modal
+        visible={showSavedModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowSavedModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>✓ Already Saved</Text>
+            <Text style={styles.modalMessage}>
+              This analysis has been saved to your insights. You can find it in your saved insights section.
+            </Text>
+            <TouchableOpacity 
+              style={styles.modalButton}
+              onPress={() => setShowSavedModal(false)}
+            >
+              <Text style={styles.modalButtonText}>Got it</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -1023,5 +1073,50 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontStyle: 'italic',
     paddingVertical: 40,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 16,
+    padding: 24,
+    margin: 20,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#28a745',
+    marginBottom: 12,
+  },
+  modalMessage: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    lineHeight: 24,
+    marginBottom: 20,
+  },
+  modalButton: {
+    backgroundColor: '#32535F',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  modalButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
