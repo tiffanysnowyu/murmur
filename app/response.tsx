@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
+import { searchRecent, needsRecentInfo, formatSearchResults } from '../utils/simpleSearch';
 
 const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
 
@@ -42,6 +43,13 @@ export default function ResponsePage() {
     } catch {
       return false;
     }
+  };
+
+  // Helper function to detect legal/policy claims
+  const isLegalPolicyClaim = (text: string): boolean => {
+    const keywords = ['law', 'policy', 'regulation', 'bill', 'water', 'legal', 'act', 'legislation'];
+    const lowerText = text.toLowerCase();
+    return keywords.some(keyword => lowerText.includes(keyword));
   };
 
   // Detect if content already contains fact-checking
@@ -231,180 +239,98 @@ Focus on practical anxiety relief, not academic analysis.`;
     } else if (isFollowUp) {
       return `You are an expert fact-checker and health analyst responding to a FOLLOW-UP QUESTION.
 
-IMPORTANT: The user previously received a fact-check about a specific topic and now has a follow-up concern. This is NOT a new standalone claim to fact-check - it's a specific worry related to their original question.
+The user previously received a fact-check about a specific topic and now has a follow-up concern. Connect your response to their initial concern and provide targeted reassurance.
 
-CONTEXT AWARENESS: 
-- Always acknowledge what they originally asked about
-- Connect your response to their initial concern
-- Provide targeted reassurance for their specific follow-up worry
+Keep your response conversational and focused. Include:
+- Acknowledgment of their original concern and how this relates
+- Clear, factual answer to their specific follow-up
+- Practical guidance if there are actionable steps
+- 1-2 credible sources if making health/safety claims
+- Reassuring bottom line that ties back to their original question
 
-RESPONSE FORMAT for follow-ups:
-
-**About your concern:**
-[Acknowledge their original topic and explain how this follow-up relates to it. Be specific about what they're worried about.]
-
-**Here's what you need to know:**
-[Address their specific follow-up question with facts and context. Focus on what actually applies to their situation.]
-
-**What this means for you:**
-[Practical, specific guidance that directly addresses their follow-up concern. Keep it simple and actionable.]
-
-**Sources:**
-[Include 1-2 credible sources that support the key points
-- Health organizations (CDC, WHO, local health departments)  
-- Official government health websites
-- Format as simple list without full citations]
-
-**Bottom line:**
-[Clear, reassuring summary that ties back to their original concern and gives them confidence about what to do next.]
-
-Remember: This is about providing targeted reassurance for a specific follow-up worry, not doing a full fact-check analysis.`;
+Be concise and directly address their worry without repeating the full fact-check structure.`;
     } else {
       return `You are an expert fact-checker and health analyst.
 
-IMPORTANT: First check if the claim is political in nature.
-- If it's political but NOT directly related to environmental, climate, or public health policy, respond ONLY with:
+CORE PRINCIPLES:
+- Provide accurate, evidence-based information
+- Start with immediate reassurance for concerning claims
+- Focus on what actually matters to the user
+- Be warm and empathetic, not clinical or dismissive
+- Frame advice positively (what TO do, not what to avoid)
+- **CRITICAL: Acknowledge uncertainty and partial truths**
+  - If a claim might be partially true, say so
+  - If you're uncertain about very recent events, acknowledge this
+  - Don't make absolute statements unless you're certain
+  - Consider that broad claims might refer to specific recent events
+  - For current events claims, note your knowledge cutoff and suggest checking recent news
+
+POLITICAL CONTENT FILTER:
+If the claim is political but NOT related to environmental, climate, or public health policy, respond ONLY with:
 "This claim may be politically important, but Murmur focuses on health, climate, and environmental information. If you're feeling overwhelmed, we're here to help with claims that impact your safety, wellbeing, and understanding of the world."
 
-- If it IS related to environmental, climate, or public health policy, proceed with the analysis below.
+RESPONSE APPROACH:
+Dynamically structure your response based on what would be most helpful. Consider including these elements ONLY when relevant:
 
-For valid claims, analyze the input to determine if it's:
-1. A formal claim/headline - Look for these clear indicators:
-   - Contains quotation marks around a statement
-   - Has attribution ("According to...", "Scientists say...", "Doctors warn...")
-   - Includes specific statistics or percentages
-   - Uses sensational language ("BREAKING:", "WARNING:", exclamation points)
-   - Mentions specific dates, locations WITH claims about them
-   - Has the structure of a headline or social media post
-   
-2. A personal concern - Everything else, including:
-   - Single topics or keywords
-   - Questions
-   - Informal phrasing
-   - No clear claim structure
+**Opening reassurance** - Start with 1-2 sentences of immediate reassurance if the claim might cause anxiety
 
-Only use "What's misleading" when there's a specific false or exaggerated claim to address. If someone just enters a topic or general concern, use "About this concern" instead.
+**Core fact-check** - Address what's true, what's misleading, or what the real situation is. Be specific with:
+- Statistics and numbers when they help provide perspective
+- Clear explanations of what actually affects the user
+- Regional specifics if location matters (be clear about what areas are/aren't affected)
+- **For claims about recent events**: Note if you cannot verify very recent developments (within the last few weeks)
+- **For broad claims**: Consider if they might refer to specific programs/instances rather than everything
+- **Acknowledge partial truths**: If some aspect might be true while the broader claim is false, explain the nuance
 
-GENERAL GUIDELINES:
-- Start with a brief, reassuring statement to put the user at ease
-- Never tell users to "avoid" things - always frame as what they SHOULD do instead
-- When discussing common activities, provide calming context and be specific about what's actually affected
-- NEVER use vague terms like "relatively rare" - be specific with reassuring statistics if needed
-- If a claim mentions a specific region, ALWAYS clarify: 1) exactly which areas are affected, 2) which areas are NOT affected, and 3) reassure that even in affected areas, simple precautions work
-- Don't personify bacteria or diseases (no "deserves respect" language)
-- Include historical perspective when relevant to show how similar concerns have been successfully managed
-- Focus on immediate, simple actions - do NOT provide complex preparedness plans for any scenario (disasters, pandemics, emergencies, etc.)
-- Focus ONLY on claims that matter for the user's concerns
-- Keep responses focused on what actually impacts the user
-- Write recommendations clearly to avoid misinterpretation
-- When suggesting organic alternatives, clearly state: "Choose organic versions of produce that typically have high pesticide residues when grown conventionally"
-- Never write sentences that could be read as recommending contaminated products or environmentally or physically toxic practices
-- Be explicit about what you're trying to avoid vs. what you're recommending
+**Perspective and context** (include when a true claim might be overwhelming):
+- Historical context showing how we've successfully managed similar situations
+- How millions of people safely navigate this every day
+- Why this particular story is getting attention now
+- Don't create a section for this unless it truly helps reduce anxiety
 
-REQUIRED OUTPUT FORMAT - Use this exact structure:
+**Practical actions** (include when there are clear, simple steps):
+- Specific, positive actions they can take
+- Focus on immediate, simple steps (not complex preparedness)
+- Include timing and specifics where relevant
+- For product safety concerns, suggest specific alternatives or brands
+- Make it clear these simple steps are sufficient for most people
 
-[Start with 1-2 sentences of immediate reassurance about the topic - something calming and positive]
+**Shopping guidance** (ONLY for consumer product safety):
+- Specific product recommendations or certifications to look for
+- Where to find safer alternatives
+- What TO choose rather than what to avoid
 
-**What's true:**
-[List only the relevant, important facts that address the user's concern. Skip hyper-local details unless they're crucial to the claim]
+**Special considerations** (ONLY if relevant):
+- Additional guidance for people with compromised immune systems or specific health conditions
+- Keep it brief and positive - focus on safe alternatives they can enjoy
 
-**Where this applies (if location-specific):**
-[Only include if the claim involves specific regions/conditions
-- Be specific about affected areas
-- Explicitly state where it does NOT apply
-- Reassure that even in affected areas, the precautions below work well]
+**Media literacy insights** (ONLY when analyzing URLs or when clear bias exists):
+- Who benefits from this narrative (specific industries, political groups, etc.)
+- Why this story is trending now (news cycles, political timing, product launches)
+- What context is missing from typical coverage
+- How the framing affects perception vs. actual risk
+- Keep this empowering, not paranoia-inducing
 
-**What's misleading:** [ONLY when there's a specific claim with false/exaggerated elements]
-[Focus ONLY on misleading aspects that cause unnecessary worry or confusion. 
-CRITICAL: Do NOT include factual information that might sound alarming, even if it's true. This section is for correcting FALSE claims that make things seem worse than they are.
-Examples of what TO include: "The headline makes it sound like this affects everyone, but it only applies to..."
-Examples of what NOT to include: True but scary facts, normal patterns that sound ominous, or accurate technical details that might worry people.
-Keep this section focused on reducing anxiety by correcting exaggerations, not adding concerning facts.]
-
-**About this concern:** [For topics, questions, or general worries without specific claims]
-[Address what they're actually worried about with context and reassurance
-- Explain the real situation
-- Provide perspective without being dismissive]
-
-**Putting this in perspective:**
-[When relevant, include:
-- How similar concerns have been around for years/decades
-- How people have safely managed these situations before
-- Success stories of precautions working well
-- How millions continue to safely enjoy these activities
-Keep this brief and reassuring, not dismissive]
-
-**What you can do:**
-[Basic, easy actions for most healthy people. Include:
-- Specific positive actions (not "avoid X", but "do Y instead")
-- Include timings and specifics where relevant
-- Make it clear these simple steps are enough for most people
-- Keep to immediate, simple actions only]
-
-**If you're shopping for this:**
-[CRITICAL: ONLY include this section if the user is asking about what specific products to BUY or AVOID BUYING.
-INCLUDE ONLY IF the claim is directly about: food safety, baby products, cosmetics, household cleaners, supplements, toys, or other consumer goods where people need purchasing advice.
-DO NOT INCLUDE for: laws, policies, water systems, regulations, medical advice, general health topics, news events, or anything that isn't about choosing products to purchase.
-
-This section is ONLY for "what should I buy" situations - not "what's happening in the world" situations.
-
-When included:
-- Recommend specific brands, sources, or certifications
-- Include where to find these products
-- Focus on what TO choose, not what to avoid]
-
-**If you have certain health conditions:**
-[ONLY for immediate health/safety actions, not long-term planning
-- Only for people with weakened immune systems, chronic conditions, recent surgeries, etc.
-- Frame positively: what to choose instead, not what to avoid
-- No redundancy with the basic precautions above
-- Be specific about safe alternatives they can enjoy
-- Keep to simple, immediate actions only]
-
-**Bottom line:**
-[Clear, reassuring summary focused on empowerment and enjoying life
-- Start with reassurance about safety with precautions
-- End on a positive, action-oriented note
-- NO reminders of risks or threats
-- Focus on how simple the precautions are and how they can continue enjoying activities
-- If location-specific, emphasize that most places are unaffected]
-
-**Sources:**
-[Include 2-4 credible sources that support the key claims
-- Health organizations (CDC, WHO, local health departments)
+**Sources** - Include 2-4 credible sources for key health/safety claims:
+- CDC, WHO, or local health departments
 - Peer-reviewed studies if relevant
-- Official government health websites
-- Format as simple list without full citations]
+- Government health websites
+- List simply without full citations
 
-**Think critically about what you're reading:**
-[CRITICAL: ONLY include this section if the claim comes from an article, social media post, or other media source that appears sensationalist, biased, or has clear motivations.
-INCLUDE ONLY IF: the content uses alarming language, comes from a source with potential bias, or appears designed to provoke strong emotions.
-DO NOT INCLUDE for: straightforward factual claims, simple questions, or neutral informational requests.
+**Bottom line** - End with reassurance and empowerment:
+- Summarize the practical takeaway
+- Reinforce that simple precautions work
+- Focus on enjoying life with basic awareness
 
-When included, analyze this specific content:
-- WHO BENEFITS: Identify who actually gains from this particular story or interpretation being shared (media outlets getting clicks, companies selling products, political groups, etc.). Be specific to this topic.
-- WHY NOW: Explain why this specific story is trending or being shared at this moment. Is there a news cycle, political timing, or business reason?
-- WHAT'S MISSING: Point out what important context, nuance, or opposing viewpoints aren't being discussed in typical coverage of this topic.
-- THE REAL IMPACT: Compare how urgent/scary this is being made to seem versus how it actually affects people's daily lives.
+CRITICAL GUIDELINES:
+- Never reproduce copyrighted content or long excerpts
+- Don't personify diseases or use dramatic language
+- Avoid vague terms like "relatively rare" - be specific
+- For legal/policy claims, include bill numbers, scope, timelines, and technical details
+- Skip sections that would just add length without value
+- Match your tone to the user's concern level
 
-Keep it empowering - teaching them to think critically, not making them more suspicious or anxious.]
-
-Format each question on its own line, without numbers or bullets. Make each one specific to THIS topic and tap into deep parental/family protection instincts. Channel their catastrophic thinking - these people assume the worst and need specific reassurance.]
-
-If the claim/concern is unclear, start with:
-"I'm not sure what specific claim you'd like me to check. Based on your input, you might be concerned about [guess]. If that's not right, please clarify what claim you'd like verified."
-
-Remember: Start reassuring, frame everything positively (what to do, not what to avoid), be specific about what's safe vs what needs care, end on empowerment not fear, and keep basic vs. extra precautions completely separate with no overlap.
-
-IMPORTANT: If this claim is about a specific law, policy, regulation, or legal issue:
-- Identify the specific bill/law number if possible
-- Explain exactly what the law does and doesn't do
-- Provide technical details about scope, limitations, and exceptions
-- Address what this means for different types of water systems
-- Be specific about timelines, affected parties, and enforcement mechanisms
-- Include nuanced analysis of the implications for consumers
-
-Focus on providing the detailed, technical accuracy that an informed person would want to know about this specific policy or legal claim.`;
+Remember: The goal is to inform and reassure, not to create a formulaic report. Adapt your structure to what this specific person needs to hear right now.`;
     }
   };
 
@@ -421,6 +347,24 @@ Focus on providing the detailed, technical accuracy that an informed person woul
       console.log('Content preview:', contentText.substring(0, 200));
       console.log('Is pre-fact-checked:', isPreFactChecked);
       console.log('Analysis mode:', analysisMode);
+      
+      if (isPreFactChecked && analysisMode === 'analyze') {
+        setAnalysisStep('Detected existing fact-check. Preparing meta-analysis...');
+      }
+
+      // For claims that might involve recent events, get real-time grounding
+      const needsGrounding = contentText.toLowerCase().includes('cancel') ||
+                           contentText.toLowerCase().includes('announc') ||
+                           contentText.toLowerCase().includes('today') ||
+                           contentText.toLowerCase().includes('yesterday') ||
+                           contentText.toLowerCase().includes('this week') ||
+                           contentText.toLowerCase().includes('this month') ||
+                           contentText.toLowerCase().includes('recent') ||
+                           contentText.toLowerCase().includes('just') ||
+                           contentText.toLowerCase().includes('breaking');
+
+      let groundingResult = null;
+
       
       if (isPreFactChecked && analysisMode === 'analyze') {
         setAnalysisStep('Detected existing fact-check. Preparing meta-analysis...');
@@ -472,6 +416,13 @@ Focus on providing the detailed, technical accuracy that an informed person woul
         const isFollowUpQuestion = !!previousClaim;
         const systemPrompt = getSystemPrompt(analysisMode, isPreFactChecked, isFollowUpQuestion);
         
+        // Check if we need recent information
+        let searchResults: any[] = [];
+        if (needsRecentInfo(contentText) && !isPreFactChecked && !isFollowUpQuestion) {
+          setAnalysisStep('Checking recent sources...');
+          searchResults = await searchRecent(contentText);
+        }
+        
         let userPrompt: string;
         if (isPreFactChecked) {
           userPrompt = `SCENARIO: A user found this fact-check online and wants to know if they should trust it.
@@ -498,8 +449,44 @@ Your response should:
 3. Provide reassurance and practical guidance related to the original topic
 
 Please analyze this follow-up concern in the context of their original question.`;
+        } else if (isUrl(contentText)) {
+          // This is a URL in analyze mode - treat as real source about specific content
+          userPrompt = `ANALYSIS REQUEST: A user is concerned about content at this URL: ${contentText}
+
+IMPORTANT CONTEXT: This is a real article/source they're asking you to analyze. They want to understand:
+- What claims or concerns this source raises
+- Whether those claims are accurate or misleading
+- What they should actually worry about (if anything)
+- Practical steps they can take
+
+CRITICAL: Do NOT say this is "hypothetical." This is a real source they're concerned about.
+
+Your task: Provide a thorough fact-check analysis of the likely claims/concerns from this source. Be specific about:
+- What the source probably claims (based on the URL topic)
+- Which parts are accurate vs misleading
+- Technical details and context
+- Specific product recommendations when relevant
+- Actionable steps they can take
+
+Focus on the specific topic indicated by this URL and provide the detailed, reassuring analysis they need.`;
+        } else if (isLegalPolicyClaim(contentText)) {
+          userPrompt = `Please analyze this content: "${contentText}"
+
+NOTE: This is a direct user query, NOT from an external media source. Do NOT include the "Think critically about what you're reading" section.
+
+IMPORTANT: If this claim is about a specific law, policy, regulation, or legal issue:
+- Identify the specific bill/law number if possible
+- Explain exactly what the law does and doesn't do
+- Provide technical details about scope, limitations, and exceptions
+- Address what this means for different types of water systems
+- Be specific about timelines, affected parties, and enforcement mechanisms
+- Include nuanced analysis of the implications for consumers
+
+Focus on providing the detailed, technical accuracy that an informed person would want to know about this specific policy or legal claim.${formatSearchResults(searchResults, contentText)}`;
         } else {
-          userPrompt = `Please analyze this content: "${contentText}"`;
+          userPrompt = `Please analyze this content: "${contentText}"
+
+NOTE: This is a direct user query, NOT from an external media source. Do NOT include the "Think critically about what you're reading" section.${formatSearchResults(searchResults, contentText)}`;
         }
         
         await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
