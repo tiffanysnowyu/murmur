@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
+import { extractTextFromImage } from '../utils/ocr';
 
 export default function ImagePage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -134,17 +135,25 @@ export default function ImagePage() {
       addDebugInfo(`Processing image: ${imageUri}`);
       setIsProcessing(true);
       
-      // Simulate text extraction processing
-      setTimeout(() => {
-        addDebugInfo('Text extraction simulation complete');
+      // Extract actual text from image using OCR
+      try {
+        const extractedText = await extractTextFromImage(imageUri);
+        
+        addDebugInfo('Text extraction complete');
         setIsProcessing(false);
         
-        // For now, simulate extracted text
-        const simulatedText = "Sample text extracted from image - this would be replaced with actual OCR";
+        if (!extractedText || extractedText === 'No text found in image') {
+          Alert.alert(
+            'No Text Found',
+            'We couldn\'t find any text in this image. Please try another image with clearer text.',
+            [{ text: 'OK', onPress: resetImage }]
+          );
+          return;
+        }
         
         Alert.alert(
           'Text Extracted!',
-          'We found some text in your image. What would you like to do?',
+          `Found text: "${extractedText.substring(0, 100)}${extractedText.length > 100 ? '...' : ''}"`,
           [
             {
               text: 'Edit Text',
@@ -153,7 +162,7 @@ export default function ImagePage() {
                 router.push({
                   pathname: '/text',
                   params: {
-                    initialText: simulatedText,
+                    initialText: extractedText,
                     mode: 'analyze'
                   }
                 });
@@ -166,7 +175,7 @@ export default function ImagePage() {
                 router.push({
                   pathname: '/response',
                   params: {
-                    text: simulatedText,
+                    text: extractedText,
                     mode: 'analyze'
                   }
                 });
@@ -174,13 +183,20 @@ export default function ImagePage() {
             }
           ]
         );
-      }, 2000);
+      } catch (ocrError) {
+        addDebugInfo(`OCR error: ${ocrError}`);
+        setIsProcessing(false);
+        Alert.alert(
+          'Text Extraction Failed',
+          'Could not extract text from this image. Please make sure the image contains clear, readable text.',
+          [{ text: 'Try Again', onPress: resetImage }]
+        );
+      }
     } catch (error) {
       addDebugInfo(`Process image error: ${error}`);
       setIsProcessing(false);
     }
   };
-
   const resetImage = () => {
     addDebugInfo('Resetting image');
     setSelectedImage(null);

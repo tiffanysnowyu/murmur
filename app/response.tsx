@@ -1,4 +1,4 @@
-// Updated response.tsx with save functionality and Next button
+// Updated response.tsx with empathetic prompting and fast source citations
 import React, { useState, useEffect } from 'react';
 import {
   View,
@@ -14,6 +14,7 @@ import {
 import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
 import { searchRecent, needsRecentInfo, formatSearchResults } from '../utils/simpleSearch';
+import { findSourcesFirst, formatSourceReferences } from '../utils/sourceFirst';
 
 const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
 
@@ -29,6 +30,8 @@ export default function ResponsePage() {
   const [articleData, setArticleData] = useState<any>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [showSavedModal, setShowSavedModal] = useState(false);
+  const [foundSources, setFoundSources] = useState<any[]>([]);
+  const [sourceSearchTime, setSourceSearchTime] = useState('');
 
   // Get the text from parameters
   const inputText = (claim || text) as string;
@@ -98,11 +101,11 @@ export default function ResponsePage() {
         mode: currentMode,
         savedAt: new Date().toISOString(),
         title: articleData?.title || inputText.substring(0, 50) + '...',
+        sources: formatSourceReferences(foundSources),
       };
 
       await insightsStorage.addInsight(newInsight);
       setIsSaved(true);
-      // Don't show alert here anymore, just set the saved state
     } catch (error) {
       console.error('Error saving insight:', error);
       Alert.alert('Error', 'Failed to save insight.');
@@ -112,10 +115,8 @@ export default function ResponsePage() {
   // Handle tapping the save button (checkmark when saved)
   const handleSaveButtonPress = () => {
     if (isSaved) {
-      // Show modal explaining it's already saved
       setShowSavedModal(true);
     } else {
-      // Save the insight
       saveInsight();
     }
   };
@@ -123,7 +124,6 @@ export default function ResponsePage() {
   // Direct fetch function (will have CORS limitations)
   const readUrlContent = async (url: string) => {
     try {
-      // Try using a CORS proxy
       const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
       
       const response = await fetch(proxyUrl);
@@ -135,7 +135,6 @@ export default function ResponsePage() {
       const data = await response.json();
       return data.contents;
     } catch (error) {
-      // If proxy fails, try direct fetch as fallback
       try {
         const response = await fetch(url, {
           method: 'GET',
@@ -160,28 +159,20 @@ export default function ResponsePage() {
   // Extract text content from HTML
   const extractTextFromHtml = (html: string) => {
     try {
-      // Basic HTML cleaning (limited without DOM parser)
       let textContent = html
-        // Remove script tags and content
         .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-        // Remove style tags and content
         .replace(/<style\b[^<]*(?:(?!<\/style>)<[^<]*)*<\/style>/gi, '')
-        // Remove HTML comments
         .replace(/<!--[\s\S]*?-->/g, '')
-        // Remove HTML tags
         .replace(/<[^>]*>/g, ' ')
-        // Decode HTML entities (basic ones)
         .replace(/&nbsp;/g, ' ')
         .replace(/&amp;/g, '&')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
-        // Normalize whitespace
         .replace(/\s+/g, ' ')
         .trim();
 
-      // Basic title extraction (look for <title> tag in original HTML)
       const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
       const title = titleMatch ? titleMatch[1].trim() : 'Article';
 
@@ -210,7 +201,6 @@ TASK: Provide a comprehensive analysis including:
 
 Note: The content may be incomplete due to technical limitations in extraction. Format with clear headings and be thorough with available information.`;
     } else if (isPreFactChecked) {
-      // Special prompt for content that already contains fact-checking
       return `You are reviewing an existing fact-check. Focus on what matters to users.
 
 TASK: Analyze whether this fact-check addresses real concerns effectively.
@@ -264,6 +254,47 @@ CORE PRINCIPLES:
   - Don't make absolute statements unless you're certain
   - Consider that broad claims might refer to specific recent events
   - For current events claims, note your knowledge cutoff and suggest checking recent news
+
+REASSURANCE FRAMEWORK:
+- ALWAYS lead with reassurance when discussing potentially scary events
+- Put risks in statistical context (e.g., "You're more likely to...")
+- Emphasize long timelines when applicable ("could be centuries away")
+- Focus on what WON'T happen to the user personally
+- Include historical examples of similar fears that didn't materialize
+- Use calming language: "extremely unlikely", "distant possibility", "scientists monitor this closely"
+
+**Perspective that reduces anxiety** (ALWAYS include for scary topics):
+- Statistical comparisons to everyday risks the user accepts without worry
+- Timeline context ("In your lifetime, this is extremely unlikely")
+- What scientists are doing to monitor/prepare (provides sense of control)
+- Historical context showing humanity has managed similar risks
+- Why this particular story is newsworthy but not personally threatening
+- Specific reasons why the user doesn't need to change their behavior
+
+CALMING REQUIREMENT:
+Every response about potentially scary events MUST include:
+- Opening reassurance about timeline/probability
+- A "Why you don't need to worry" section with 3+ specific points
+- Statistical context comparing to accepted daily risks
+- Emphasis that no immediate action is needed
+- Closing reminder that the user is safe
+
+ANXIETY REDUCTION PRIORITIES:
+1. If the claim involves a catastrophic event, IMMEDIATELY state how unlikely/distant it is
+2. Include at least 3 specific reasons not to worry
+3. Frame preparedness as "peace of mind" not "necessary for survival"
+4. Emphasize that experts aren't worried about immediate risks
+5. Include phrases like:
+   - "Here's why you can relax about this..."
+   - "The important context that headlines miss..."
+   - "What this actually means for your daily life (spoiler: nothing needs to change)..."
+
+CITATION STYLE:
+- Use natural, conversational inline citations: "According to the CDC...", "Recent WHO data shows...", "Researchers found (Nature, 2024)..."
+- Avoid academic-style numbered citations that feel stiff
+- Only cite when making specific factual claims
+- Don't over-cite - once per major claim is enough
+- Make citations part of the natural flow, not interruptions
 
 POLITICAL CONTENT FILTER:
 If the claim is political but NOT related to environmental, climate, or public health policy, respond ONLY with:
@@ -340,31 +371,11 @@ Remember: The goal is to inform and reassure, not to create a formulaic report. 
     setResponse('');
 
     try {
-      // Check if content is already fact-checked
       const isPreFactChecked = detectPreFactCheckedContent(contentText);
       
-      // Debug logging
       console.log('Content preview:', contentText.substring(0, 200));
       console.log('Is pre-fact-checked:', isPreFactChecked);
       console.log('Analysis mode:', analysisMode);
-      
-      if (isPreFactChecked && analysisMode === 'analyze') {
-        setAnalysisStep('Detected existing fact-check. Preparing meta-analysis...');
-      }
-
-      // For claims that might involve recent events, get real-time grounding
-      const needsGrounding = contentText.toLowerCase().includes('cancel') ||
-                           contentText.toLowerCase().includes('announc') ||
-                           contentText.toLowerCase().includes('today') ||
-                           contentText.toLowerCase().includes('yesterday') ||
-                           contentText.toLowerCase().includes('this week') ||
-                           contentText.toLowerCase().includes('this month') ||
-                           contentText.toLowerCase().includes('recent') ||
-                           contentText.toLowerCase().includes('just') ||
-                           contentText.toLowerCase().includes('breaking');
-
-      let groundingResult = null;
-
       
       if (isPreFactChecked && analysisMode === 'analyze') {
         setAnalysisStep('Detected existing fact-check. Preparing meta-analysis...');
@@ -390,7 +401,6 @@ Remember: The goal is to inform and reassure, not to create a formulaic report. 
             return;
           }
           
-          // Analyze with Claude
           setAnalysisStep('Analyzing article with AI...');
           
           const systemPrompt = getSystemPrompt(analysisMode, false, false);
@@ -405,27 +415,82 @@ Remember: The goal is to inform and reassure, not to create a formulaic report. 
           await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
           
         } catch (fetchError) {
-          // If direct fetch fails, inform user about CORS
           setError(`Could not fetch article content (likely CORS blocked): ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}. Please copy and paste the article text instead.`);
           setLoading(false);
           return;
         }
       } else {
-        // For analyze mode or non-URL content, use the text directly
-        setAnalysisStep(isPreFactChecked ? 'Analyzing existing fact-check...' : 'Analyzing content...');
+        // For analyze mode, do both source search AND recent info search
         const isFollowUpQuestion = !!previousClaim;
-        const systemPrompt = getSystemPrompt(analysisMode, isPreFactChecked, isFollowUpQuestion);
         
-        // Check if we need recent information
-        let searchResults: any[] = [];
-        if (needsRecentInfo(contentText) && !isPreFactChecked && !isFollowUpQuestion) {
-          setAnalysisStep('Checking recent sources...');
-          searchResults = await searchRecent(contentText);
-        }
-        
-        let userPrompt: string;
-        if (isPreFactChecked) {
-          userPrompt = `SCENARIO: A user found this fact-check online and wants to know if they should trust it.
+        if (!isPreFactChecked && !isFollowUpQuestion) {
+          // Do source search for citations
+          setAnalysisStep('Quick search...');
+          
+          let sourceResult = null;
+          try {
+            const sourcePromise = findSourcesFirst(contentText);
+            const timeout = new Promise((_, reject) => 
+              setTimeout(() => reject(new Error('TIMEOUT')), 5000)
+            );
+            
+            sourceResult = await Promise.race([sourcePromise, timeout]) as any;
+            setFoundSources(sourceResult.sources);
+            setSourceSearchTime(`${sourceResult.searchTime}ms`);
+            
+          } catch (error) {
+            console.log('Source search timed out');
+            setSourceSearchTime('timeout');
+          }
+          
+          // Also check if we need recent search results for knowledge cutoff issues
+          let searchResults: any[] = [];
+          if (needsRecentInfo(contentText)) {
+            setAnalysisStep('Checking recent sources...');
+            try {
+              searchResults = await searchRecent(contentText);
+            } catch (error) {
+              console.log('Recent search failed:', error);
+            }
+          }
+          
+          // Continue with analysis 
+          setAnalysisStep('Analyzing...');
+          const systemPrompt = getSystemPrompt(analysisMode, false, false);
+          
+          let userPrompt = `Please analyze this content: "${contentText}"
+
+NOTE: This is a direct user query, NOT from an external media source. Do NOT include the "Think critically about what you're reading" section.`;
+          
+          // Add search results if we found recent info
+          if (searchResults.length > 0) {
+            userPrompt += formatSearchResults(searchResults, contentText);
+          }
+          
+          // Add source info if we found sources for citations - UPDATED FOR INLINE CITATIONS
+          if (sourceResult && sourceResult.sources.length > 0) {
+            const sourceText = sourceResult.sources.map((source: any, i: number) => 
+              `Source ${i + 1}:
+URL: ${source.url}
+Title: ${source.title}
+Preview: ${source.snippet}`
+            ).join('\n\n');
+            
+            userPrompt += `\n\nIMPORTANT: You have EXACTLY ${sourceResult.sources.length} sources available for citation. DO NOT cite any sources beyond these ${sourceResult.sources.length}.\n`;
+            userPrompt += `\nAvailable sources:\n${sourceText}`;
+            userPrompt += `\n\nWhen citing these sources, use natural inline citations based on the organization/publication name from the URL. For example, if the URL is from pnsn.org, cite it as "according to the Pacific Northwest Seismic Network" or "PNSN reports". If from wikipedia.org, cite as "Wikipedia notes" or similar. Make citations conversational and part of your natural response flow. DO NOT use numbered citations like [1], [2], etc. DO NOT cite sources that aren't provided above.`;
+          }
+          
+          await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
+          
+        } else {
+          // For pre-fact-checked or follow-ups, use normal analysis
+          setAnalysisStep(isPreFactChecked ? 'Analyzing existing fact-check...' : 'Analyzing follow-up...');
+          const systemPrompt = getSystemPrompt(analysisMode, isPreFactChecked, isFollowUpQuestion);
+          
+          let userPrompt: string;
+          if (isPreFactChecked) {
+            userPrompt = `SCENARIO: A user found this fact-check online and wants to know if they should trust it.
 
 YOUR ROLE: You're a skeptical expert who HATES bad fact-checks that don't cite sources.
 
@@ -435,9 +500,8 @@ ${contentText}
 YOUR TASK: Tear apart this fact-check for having ZERO sources. Do NOT verify if the claims are true - you CAN'T without sources. Instead, explain why this is a terrible fact-check that no one should trust.
 
 Start your response with: "This fact-check is fundamentally flawed because..."`;
-        } else if (previousClaim) {
-          // This is a follow-up question
-          userPrompt = `CONTEXT: A user previously asked about: "${previousClaim}"
+          } else if (previousClaim) {
+            userPrompt = `CONTEXT: A user previously asked about: "${previousClaim}"
 
 They received a fact-check analysis and now have a follow-up concern: "${contentText}"
 
@@ -449,9 +513,8 @@ Your response should:
 3. Provide reassurance and practical guidance related to the original topic
 
 Please analyze this follow-up concern in the context of their original question.`;
-        } else if (isUrl(contentText)) {
-          // This is a URL in analyze mode - treat as real source about specific content
-          userPrompt = `ANALYSIS REQUEST: A user is concerned about content at this URL: ${contentText}
+          } else if (isUrl(contentText)) {
+            userPrompt = `ANALYSIS REQUEST: A user is concerned about content at this URL: ${contentText}
 
 IMPORTANT CONTEXT: This is a real article/source they're asking you to analyze. They want to understand:
 - What claims or concerns this source raises
@@ -469,8 +532,8 @@ Your task: Provide a thorough fact-check analysis of the likely claims/concerns 
 - Actionable steps they can take
 
 Focus on the specific topic indicated by this URL and provide the detailed, reassuring analysis they need.`;
-        } else if (isLegalPolicyClaim(contentText)) {
-          userPrompt = `Please analyze this content: "${contentText}"
+          } else if (isLegalPolicyClaim(contentText)) {
+            userPrompt = `Please analyze this content: "${contentText}"
 
 NOTE: This is a direct user query, NOT from an external media source. Do NOT include the "Think critically about what you're reading" section.
 
@@ -482,14 +545,15 @@ IMPORTANT: If this claim is about a specific law, policy, regulation, or legal i
 - Be specific about timelines, affected parties, and enforcement mechanisms
 - Include nuanced analysis of the implications for consumers
 
-Focus on providing the detailed, technical accuracy that an informed person would want to know about this specific policy or legal claim.${formatSearchResults(searchResults, contentText)}`;
-        } else {
-          userPrompt = `Please analyze this content: "${contentText}"
+Focus on providing the detailed, technical accuracy that an informed person would want to know about this specific policy or legal claim.`;
+          } else {
+            userPrompt = `Please analyze this content: "${contentText}"
 
-NOTE: This is a direct user query, NOT from an external media source. Do NOT include the "Think critically about what you're reading" section.${formatSearchResults(searchResults, contentText)}`;
+NOTE: This is a direct user query, NOT from an external media source. Do NOT include the "Think critically about what you're reading" section.`;
+          }
+          
+          await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
         }
-        
-        await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
       }
       
     } catch (err) {
@@ -497,6 +561,10 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
       setError(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setAnalysisStep('');
       setLoading(false);
+      
+      // Reset source states on error
+      setFoundSources([]);
+      setSourceSearchTime('');
     }
   };
 
@@ -552,7 +620,14 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
       }
 
       if (reply) {
-        setResponse(reply);
+        // Add sources if we found any
+        if (foundSources.length > 0) {
+          const responseWithSources = reply + formatSourceReferences(foundSources);
+          setResponse(responseWithSources);
+        } else {
+          setResponse(reply);
+        }
+        
         setAnalysisStep('');
         if (analysisMode === 'summarize') {
           setShowAnalysisButton(true);
@@ -588,6 +663,10 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
 
   const handleRetry = () => {
     if (inputText && typeof inputText === 'string') {
+      setError('');
+      setFoundSources([]);
+      setSourceSearchTime('');
+      
       const analysisMode = currentMode || 'analyze';
       analyzeContentWithClaude(inputText, analysisMode);
     }
@@ -602,7 +681,6 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
 
   const goBack = () => {
     if (previousClaim) {
-      // If this is a follow-up, go back to the original claim's response page
       router.push({
         pathname: '/response',
         params: {
@@ -611,7 +689,6 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
         }
       });
     } else {
-      // If this is not a follow-up, go back to text input with the original text
       router.push({
         pathname: '/text',
         params: {
@@ -683,6 +760,18 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
           </View>
         )}
 
+        {sourceSearchTime && (
+          <View style={styles.sourceInfoSection}>
+            <Text style={styles.sourceInfoTitle}>🔍 Source Search {sourceSearchTime}</Text>
+            <Text style={styles.sourceInfoText}>
+              {foundSources.length > 0 
+                ? `Found ${foundSources.length} sources for citations`
+                : 'No sources found - analysis based on knowledge'
+              }
+            </Text>
+          </View>
+        )}
+
         {articleData && isSummaryMode && (
           <View style={styles.articleInfoSection}>
             <Text style={styles.articleInfoTitle}>📄 Article Extracted</Text>
@@ -723,7 +812,6 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
               <Text style={styles.responseText}>
                 {response.split(/(\*\*[^*]+\*\*)/).map((part, index) => {
                   if (part.startsWith('**') && part.endsWith('**')) {
-                    // This is a bold section - remove ** and make it bold
                     const boldText = part.replace(/\*\*/g, '');
                     return (
                       <Text key={index} style={styles.boldText}>
@@ -754,7 +842,6 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
                       key={index}
                       style={[styles.followUpButton, index > 0 && styles.followUpButtonSpacing]}
                       onPress={() => {
-                        // Navigate to response page with the follow-up question
                         router.push({
                           pathname: '/response',
                           params: {
@@ -789,7 +876,6 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
         </View>
       </ScrollView>
 
-      {/* Saved Modal */}
       <Modal
         visible={showSavedModal}
         transparent={true}
@@ -898,6 +984,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 24,
     color: '#333',
+  },
+  sourceInfoSection: {
+    marginBottom: 16,
+    backgroundColor: '#e8f5e8',
+    borderRadius: 8,
+    padding: 16,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
+  },
+  sourceInfoTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2E7D32',
+    marginBottom: 4,
+  },
+  sourceInfoText: {
+    fontSize: 14,
+    color: '#388E3C',
   },
   articleInfoSection: {
     marginBottom: 16,
