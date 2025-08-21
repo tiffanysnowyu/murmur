@@ -32,16 +32,16 @@ export default function ResponsePage() {
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [foundSources, setFoundSources] = useState<any[]>([]);
   const [sourceSearchTime, setSourceSearchTime] = useState('');
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set()); // collapsible state
 
   // Get the text from parameters
   const inputText = (claim || text) as string;
   const currentMode = mode as string;
-  const isAnalyzeMode = currentMode === 'analyze' || currentMode !== 'summarize';
   const isSummaryMode = currentMode === 'summarize';
 
-  const isUrl = (text: string): boolean => {
+  const isUrl = (t: string): boolean => {
     try {
-      new URL(text);
+      new URL(t);
       return true;
     } catch {
       return false;
@@ -49,16 +49,15 @@ export default function ResponsePage() {
   };
 
   // Helper function to detect legal/policy claims
-  const isLegalPolicyClaim = (text: string): boolean => {
+  const isLegalPolicyClaim = (t: string): boolean => {
     const keywords = ['law', 'policy', 'regulation', 'bill', 'water', 'legal', 'act', 'legislation'];
-    const lowerText = text.toLowerCase();
+    const lowerText = t.toLowerCase();
     return keywords.some(keyword => lowerText.includes(keyword));
   };
 
   // Detect if content already contains fact-checking
   const detectPreFactCheckedContent = (content: string): boolean => {
     if (!content) return false;
-    
     const lowerContent = content.toLowerCase();
     const patterns = [
       'fact-check results:',
@@ -73,21 +72,15 @@ export default function ResponsePage() {
       'rating:',
       'claim:',
       'what\'s misleading:',
-      'what\'s false:'
+      'what\'s false:',
     ];
-    
-    // Check if content contains at least 2 of these patterns (more reliable)
     let matchCount = 0;
     for (const pattern of patterns) {
       if (lowerContent.includes(pattern)) {
         matchCount++;
-        if (matchCount >= 2) {
-          console.log('Detected pre-fact-checked content with patterns:', pattern);
-          return true;
-        }
+        if (matchCount >= 2) return true;
       }
     }
-    
     return false;
   };
 
@@ -103,52 +96,38 @@ export default function ResponsePage() {
         title: articleData?.title || inputText.substring(0, 50) + '...',
         sources: formatSourceReferences(foundSources),
       };
-
       await insightsStorage.addInsight(newInsight);
       setIsSaved(true);
-    } catch (error) {
-      console.error('Error saving insight:', error);
+    } catch (e) {
+      console.error('Error saving insight:', e);
       Alert.alert('Error', 'Failed to save insight.');
     }
   };
 
-  // Handle tapping the save button (checkmark when saved)
   const handleSaveButtonPress = () => {
-    if (isSaved) {
-      setShowSavedModal(true);
-    } else {
-      saveInsight();
-    }
+    if (isSaved) setShowSavedModal(true);
+    else saveInsight();
   };
 
   // Direct fetch function (will have CORS limitations)
   const readUrlContent = async (url: string) => {
     try {
       const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-      
-      const response = await fetch(proxyUrl);
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const data = await response.json();
+      const r = await fetch(proxyUrl);
+      if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+      const data = await r.json();
       return data.contents;
     } catch (error) {
       try {
-        const response = await fetch(url, {
+        const r = await fetch(url, {
           method: 'GET',
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-          }
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
         });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const content = await response.text();
+        if (!r.ok) throw new Error(`HTTP error! status: ${r.status}`);
+        const content = await r.text();
         return content;
       } catch (directError) {
         throw new Error(`Failed to read URL content: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -172,19 +151,18 @@ export default function ResponsePage() {
         .replace(/&#39;/g, "'")
         .replace(/\s+/g, ' ')
         .trim();
-
       const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
       const title = titleMatch ? titleMatch[1].trim() : 'Article';
-
       return {
         title,
         content: textContent,
         wordCount: textContent.split(' ').length,
-        isPaywalled: html.toLowerCase().includes('paywall') || 
-                     html.toLowerCase().includes('subscription') ||
-                     html.toLowerCase().includes('premium content')
+        isPaywalled:
+          html.toLowerCase().includes('paywall') ||
+          html.toLowerCase().includes('subscription') ||
+          html.toLowerCase().includes('premium content'),
       };
-    } catch (error) {
+    } catch {
       throw new Error('Failed to extract text from HTML');
     }
   };
@@ -316,52 +294,15 @@ Dynamically structure your response based on what would be most helpful. Conside
 **Perspective and context** (include when a true claim might be overwhelming):
 - Historical context showing how we've successfully managed similar situations
 - How millions of people safely navigate this every day
-- Why this particular story is getting attention now
 - Don't create a section for this unless it truly helps reduce anxiety
 
 **Practical actions** (include when there are clear, simple steps):
 - Specific, positive actions they can take
-- Focus on immediate, simple steps (not complex preparedness)
-- Include timing and specifics where relevant
-- For product safety concerns, suggest specific alternatives or brands
-- Make it clear these simple steps are sufficient for most people
+- Focus on immediate, simple steps
 
-**Shopping guidance** (ONLY for consumer product safety):
-- Specific product recommendations or certifications to look for
-- Where to find safer alternatives
-- What TO choose rather than what to avoid
+**Sources** - Include 2-4 credible sources for key health/safety claims
 
-**Special considerations** (ONLY if relevant):
-- Additional guidance for people with compromised immune systems or specific health conditions
-- Keep it brief and positive - focus on safe alternatives they can enjoy
-
-**Media literacy insights** (ONLY when analyzing URLs or when clear bias exists):
-- Who benefits from this narrative (specific industries, political groups, etc.)
-- Why this story is trending now (news cycles, political timing, product launches)
-- What context is missing from typical coverage
-- How the framing affects perception vs. actual risk
-- Keep this empowering, not paranoia-inducing
-
-**Sources** - Include 2-4 credible sources for key health/safety claims:
-- CDC, WHO, or local health departments
-- Peer-reviewed studies if relevant
-- Government health websites
-- List simply without full citations
-
-**Bottom line** - End with reassurance and empowerment:
-- Summarize the practical takeaway
-- Reinforce that simple precautions work
-- Focus on enjoying life with basic awareness
-
-CRITICAL GUIDELINES:
-- Never reproduce copyrighted content or long excerpts
-- Don't personify diseases or use dramatic language
-- Avoid vague terms like "relatively rare" - be specific
-- For legal/policy claims, include bill numbers, scope, timelines, and technical details
-- Skip sections that would just add length without value
-- Match your tone to the user's concern level
-
-Remember: The goal is to inform and reassure, not to create a formulaic report. Adapt your structure to what this specific person needs to hear right now.`;
+**Bottom line** - End with reassurance and empowerment.`;
     }
   };
 
@@ -369,40 +310,29 @@ Remember: The goal is to inform and reassure, not to create a formulaic report. 
     setLoading(true);
     setError('');
     setResponse('');
-
     try {
       const isPreFactChecked = detectPreFactCheckedContent(contentText);
-      
-      console.log('Content preview:', contentText.substring(0, 200));
-      console.log('Is pre-fact-checked:', isPreFactChecked);
-      console.log('Analysis mode:', analysisMode);
-      
       if (isPreFactChecked && analysisMode === 'analyze') {
         setAnalysisStep('Detected existing fact-check. Preparing meta-analysis...');
       }
 
-      // For summarize mode, try to extract article content if it's a URL
       if (analysisMode === 'summarize' && isUrl(contentText)) {
         setAnalysisStep('Attempting to fetch article content...');
-        
         try {
           const rawHtml = await readUrlContent(contentText);
           const extractedData = extractTextFromHtml(rawHtml);
-          
           setArticleData(extractedData);
-          
           if (extractedData.isPaywalled) {
             setError('This article appears to be behind a paywall. Analysis may be incomplete.');
           }
-          
           if (extractedData.content.length < 100) {
-            setError('Could not extract sufficient content from this URL. This might be due to CORS restrictions or the site blocking automated access.');
+            setError(
+              'Could not extract sufficient content from this URL. This might be due to CORS restrictions or the site blocking automated access.'
+            );
             setLoading(false);
             return;
           }
-          
           setAnalysisStep('Analyzing article with AI...');
-          
           const systemPrompt = getSystemPrompt(analysisMode, false, false);
           const userPrompt = `Please analyze this article content:
 
@@ -413,81 +343,72 @@ Remember: The goal is to inform and reassure, not to create a formulaic report. 
             Note: Content extracted directly from web page, may have some formatting issues.`;
 
           await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
-          
         } catch (fetchError) {
-          setError(`Could not fetch article content (likely CORS blocked): ${fetchError instanceof Error ? fetchError.message : 'Unknown error'}. Please copy and paste the article text instead.`);
+          setError(
+            `Could not fetch article content (likely CORS blocked): ${
+              fetchError instanceof Error ? fetchError.message : 'Unknown error'
+            }. Please copy and paste the article text instead.`
+          );
           setLoading(false);
           return;
         }
       } else {
-        // For analyze mode, do both source search AND recent info search
         const isFollowUpQuestion = !!previousClaim;
-        
+
         if (!isPreFactChecked && !isFollowUpQuestion) {
-          // Do source search for citations
           setAnalysisStep('Quick search...');
-          
-          let sourceResult = null;
+          let sourceResult: any = null;
           try {
             const sourcePromise = findSourcesFirst(contentText);
-            const timeout = new Promise((_, reject) => 
-              setTimeout(() => reject(new Error('TIMEOUT')), 5000)
-            );
-            
-            sourceResult = await Promise.race([sourcePromise, timeout]) as any;
+            const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 5000));
+            sourceResult = (await Promise.race([sourcePromise, timeout])) as any;
             setFoundSources(sourceResult.sources);
             setSourceSearchTime(`${sourceResult.searchTime}ms`);
-            
-          } catch (error) {
-            console.log('Source search timed out');
+          } catch {
             setSourceSearchTime('timeout');
           }
-          
-          // Also check if we need recent search results for knowledge cutoff issues
+
           let searchResults: any[] = [];
           if (needsRecentInfo(contentText)) {
             setAnalysisStep('Checking recent sources...');
             try {
               searchResults = await searchRecent(contentText);
-            } catch (error) {
-              console.log('Recent search failed:', error);
+            } catch (e) {
+              console.log('Recent search failed:', e);
             }
           }
-          
-          // Continue with analysis 
+
           setAnalysisStep('Analyzing...');
           const systemPrompt = getSystemPrompt(analysisMode, false, false);
-          
+
           let userPrompt = `Please analyze this content: "${contentText}"
 
 NOTE: This is a direct user query, NOT from an external media source. Do NOT include the "Think critically about what you're reading" section.`;
-          
-          // Add search results if we found recent info
+
           if (searchResults.length > 0) {
             userPrompt += formatSearchResults(searchResults, contentText);
           }
-          
-          // Add source info if we found sources for citations - UPDATED FOR INLINE CITATIONS
+
           if (sourceResult && sourceResult.sources.length > 0) {
-            const sourceText = sourceResult.sources.map((source: any, i: number) => 
-              `Source ${i + 1}:
+            const sourceText = sourceResult.sources
+              .map(
+                (source: any, i: number) => `Source ${i + 1}:
 URL: ${source.url}
 Title: ${source.title}
 Preview: ${source.snippet}`
-            ).join('\n\n');
-            
+              )
+              .join('\n\n');
+
             userPrompt += `\n\nIMPORTANT: You have EXACTLY ${sourceResult.sources.length} sources available for citation. DO NOT cite any sources beyond these ${sourceResult.sources.length}.\n`;
             userPrompt += `\nAvailable sources:\n${sourceText}`;
-            userPrompt += `\n\nWhen citing these sources, use natural inline citations based on the organization/publication name from the URL. For example, if the URL is from pnsn.org, cite it as "according to the Pacific Northwest Seismic Network" or "PNSN reports". If from wikipedia.org, cite as "Wikipedia notes" or similar. Make citations conversational and part of your natural response flow. DO NOT use numbered citations like [1], [2], etc. DO NOT cite sources that aren't provided above.`;
+            userPrompt += `\n\nWhen citing these sources, use natural inline citations based on the organization/publication name from the URL. Make citations conversational (no [1], [2], etc.).`;
           }
-          
+
           await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
-          
         } else {
-          // For pre-fact-checked or follow-ups, use normal analysis
           setAnalysisStep(isPreFactChecked ? 'Analyzing existing fact-check...' : 'Analyzing follow-up...');
           const systemPrompt = getSystemPrompt(analysisMode, isPreFactChecked, isFollowUpQuestion);
-          
+
           let userPrompt: string;
           if (isPreFactChecked) {
             userPrompt = `SCENARIO: A user found this fact-check online and wants to know if they should trust it.
@@ -516,53 +437,25 @@ Please analyze this follow-up concern in the context of their original question.
           } else if (isUrl(contentText)) {
             userPrompt = `ANALYSIS REQUEST: A user is concerned about content at this URL: ${contentText}
 
-IMPORTANT CONTEXT: This is a real article/source they're asking you to analyze. They want to understand:
-- What claims or concerns this source raises
-- Whether those claims are accurate or misleading
-- What they should actually worry about (if anything)
-- Practical steps they can take
+IMPORTANT CONTEXT: This is a real article/source they're asking you to analyze. They want to understand the claims, what's accurate, and what to actually do.
 
-CRITICAL: Do NOT say this is "hypothetical." This is a real source they're concerned about.
-
-Your task: Provide a thorough fact-check analysis of the likely claims/concerns from this source. Be specific about:
-- What the source probably claims (based on the URL topic)
-- Which parts are accurate vs misleading
-- Technical details and context
-- Specific product recommendations when relevant
-- Actionable steps they can take
-
-Focus on the specific topic indicated by this URL and provide the detailed, reassuring analysis they need.`;
+Your task: Provide a thorough, reassuring fact-check of the likely claims from this source.`;
           } else if (isLegalPolicyClaim(contentText)) {
             userPrompt = `Please analyze this content: "${contentText}"
 
-NOTE: This is a direct user query, NOT from an external media source. Do NOT include the "Think critically about what you're reading" section.
-
-IMPORTANT: If this claim is about a specific law, policy, regulation, or legal issue:
-- Identify the specific bill/law number if possible
-- Explain exactly what the law does and doesn't do
-- Provide technical details about scope, limitations, and exceptions
-- Address what this means for different types of water systems
-- Be specific about timelines, affected parties, and enforcement mechanisms
-- Include nuanced analysis of the implications for consumers
-
-Focus on providing the detailed, technical accuracy that an informed person would want to know about this specific policy or legal claim.`;
+If this is about a law/policy, include bill numbers, scope, timelines, exceptions, and implications for consumers.`;
           } else {
-            userPrompt = `Please analyze this content: "${contentText}"
-
-NOTE: This is a direct user query, NOT from an external media source. Do NOT include the "Think critically about what you're reading" section.`;
+            userPrompt = `Please analyze this content: "${contentText}"`;
           }
-          
+
           await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
         }
       }
-      
     } catch (err) {
       console.error('❌ Analysis error:', err);
       setError(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setAnalysisStep('');
       setLoading(false);
-      
-      // Reset source states on error
       setFoundSources([]);
       setSourceSearchTime('');
     }
@@ -570,31 +463,21 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
 
   const callClaudeAPI = async (systemPrompt: string, userPrompt: string, analysisMode: string) => {
     try {
-      if (!CLAUDE_API_KEY) {
-        throw new Error('Claude API key not found. Please add EXPO_PUBLIC_CLAUDE_API_KEY to your .env file');
-      }
-
-      if (!CLAUDE_API_KEY.startsWith('sk-ant-')) {
-        throw new Error('Invalid Claude API key format. Key should start with sk-ant-');
-      }
+      if (!CLAUDE_API_KEY) throw new Error('Claude API key not found. Please add EXPO_PUBLIC_CLAUDE_API_KEY to your .env file');
+      if (!CLAUDE_API_KEY.startsWith('sk-ant-')) throw new Error('Invalid Claude API key format. Key should start with sk-ant-');
 
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
           'x-api-key': CLAUDE_API_KEY,
           'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01'
+          'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
           model: 'claude-opus-4-1-20250805',
           max_tokens: 4000,
           system: systemPrompt,
-          messages: [
-            {
-              role: 'user',
-              content: userPrompt
-            }
-          ]
+          messages: [{ role: 'user', content: userPrompt }],
         }),
       });
 
@@ -620,27 +503,22 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
       }
 
       if (reply) {
-        // Add sources if we found any
         if (foundSources.length > 0) {
           const responseWithSources = reply + formatSourceReferences(foundSources);
           setResponse(responseWithSources);
         } else {
           setResponse(reply);
         }
-        
         setAnalysisStep('');
-        if (analysisMode === 'summarize') {
-          setShowAnalysisButton(true);
-        }
-        
-        // Extract follow-up questions if present
+        if (analysisMode === 'summarize') setShowAnalysisButton(true);
+
         const followUpMatch = reply.match(/\*\*You might be wondering:\*\*\s*\n(.+?)(?=\n\n|\n\*\*|$)/s);
         if (followUpMatch) {
           const questionsText = followUpMatch[1].trim();
-          const questions = questionsText.split('\n')
+          const questions = questionsText
+            .split('\n')
             .map(q => q.trim())
             .filter(q => q.length > 0 && !q.startsWith('*') && !q.match(/^question \d/i));
-          
           if (questions.length > 0) {
             setFollowUpQuestions(questions);
             setShowFollowUp(true);
@@ -666,7 +544,6 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
       setError('');
       setFoundSources([]);
       setSourceSearchTime('');
-      
       const analysisMode = currentMode || 'analyze';
       analyzeContentWithClaude(inputText, analysisMode);
     }
@@ -683,25 +560,17 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
     if (previousClaim) {
       router.push({
         pathname: '/response',
-        params: {
-          text: previousClaim,
-          mode: currentMode
-        }
+        params: { text: previousClaim, mode: currentMode },
       });
     } else {
       router.push({
         pathname: '/text',
-        params: {
-          initialText: inputText,
-          mode: currentMode
-        }
+        params: { initialText: inputText, mode: currentMode },
       });
     }
   };
 
-  const handleNext = () => {
-    router.push('/followup');
-  };
+  const handleNext = () => router.push('/followup');
 
   const getTitle = () => {
     const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
@@ -712,15 +581,158 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
 
   const getContentLabel = () => {
     const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
-    if (isSummaryMode) {
-      return isUrl(inputText || '') ? '🔗 Article URL' : '📄 Article Headline/Content';
-    }
-    if (isPreFactChecked) {
-      return '✅ Pre-Fact-Checked Content';
-    }
+    if (isSummaryMode) return isUrl(inputText || '') ? '🔗 Article URL' : '📄 Article Headline/Content';
+    if (isPreFactChecked) return '✅ Pre-Fact-Checked Content';
     return '🔍 Content to Analyze';
   };
 
+  // =========================
+  //   COLLAPSIBLE PARSING
+  // =========================
+
+  // Only these stay non-collapsible; titles are shown outside any card.
+  const ALWAYS_VISIBLE_HEADINGS = [
+    'summary',
+    'keeping things in perspective',
+    'perspective that reduces anxiety',
+    'why you can relax',
+    "here's why you can relax",
+    'bottom line',
+  ];
+
+  const normalize = (s: string) => s.normalize('NFKD').replace(/[^\w\s]/g, '').trim().toLowerCase();
+
+  const isAlwaysVisible = (title: string) => {
+    const t = normalize(title);
+    return ALWAYS_VISIBLE_HEADINGS.some(h => t.includes(normalize(h)));
+  };
+
+  type TopSection = { title: string; body: string };
+
+  // Split into top-level sections by markdown "## ..."
+  const splitByH2 = (text: string): TopSection[] => {
+    if (!text || !text.trim()) return [];
+    const lines = text.split('\n');
+
+    const sections: TopSection[] = [];
+    let currentTitle: string | null = null;
+    let currentBody: string[] = [];
+
+    const push = () => {
+      if (currentTitle || currentBody.length) {
+        sections.push({
+          title: currentTitle || 'Summary',
+          body: currentBody.join('\n').trim(),
+        });
+      }
+      currentTitle = null;
+      currentBody = [];
+    };
+
+    for (const line of lines) {
+      const h2 = line.match(/^\s*##\s+(.*)\s*$/);
+      if (h2) {
+        push();
+        currentTitle = h2[1].trim(); // drop the ##
+      } else {
+        currentBody.push(line);
+      }
+    }
+    push();
+    return sections.filter(s => s.title || s.body);
+  };
+
+  type SubItem = { title: string; content: string; summary: string };
+
+  // Build collapsible subitems from bold subheads inside a section (**Subhead**)
+  const buildSubItems = (body: string): SubItem[] => {
+    const lines = body.split('\n');
+
+    const items: SubItem[] = [];
+    let currentTitle: string | null = null;
+    let currentContent: string[] = [];
+
+    const push = () => {
+      const full = currentContent.join('\n').trim();
+      if (!full) {
+        currentTitle = null;
+        currentContent = [];
+        return;
+      }
+      const summary =
+        full
+          .replace(/\*\*[^*]+\*\*/g, '')
+          .split('\n')
+          .find(l => l.trim())?.slice(0, 140) + (full.length > 140 ? '…' : '') || '';
+      items.push({
+        title: currentTitle || 'Details',
+        content: full,
+        summary,
+      });
+      currentTitle = null;
+      currentContent = [];
+    };
+
+    for (const l of lines) {
+      const m = l.match(/^\s*\*\*([^*]+)\*\*\s*[:.]*\s*$/); // **Title** or **Title:** line
+      if (m) {
+        push();
+        currentTitle = m[1].trim();
+      } else {
+        currentContent.push(l);
+      }
+    }
+    push();
+    return items.filter(it => it.content && it.content.trim().length > 0);
+  };
+
+  // Remove a duplicated leading bold line that matches the section title
+  const stripDuplicateLeadBold = (title: string, body: string) => {
+    const lines = body.split('\n');
+    if (!lines.length) return body;
+    const first = lines[0].trim();
+    const m = first.match(/^\s*\*\*([^*]+)\*\*\s*[:\-–—.]?\s*$/);
+    if (m) {
+      const a = normalize(m[1]);
+      const b = normalize(title);
+      if (a === b || a.includes(b) || b.includes(a)) {
+        lines.shift();
+        return lines.join('\n').trim();
+      }
+    }
+    return body;
+  };
+
+  const toggleKey = (key: string) => {
+    const next = new Set(expandedKeys);
+    if (next.has(key)) next.delete(key);
+    else next.add(key);
+    setExpandedKeys(next);
+  };
+
+  const renderInlineWithBold = (content: string, baseStyle: any, sourceAware = false) => {
+    const isSourceLine = sourceAware && (content.includes('**Sources Consulted:**') || content.includes('**Sources:**'));
+    const parts = content.split(/(\*\*[^*]+\*\*)/);
+    return (
+      <Text style={baseStyle}>
+        {parts.map((part, idx) => {
+          if (part.startsWith('**') && part.endsWith('**')) {
+            const boldText = part.replace(/\*\*/g, '');
+            return (
+              <Text key={idx} style={isSourceLine ? styles.sourceText : styles.boldText}>
+                {boldText}
+              </Text>
+            );
+          }
+          return <Text key={idx}>{part}</Text>;
+        })}
+      </Text>
+    );
+  };
+
+  // =========================
+  //         RENDER
+  // =========================
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -729,10 +741,7 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
         </TouchableOpacity>
         <Text style={styles.title}>{getTitle()}</Text>
         {response && !loading && (
-          <TouchableOpacity 
-            onPress={handleSaveButtonPress} 
-            style={styles.saveButton}
-          >
+          <TouchableOpacity onPress={handleSaveButtonPress} style={styles.saveButton}>
             <Text style={styles.saveButtonText}>{isSaved ? '✓' : '💾'}</Text>
           </TouchableOpacity>
         )}
@@ -748,15 +757,15 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
 
         {inputText && (
           <View style={styles.inputSection}>
-            <View style={[
-              styles.typeIndicator,
-              inputText && detectPreFactCheckedContent(inputText) && styles.preFactCheckedIndicator
-            ]}>
+            <View
+              style={[
+                styles.typeIndicator,
+                inputText && detectPreFactCheckedContent(inputText) && styles.preFactCheckedIndicator,
+              ]}
+            >
               <Text style={styles.typeText}>{getContentLabel()}</Text>
             </View>
-            <Text style={styles.inputText}>
-              {inputText || 'No content provided'}
-            </Text>
+            <Text style={styles.inputText}>{inputText || 'No content provided'}</Text>
           </View>
         )}
 
@@ -764,10 +773,7 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
           <View style={styles.sourceInfoSection}>
             <Text style={styles.sourceInfoTitle}>🔍 Source Search {sourceSearchTime}</Text>
             <Text style={styles.sourceInfoText}>
-              {foundSources.length > 0 
-                ? `Found ${foundSources.length} sources for citations`
-                : 'No sources found - analysis based on knowledge'
-              }
+              {foundSources.length > 0 ? `Found ${foundSources.length} sources for citations` : 'No sources found - analysis based on knowledge'}
             </Text>
           </View>
         )}
@@ -779,18 +785,19 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
             <Text style={styles.articleMeta}>
               {articleData.wordCount} words • {articleData.isPaywalled ? '🔒 May be paywalled' : '✅ Content extracted'}
             </Text>
-            <Text style={styles.warningText}>
-              ⚠️ Note: Content extracted directly from web page. Some sites may block this method.
-            </Text>
+            <Text style={styles.warningText}>⚠️ Note: Content extracted directly from web page. Some sites may block this method.</Text>
           </View>
         )}
 
         <View style={styles.responseSection}>
           <Text style={styles.sectionTitle}>
-            {isSummaryMode ? 'Analysis:' : 
-             (inputText && detectPreFactCheckedContent(inputText) ? 'Meta-Analysis Results:' : 'Fact-Check Results:')}
+            {isSummaryMode
+              ? 'Analysis:'
+              : inputText && detectPreFactCheckedContent(inputText)
+              ? 'Meta-Analysis Results:'
+              : 'Fact-Check Results:'}
           </Text>
-          
+
           {loading && (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#32535F" />
@@ -809,28 +816,107 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
 
           {response && !loading && (
             <View style={styles.responseContainer}>
-              <Text style={styles.responseText}>
-                {response.split(/(\*\*[^*]+\*\*)/).map((part, index) => {
-                  if (part.startsWith('**') && part.endsWith('**')) {
-                    const boldText = part.replace(/\*\*/g, '');
-                    return (
-                      <Text key={index} style={styles.boldText}>
-                        {boldText}
-                      </Text>
-                    );
-                  }
-                  return part;
-                })}
-              </Text>
-              
+              {/* Break into H2 sections. Titles outside of collapsibles. */}
+              {splitByH2(response).map((sec, sIdx) => {
+                const title = sec.title?.trim() || 'Section';
+                const always = isAlwaysVisible(title);
+                const bodyForRender = stripDuplicateLeadBold(title, sec.body || '');
+
+                // Always-visible sections (Summary, Perspective, Relax, Bottom line...)
+                if (always) {
+                  const lines = bodyForRender.split('\n');
+                  return (
+                    <View key={`sec-${sIdx}`} style={{ marginBottom: 16 }}>
+                      <Text style={styles.h2Title}>{title}</Text>
+                      <View style={styles.sectionCard}>
+                        {lines.map((line, i) => {
+                          const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-');
+                          if (isBullet) {
+                            return (
+                              <Text key={i} style={styles.bulletPoint}>
+                                {renderInlineWithBold(line, styles.bulletPoint, true)}
+                              </Text>
+                            );
+                          }
+                          return (
+                            <Text key={i} style={styles.responseText}>
+                              {renderInlineWithBold(line, styles.responseText, true)}
+                              {i < lines.length - 1 ? '\n' : ''}
+                            </Text>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  );
+                }
+
+                // Collapsible sub-items (built from bold subheads)
+                const items = buildSubItems(bodyForRender);
+
+                // If no subitems detected, render as a simple card (non-collapsible).
+                if (items.length === 0) {
+                  const lines = bodyForRender.split('\n');
+                  return (
+                    <View key={`sec-${sIdx}`} style={{ marginBottom: 16 }}>
+                      <Text style={styles.h2Title}>{title}</Text>
+                      <View style={styles.sectionCard}>
+                        {lines.map((line, i) => (
+                          <Text key={i} style={styles.responseText}>
+                            {renderInlineWithBold(line, styles.responseText, true)}
+                            {i < lines.length - 1 ? '\n' : ''}
+                          </Text>
+                        ))}
+                      </View>
+                    </View>
+                  );
+                }
+
+                // With subitems: title outside, collapsible cards underneath.
+                return (
+                  <View key={`sec-${sIdx}`} style={{ marginBottom: 16 }}>
+                    <Text style={styles.h2Title}>{title}</Text>
+                    {items.map((it, iIdx) => {
+                      const k = `${sIdx}-${iIdx}`;
+                      const expanded = expandedKeys.has(k);
+                      return (
+                        <View key={k} style={styles.sectionContainer}>
+                          <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleKey(k)} activeOpacity={0.7}>
+                            <View style={styles.sectionTitleRow}>
+                              <Text style={styles.sectionTitleText}>{it.title}</Text>
+                              <Text style={styles.expandIcon}>{expanded ? '▲' : '▼'}</Text>
+                            </View>
+                            {!expanded && <Text style={styles.sectionSummary}>{it.summary}</Text>}
+                          </TouchableOpacity>
+                          {expanded && (
+                            <View style={styles.sectionContent}>
+                              {it.content.split('\n').map((line, lineIndex) => {
+                                const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-');
+                                if (isBullet) {
+                                  return (
+                                    <Text key={lineIndex} style={styles.bulletPoint}>
+                                      {renderInlineWithBold(line, styles.bulletPoint, true)}
+                                    </Text>
+                                  );
+                                }
+                                return (
+                                  <Text key={lineIndex} style={styles.responseText}>
+                                    {renderInlineWithBold(line, styles.responseText, true)}
+                                    {lineIndex < it.content.split('\n').length - 1 ? '\n' : ''}
+                                  </Text>
+                                );
+                              })}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })}
+                  </View>
+                );
+              })}
+
               {showAnalysisButton && (
-                <TouchableOpacity 
-                  style={styles.analyzeButton} 
-                  onPress={handleAnalyzeClaims}
-                >
-                  <Text style={styles.analyzeButtonText}>
-                    🔍 Now Fact-Check Claims from This Article
-                  </Text>
+                <TouchableOpacity style={styles.analyzeButton} onPress={handleAnalyzeClaims}>
+                  <Text style={styles.analyzeButtonText}>🔍 Now Fact-Check Claims from This Article</Text>
                 </TouchableOpacity>
               )}
 
@@ -838,7 +924,7 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
                 <View style={styles.followUpContainer}>
                   <Text style={styles.followUpLabel}>You might be wondering:</Text>
                   {followUpQuestions.map((question, index) => (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       key={index}
                       style={[styles.followUpButton, index > 0 && styles.followUpButtonSpacing]}
                       onPress={() => {
@@ -847,8 +933,8 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
                           params: {
                             text: question.replace(/["""]/g, ''),
                             mode: 'analyze',
-                            previousClaim: inputText
-                          }
+                            previousClaim: inputText,
+                          },
                         });
                       }}
                     >
@@ -859,19 +945,14 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
                 </View>
               )}
 
-              <TouchableOpacity 
-                style={styles.nextButton} 
-                onPress={handleNext}
-              >
+              <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
                 <Text style={styles.nextButtonText}>Next →</Text>
               </TouchableOpacity>
             </View>
           )}
 
           {!inputText && !loading && (
-            <Text style={styles.noContentText}>
-              No content provided for analysis. Please go back and enter some content.
-            </Text>
+            <Text style={styles.noContentText}>No content provided for analysis. Please go back and enter some content.</Text>
           )}
         </View>
       </ScrollView>
@@ -888,10 +969,7 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
             <Text style={styles.modalMessage}>
               This analysis has been saved to your insights. You can find it in your saved insights section.
             </Text>
-            <TouchableOpacity 
-              style={styles.modalButton}
-              onPress={() => setShowSavedModal(false)}
-            >
+            <TouchableOpacity style={styles.modalButton} onPress={() => setShowSavedModal(false)}>
               <Text style={styles.modalButtonText}>Got it</Text>
             </TouchableOpacity>
           </View>
@@ -902,10 +980,7 @@ NOTE: This is a direct user query, NOT from an external media source. Do NOT inc
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -916,30 +991,12 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
     backgroundColor: '#f8f9fa',
   },
-  backButton: {
-    marginRight: 16,
-  },
-  backButtonText: {
-    fontSize: 16,
-    color: '#32535F',
-    fontWeight: '600',
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
-  },
-  saveButton: {
-    padding: 8,
-  },
-  saveButtonText: {
-    fontSize: 20,
-  },
-  content: {
-    flex: 1,
-    padding: 16,
-  },
+  backButton: { marginRight: 16 },
+  backButtonText: { fontSize: 16, color: '#32535F', fontWeight: '600' },
+  title: { fontSize: 20, fontWeight: 'bold', color: '#333', flex: 1 },
+  saveButton: { padding: 8 },
+  saveButtonText: { fontSize: 20 },
+  content: { flex: 1, padding: 16 },
   followUpFromSection: {
     marginBottom: 16,
     backgroundColor: '#e8f4fd',
@@ -955,36 +1012,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     textTransform: 'uppercase',
   },
-  followUpFromText: {
-    fontSize: 14,
-    color: '#0D47A1',
-    fontStyle: 'italic',
-  },
-  inputSection: {
-    marginBottom: 16,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    overflow: 'hidden',
-  },
-  typeIndicator: {
-    backgroundColor: '#32535F',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-  },
-  preFactCheckedIndicator: {
-    backgroundColor: '#28a745',
-  },
-  typeText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  inputText: {
-    padding: 16,
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
-  },
+  followUpFromText: { fontSize: 14, color: '#0D47A1', fontStyle: 'italic' },
+  inputSection: { marginBottom: 16, backgroundColor: '#f8f9fa', borderRadius: 8, overflow: 'hidden' },
+  typeIndicator: { backgroundColor: '#32535F', paddingHorizontal: 16, paddingVertical: 8 },
+  preFactCheckedIndicator: { backgroundColor: '#28a745' },
+  typeText: { color: 'white', fontSize: 14, fontWeight: '600' },
+  inputText: { padding: 16, fontSize: 16, lineHeight: 24, color: '#333' },
   sourceInfoSection: {
     marginBottom: 16,
     backgroundColor: '#e8f5e8',
@@ -993,16 +1026,8 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#4CAF50',
   },
-  sourceInfoTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#2E7D32',
-    marginBottom: 4,
-  },
-  sourceInfoText: {
-    fontSize: 14,
-    color: '#388E3C',
-  },
+  sourceInfoTitle: { fontSize: 14, fontWeight: '600', color: '#2E7D32', marginBottom: 4 },
+  sourceInfoText: { fontSize: 14, color: '#388E3C' },
   articleInfoSection: {
     marginBottom: 16,
     backgroundColor: '#fff3cd',
@@ -1011,69 +1036,22 @@ const styles = StyleSheet.create({
     borderLeftWidth: 4,
     borderLeftColor: '#ffc107',
   },
-  articleInfoTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#856404',
-    marginBottom: 8,
-  },
-  articleTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#533f03',
-    marginBottom: 4,
-  },
-  articleMeta: {
-    fontSize: 14,
-    color: '#856404',
-    marginBottom: 8,
-  },
-  warningText: {
-    fontSize: 12,
-    color: '#856404',
-    fontStyle: 'italic',
-  },
-  responseSection: {
-    flex: 1,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 16,
-  },
-  loadingContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  errorContainer: {
-    alignItems: 'center',
-    paddingVertical: 20,
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#d32f2f',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
-  retryButton: {
-    backgroundColor: '#32535F',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 6,
-  },
-  retryButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  articleInfoTitle: { fontSize: 14, fontWeight: '600', color: '#856404', marginBottom: 8 },
+  articleTitle: { fontSize: 16, fontWeight: 'bold', color: '#533f03', marginBottom: 4 },
+  articleMeta: { fontSize: 14, color: '#856404', marginBottom: 8 },
+  warningText: { fontSize: 12, color: '#856404', fontStyle: 'italic' },
+
+  responseSection: { flex: 1 },
+  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 },
+
+  loadingContainer: { alignItems: 'center', paddingVertical: 40 },
+  loadingText: { marginTop: 12, fontSize: 16, color: '#666', textAlign: 'center', fontWeight: '600' },
+
+  errorContainer: { alignItems: 'center', paddingVertical: 20 },
+  errorText: { fontSize: 16, color: '#d32f2f', textAlign: 'center', marginBottom: 16 },
+  retryButton: { backgroundColor: '#32535F', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 6 },
+  retryButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+
   responseContainer: {
     backgroundColor: '#ffffff',
     borderRadius: 8,
@@ -1081,18 +1059,55 @@ const styles = StyleSheet.create({
     borderColor: '#e0e0e0',
     padding: 16,
   },
+
+  // Titles for H2 sections (outside of collapsibles)
+  h2Title: {
+    fontSize: 17,
+    fontWeight: '700',
+    color: '#32535F',
+    marginBottom: 8,
+  },
+
+  // Simple non-collapsible card
+  sectionCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    padding: 16,
+  },
+
   responseText: {
     fontSize: 16,
     lineHeight: 24,
     color: '#333',
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
-  boldText: {
-    fontWeight: 'bold',
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
+  boldText: { fontWeight: 'bold', fontSize: 16, lineHeight: 24, color: '#333' },
+  bulletPoint: { fontSize: 16, lineHeight: 24, color: '#333', paddingLeft: 20, marginVertical: 4 },
+  sourceText: { fontWeight: 'bold', color: '#32535F' },
+
+  // Collapsible styles (for sub-items)
+  sectionContainer: {
+    marginBottom: 12,
+    borderRadius: 8,
+    backgroundColor: '#f8f9fa',
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
+  sectionHeader: {
+    padding: 16,
+    backgroundColor: '#ffffff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  sectionTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  sectionTitleText: { fontSize: 17, fontWeight: '600', color: '#32535F', flex: 1 },
+  expandIcon: { fontSize: 14, color: '#666', marginLeft: 8 },
+  sectionSummary: { marginTop: 8, fontSize: 14, color: '#666', lineHeight: 20, fontStyle: 'italic' },
+  sectionContent: { padding: 16, backgroundColor: '#ffffff' },
+
   analyzeButton: {
     backgroundColor: '#32535F',
     paddingVertical: 14,
@@ -1101,11 +1116,8 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: 'center',
   },
-  analyzeButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  analyzeButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+
   followUpContainer: {
     marginTop: 20,
     padding: 16,
@@ -1114,12 +1126,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#e0e8f0',
   },
-  followUpLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 8,
-    fontWeight: '500',
-  },
+  followUpLabel: { fontSize: 14, color: '#666', marginBottom: 8, fontWeight: '500' },
   followUpButton: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -1130,21 +1137,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#d0d0d0',
   },
-  followUpButtonSpacing: {
-    marginTop: 12,
-  },
-  followUpQuestion: {
-    fontSize: 16,
-    color: '#32535F',
-    fontWeight: '500',
-    flex: 1,
-    paddingRight: 10,
-  },
-  followUpArrow: {
-    fontSize: 20,
-    color: '#32535F',
-    fontWeight: 'bold',
-  },
+  followUpButtonSpacing: { marginTop: 12 },
+  followUpQuestion: { fontSize: 16, color: '#32535F', fontWeight: '500', flex: 1, paddingRight: 10 },
+  followUpArrow: { fontSize: 20, color: '#32535F', fontWeight: 'bold' },
+
   nextButton: {
     backgroundColor: '#4CAF50',
     paddingVertical: 14,
@@ -1153,24 +1149,10 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: 'center',
   },
-  nextButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  noContentText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
-    fontStyle: 'italic',
-    paddingVertical: 40,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
+  nextButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+
+  noContentText: { fontSize: 16, color: '#666', textAlign: 'center', fontStyle: 'italic', paddingVertical: 40 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
   modalContent: {
     backgroundColor: 'white',
     borderRadius: 16,
@@ -1178,36 +1160,13 @@ const styles = StyleSheet.create({
     margin: 20,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
     elevation: 5,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#28a745',
-    marginBottom: 12,
-  },
-  modalMessage: {
-    fontSize: 16,
-    color: '#333',
-    textAlign: 'center',
-    lineHeight: 24,
-    marginBottom: 20,
-  },
-  modalButton: {
-    backgroundColor: '#32535F',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  modalButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#28a745', marginBottom: 12 },
+  modalMessage: { fontSize: 16, color: '#333', textAlign: 'center', lineHeight: 24, marginBottom: 20 },
+  modalButton: { backgroundColor: '#32535F', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
+  modalButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
 });
