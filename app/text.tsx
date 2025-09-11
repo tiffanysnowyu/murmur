@@ -3,10 +3,10 @@ import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
-  TouchableOpacity,
   Text,
-  Alert,
   StyleSheet,
+  Pressable,
+  Alert,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -30,7 +30,6 @@ export default function TextPage() {
       return;
     }
 
-    // Navigate with router.push to avoid URL encoding issues
     router.push({
       pathname: '/response',
       params: {
@@ -61,162 +60,262 @@ export default function TextPage() {
     }
   };
 
+  // Mode selection screen
   if (!mode) {
     return (
       <View style={styles.container}>
-        <Text style={styles.title}>What do you need?</Text>
-        
-        <TouchableOpacity 
-          style={styles.modeButton} 
-          onPress={() => handleModeSelect('summarize')}
-        >
-          <View style={styles.modeButtonContent}>
-            <Text style={styles.modeIcon}>📄</Text>
-            <View style={styles.modeTextContainer}>
-              <Text style={styles.modeTitle}>SUMMARIZE ARTICLE</Text>
-              <Text style={styles.modeSubtitle}>Step 1: Summary → Step 2: Analyze claims</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
+        {/* Back button */}
+        <Pressable style={styles.backButton} onPress={() => router.push('/chooseinput')}>
+          <Text style={styles.chevron}>‹</Text>
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
 
-        <TouchableOpacity 
-          style={styles.modeButton} 
-          onPress={() => handleModeSelect('analyze')}
-        >
-          <View style={styles.modeButtonContent}>
-            <Text style={styles.modeIcon}>🔍</Text>
-            <View style={styles.modeTextContainer}>
-              <Text style={styles.modeTitle}>ANALYZE CLAIM</Text>
-              <Text style={styles.modeSubtitle}>Direct fact-checking</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
+        {/* Heading */}
+        <View style={styles.header}>
+          <Text style={styles.title}>Get started with text</Text>
+          <Text style={styles.subtitle}>Do you want to simplify or check directly?</Text>
+        </View>
+
+        {/* Options */}
+        <View style={styles.options}>
+          <Pressable
+            onPress={() => handleModeSelect('summarize')}
+            style={({ pressed }) => [
+              styles.pill,
+              pressed && styles.pillPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Choose Summarize"
+          >
+            <Text style={styles.pillTitle}>Summarize</Text>
+            <Text style={styles.pillDesc}>Simplify the article into key claims,{'\n'}analyze if needed</Text>
+          </Pressable>
+
+          <Pressable
+            onPress={() => handleModeSelect('analyze')}
+            style={({ pressed }) => [
+              styles.pill,
+              pressed && styles.pillPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Choose Analyze"
+          >
+            <Text style={styles.pillTitle}>Analyze</Text>
+            <Text style={styles.pillDesc}>Check claims directly</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
 
+  // Text input screen
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => setMode(null)} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>
-          {mode === 'summarize' ? 'Summarize Article' : 'Analyze Claim'}
+    <View style={styles.inputContainer}>
+      {/* Back button - SEPARATE */}
+      <Pressable style={styles.inputBackButton} onPress={() => setMode(null)}>
+        <Text style={styles.chevron}>‹</Text>
+        <Text style={styles.backText}>Back</Text>
+      </Pressable>
+
+      {/* Title and description - NO BACK BUTTON HERE */}
+      <View style={styles.inputHeader}>
+        <Text style={styles.inputTitle}>
+          {mode === 'summarize' ? 'Summarize' : 'Analyze'}
+        </Text>
+        <Text style={styles.inputDescription}>
+          {mode === 'summarize' 
+            ? "Too long to read? Paste the article and we'll pull out the key points and claims (you can analyze them afterwards)."
+            : "Type or paste any claim, headline, or statement you want to fact-check."}
         </Text>
       </View>
 
+      {/* Divider line */}
+      <View style={styles.divider} />
+
+      {/* Text input */}
       <TextInput
         style={styles.input}
         multiline
-        placeholder={getPlaceholder()}
-        placeholderTextColor="#999"
+        placeholder="Paste text here..."
+        placeholderTextColor="#B0B0B8"
         value={text}
         onChangeText={setText}
       />
 
-      {text.trim() ? (
-        <TouchableOpacity style={styles.button} onPress={handleAnalyze}>
-          <Text style={styles.buttonText}>{getButtonText()}</Text>
-        </TouchableOpacity>
-      ) : (
-        <TouchableOpacity
-          style={[styles.button, styles.disabled]}
-          onPress={() => Alert.alert('Please enter some text.')}
-        >
-          <Text style={styles.buttonText}>{getButtonText()}</Text>
-        </TouchableOpacity>
-      )}
+      {/* Submit button */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.submitButton,
+          !text.trim() && styles.submitButtonDisabled,
+          pressed && text.trim() && styles.submitButtonPressed,
+        ]}
+        onPress={handleAnalyze}
+        disabled={!text.trim()}
+      >
+        <Text style={styles.submitButtonText}>Continue</Text>
+      </Pressable>
     </View>
   );
 }
 
+const BORDER = "#CCE5E7";       
+const FILL = "#F3F8FA";         
+const TEXT_PRIMARY = "#4A4A4A"; 
+const TEXT_SECONDARY = "#595959";
+const BACK_TEXT = "#B0B0B8";
+const PRIMARY = "#32535F";
+const PRIMARY_PRESSED = "#2A454F";
+
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 24, 
-    backgroundColor: '#fff' 
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 40,
-    marginTop: 60,
-    color: '#333',
-  },
-  modeButton: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  modeButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 20,
-  },
-  modeIcon: {
-    fontSize: 24,
-    marginRight: 16,
-  },
-  modeTextContainer: {
+  container: {
     flex: 1,
-  },
-  modeTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  modeSubtitle: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-    paddingTop: 20,
+    backgroundColor: "#FFFFFF",
+    paddingTop: 80,
+    paddingHorizontal: 24,
+    paddingBottom: 270,
+    gap: 40,
   },
   backButton: {
-    marginRight: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
-  backButtonText: {
-    fontSize: 16,
-    color: '#32535F',
-    fontWeight: '600',
+  chevron: {
+    fontSize: 24,
+    color: BACK_TEXT,
+    width: 24,
+    height: 24,
+    lineHeight: 24,
+    textAlign: "center",
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+  backText: {
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    color: BACK_TEXT,
+    fontWeight: "400",
+  },
+  header: {
+    gap: 16,
+  },
+  title: { 
+    fontSize: 32,
+    fontFamily: "SF Pro Display",
+    fontWeight: "700", 
+    color: "#1A1A1A",
+  },
+  subtitle: { 
+    fontSize: 18,
+    fontFamily: "SF Pro Display", 
+    fontWeight: "400",
+    color: "#000000",
+    paddingBottom: 24,
+  },
+  options: { 
+    alignItems: "center",
+    gap: 24, // 24px gap between buttons
+  },
+  pill: {
+    width: 345,
+    minHeight: 128,
+    borderWidth: 2,
+    borderColor: BORDER,
+    borderRadius: 100,
+    paddingVertical: 24,
+    paddingHorizontal: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pillPressed: { 
+    backgroundColor: FILL,
+  },
+  pillTitle: { 
+    fontSize: 24, 
+    fontFamily: "SF Pro Display",
+    fontWeight: "500", 
+    color: TEXT_PRIMARY, 
+    marginBottom: 4,
+    textAlign: "center",
+    lineHeight: 36,
+    letterSpacing: -0.264,
+  },
+  pillDesc: { 
+    fontSize: 15, 
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
+    color: TEXT_SECONDARY,
+    textAlign: "center",
+    lineHeight: 22.5,
+    letterSpacing: -0.165,
+  },
+  
+  // Input screen styles
+  inputContainer: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    paddingTop: 80,
+    paddingHorizontal: 24,
+    paddingBottom: 40,
+  },
+  inputBackButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 40,
+  },
+  inputHeader: {
+    marginBottom: 48, // 48px to divider
+  },
+  inputTitle: {
+    fontSize: 32,
+    fontFamily: "SF Pro Display",
+    fontWeight: "700",
+    color: "#1A1A1A",
+    marginBottom: 16,
+  },
+  inputDescription: {
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
+    color: "#000000",
+    lineHeight: 24,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#D0D0D0",
+    marginBottom: 48, // 48px after divider
   },
   input: {
-    flex:1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    textAlignVertical: 'top',
-    fontSize: 16,
-    backgroundColor: '#f9f9f9',
+    flex: 1,
+    borderWidth: 0,
+    paddingVertical: 0,
+    paddingHorizontal: 0,
+    textAlignVertical: "top",
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    color: "#1A1A1A",
   },
-  button: {
-    backgroundColor: '#32535F',
-    paddingVertical: 16,
-    borderRadius: 8,
+  submitButton: {
+    backgroundColor: "#1A1A1A",
+    width: 345,
+    height: 64,
+    paddingVertical: 18,
+    paddingHorizontal: 39,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    alignSelf: "center",
+    marginTop: 40,
   },
-  disabled: {
-    backgroundColor: '#ccc',
+  submitButtonPressed: {
+    backgroundColor: "#000000",
   },
-  buttonText: {
-    color: 'white',
-    textAlign: 'center',
-    fontSize: 18,
-    fontWeight: '600',
+  submitButtonDisabled: {
+    backgroundColor: "#D1D5DB",
+  },
+  submitButtonText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    fontWeight: "600",
   },
 });

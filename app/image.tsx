@@ -220,24 +220,6 @@ export default function ImagePage() {
         Upload an image containing text you'd like to fact-check
       </Text>
 
-      {/* Debug Section */}
-      <View style={styles.debugSection}>
-        <Text style={styles.debugTitle}>🐛 Debug Info (Platform: {Platform.OS}):</Text>
-        {debugInfo.slice(-3).map((info, index) => (
-          <Text key={index} style={styles.debugText}>{info}</Text>
-        ))}
-      </View>
-
-      {/* Test Buttons */}
-      <View style={styles.testSection}>
-        <TouchableOpacity style={styles.testButton} onPress={testSimpleAlert}>
-          <Text style={styles.testButtonText}>Test Alert</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.testButton} onPress={testNavigation}>
-          <Text style={styles.testButtonText}>Test Navigation</Text>
-        </TouchableOpacity>
-      </View>
-
       {!selectedImage && !isProcessing && (
         <View style={styles.uploadSection}>
           <TouchableOpacity style={styles.uploadButton} onPress={pickImageFromLibrary}>
