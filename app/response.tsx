@@ -1,5 +1,5 @@
 // Updated response.tsx with empathetic prompting and fast source citations
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,9 @@ import {
   Alert,
   Platform,
   Modal,
+  Pressable,
+  Image,
+  Animated,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
@@ -30,9 +33,23 @@ export default function ResponsePage() {
   const [articleData, setArticleData] = useState<any>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [showSavedModal, setShowSavedModal] = useState(false);
+  const [savedInsightId, setSavedInsightId] = useState<string | null>(null);
   const [foundSources, setFoundSources] = useState<any[]>([]);
   const [sourceSearchTime, setSourceSearchTime] = useState('');
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set()); // collapsible state
+  
+  // Animation states
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const [isPressed, setIsPressed] = useState(false);
+  
+  // Summary-specific states
+  const [showFullArticle, setShowFullArticle] = useState(false);
+  const [expandedClaims, setExpandedClaims] = useState<Set<number>>(new Set());
+  const [parsedSummary, setParsedSummary] = useState<{
+    article: string;
+    overview: string;
+    keyClaims: Array<{ title: string; content: string }>;
+  }>({ article: '', overview: '', keyClaims: [] });
 
   // Get the text from parameters
   const inputText = (claim || text) as string;
@@ -84,11 +101,54 @@ export default function ResponsePage() {
     return false;
   };
 
+  // Parse summary response
+  const parseSummaryResponse = (responseText: string) => {
+    const sections = responseText.split(/^##\s+/m).filter(s => s.trim());
+    
+    let article = '';
+    let overview = '';
+    const keyClaims: Array<{ title: string; content: string }> = [];
+
+    sections.forEach(section => {
+      const lines = section.trim().split('\n');
+      const sectionTitle = lines[0].trim().toLowerCase();
+      const content = lines.slice(1).join('\n').trim();
+
+      if (sectionTitle === 'article') {
+        article = content;
+      } else if (sectionTitle === 'overview') {
+        overview = content;
+      } else if (sectionTitle === 'key claims') {
+        // Parse key claims
+        const claimMatches = content.matchAll(/\*\*([^*]+)\*\*\n([^*]+)(?=\*\*|$)/g);
+        for (const match of claimMatches) {
+          keyClaims.push({
+            title: match[1].trim(),
+            content: match[2].trim()
+          });
+        }
+      }
+    });
+
+    setParsedSummary({ article, overview, keyClaims });
+  };
+
+  const toggleClaim = (index: number) => {
+    const newExpanded = new Set(expandedClaims);
+    if (newExpanded.has(index)) {
+      newExpanded.delete(index);
+    } else {
+      newExpanded.add(index);
+    }
+    setExpandedClaims(newExpanded);
+  };
+
   // Save insight to file
   const saveInsight = async () => {
     try {
+      const insightId = Date.now().toString();
       const newInsight = {
-        id: Date.now().toString(),
+        id: insightId,
         claim: inputText,
         analysis: response,
         mode: currentMode,
@@ -97,6 +157,7 @@ export default function ResponsePage() {
         sources: formatSourceReferences(foundSources),
       };
       await insightsStorage.addInsight(newInsight);
+      setSavedInsightId(insightId);
       setIsSaved(true);
     } catch (e) {
       console.error('Error saving insight:', e);
@@ -104,9 +165,46 @@ export default function ResponsePage() {
     }
   };
 
+  // Unsave insight
+  const unsaveInsight = async () => {
+    try {
+      if (savedInsightId) {
+        await insightsStorage.deleteInsight(savedInsightId);
+        setSavedInsightId(null);
+        setIsSaved(false);
+      }
+    } catch (e) {
+      console.error('Error unsaving insight:', e);
+      Alert.alert('Error', 'Failed to unsave insight.');
+    }
+  };
+
   const handleSaveButtonPress = () => {
-    if (isSaved) setShowSavedModal(true);
-    else saveInsight();
+    // Start the press animation
+    setIsPressed(true);
+    
+    // Scale up to 28px (28/24 = 1.167)
+    Animated.sequence([
+      Animated.timing(scaleAnim, {
+        toValue: 1.167, // 28px / 24px
+        duration: 100,
+        useNativeDriver: true,
+      }),
+      Animated.timing(scaleAnim, {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setIsPressed(false);
+    });
+    
+    // Toggle save/unsave
+    if (isSaved) {
+      unsaveInsight();
+    } else {
+      saveInsight();
+    }
   };
 
   // Direct fetch function (will have CORS limitations)
@@ -171,11 +269,25 @@ export default function ResponsePage() {
     if (mode === 'summarize') {
       return `You are an expert content analyzer. You will be provided with article content that has been extracted from a web page.
 
-TASK: Provide a comprehensive analysis including:
-- **ARTICLE SUMMARY**: Main points and key findings from the article
-- **KEY CLAIMS**: Important claims or statements made in the article  
-- **CONTEXT**: Background information and why this topic matters
-- **CREDIBILITY NOTES**: Any observations about the content quality
+TASK: Provide a comprehensive analysis in EXACTLY this format:
+
+## Article
+[Summarize the main content in 2-3 clear sentences]
+
+## Overview
+[Provide a comprehensive overview paragraph explaining the main arguments, findings, and significance]
+
+## Key Claims
+**[First key claim stated clearly]**
+[Detailed explanation of this claim including evidence and context]
+
+**[Second key claim stated clearly]**
+[Detailed explanation of this claim including evidence and context]
+
+**[Third key claim stated clearly]**
+[Detailed explanation of this claim including evidence and context]
+
+Include 3-5 key claims. Each must have a clear statement followed by explanation.
 
 Note: The content may be incomplete due to technical limitations in extraction. Format with clear headings and be thorough with available information.`;
     } else if (isPreFactChecked) {
@@ -474,7 +586,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-opus-4-1-20250805',
+          model: 'claude-3-5-sonnet-20241022',
           max_tokens: 4000,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }],
@@ -509,6 +621,12 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         } else {
           setResponse(reply);
         }
+        
+        // Parse summary if in summary mode
+        if (analysisMode === 'summarize') {
+          parseSummaryResponse(reply);
+        }
+        
         setAnalysisStep('');
         if (analysisMode === 'summarize') setShowAnalysisButton(true);
 
@@ -550,9 +668,15 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   };
 
   const handleAnalyzeClaims = () => {
-    if (articleData?.content) {
-      analyzeContentWithClaude(articleData.content, 'analyze');
-      setShowAnalysisButton(false);
+    // Analyze the original input text, not the summary
+    if (inputText) {
+      router.push({
+        pathname: '/response',
+        params: { 
+          text: inputText, 
+          mode: 'analyze'
+        },
+      });
     }
   };
 
@@ -574,7 +698,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
 
   const getTitle = () => {
     const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
-    if (isSummaryMode) return 'Article Analysis';
+    if (isSummaryMode) return 'Summary';
     if (isPreFactChecked) return 'Fact-Check Analysis';
     return 'Claim Analysis';
   };
@@ -731,11 +855,150 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   };
 
   // =========================
-  //         RENDER
+  //   RENDER FOR SUMMARY MODE
+  // =========================
+  // Show loading state for summary mode
+  if (isSummaryMode && loading) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.summaryHeader}>
+          <Pressable style={styles.summaryBackButton} onPress={goBack}>
+            <Text style={styles.summaryChevron}>‹</Text>
+            <Text style={styles.summaryBackText}>Back</Text>
+          </Pressable>
+          
+          <Text style={styles.summaryTitle}>Summary</Text>
+          
+          <View style={{ width: 40 }} />
+        </View>
+        
+        <View style={styles.loadingCenterContainer}>
+          <ActivityIndicator size="large" color="#32535F" />
+          <Text style={styles.loadingText}>{analysisStep || 'Analyzing...'}</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (isSummaryMode && !loading && !error && parsedSummary.article) {
+    return (
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.summaryHeader}>
+          <Pressable style={styles.summaryBackButton} onPress={goBack}>
+            <Text style={styles.summaryChevron}>‹</Text>
+            <Text style={styles.summaryBackText}>Back</Text>
+          </Pressable>
+
+          <View style={styles.summaryArea}>
+            <Text style={styles.summaryTitle}>Summary</Text>
+            <Pressable style={styles.summarySaveButton} onPress={handleSaveButtonPress}>
+              <Animated.Image 
+                source={(isSaved || isPressed) ? require('../assets/images/save_summ_filled.png') : require('../assets/images/save_summ.png')} 
+                style={[
+                  styles.summarySaveIcon,
+                  {
+                    transform: [{ scale: scaleAnim }]
+                  }
+                ]}
+              />
+            </Pressable>
+          </View>
+        </View>
+
+        <ScrollView style={styles.summaryContent} showsVerticalScrollIndicator={false}>
+          {/* Article Section */}
+          <View style={styles.summarySection}>
+            <Text style={styles.summarySectionTitle}>Article</Text>
+            <ScrollView 
+              style={styles.summaryArticleContainer}
+              showsVerticalScrollIndicator={true}
+              nestedScrollEnabled={true}
+            >
+              <Text style={styles.summaryArticleText}>
+                {inputText}
+              </Text>
+            </ScrollView>
+          </View>
+
+          {/* Divider */}
+          <View style={styles.summaryDivider} />
+
+          {/* Overview Section */}
+          <View style={styles.summarySection}>
+            <Text style={styles.summarySectionTitle}>Overview</Text>
+            <Text style={styles.summaryOverviewText}>
+              {parsedSummary.overview}
+            </Text>
+          </View>
+
+          {/* Key Claims Section */}
+          {parsedSummary.keyClaims.length > 0 && (
+            <View style={styles.summarySection}>
+              <Text style={styles.summarySectionTitle}>Key Claims</Text>
+              
+              {parsedSummary.keyClaims.map((claim, index) => (
+                <Pressable 
+                  key={index}
+                  style={styles.claimContainer}
+                  onPress={() => toggleClaim(index)}
+                >
+                  <View style={styles.claimHeader}>
+                    <Text style={styles.claimTitle}>
+                      {claim.title}
+                    </Text>
+                    <Text style={[
+                      styles.claimChevron,
+                      expandedClaims.has(index) && styles.claimChevronExpanded
+                    ]}>
+                      ‹
+                    </Text>
+                  </View>
+                  
+                  {expandedClaims.has(index) && (
+                    <View style={styles.claimContent}>
+                      <Text style={styles.claimText}>
+                        {claim.content}
+                      </Text>
+                      
+                      {/* Explanation section if it exists */}
+                      {claim.content.includes('Explanation:') && (
+                        <View style={styles.explanationSection}>
+                          <Text style={styles.explanationTitle}>Explanation</Text>
+                          <Text style={styles.explanationText}>
+                            • {claim.content.split('Explanation:')[1]?.trim()}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                  )}
+                </Pressable>
+              ))}
+            </View>
+          )}
+
+          {/* CTA Buttons at the bottom */}
+          <View style={styles.ctaContainer}>
+            <Pressable style={styles.analyzeCTA} onPress={handleAnalyzeClaims}>
+              <Text style={styles.analyzeCtaText}>Analyze these claims</Text>
+            </Pressable>
+            
+            <Pressable style={styles.doneCTA} onPress={goBack}>
+              <Text style={styles.doneCtaText}>Done</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+
+      </View>
+    );
+  }
+
+  // =========================
+  //   REGULAR RENDER (ANALYSIS MODE)
   // =========================
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+     <View style={styles.header}>
         <TouchableOpacity onPress={goBack} style={styles.backButton}>
           <Text style={styles.backButtonText}>← Back</Text>
         </TouchableOpacity>
@@ -979,8 +1242,242 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   );
 }
 
+// Summary-specific styles
+const BACK_TEXT = "#B0B0B8";
+const TEXT_PRIMARY = "#1A1A1A";
+const TEXT_SECONDARY = "#595959";
+const DIVIDER_COLOR = "#E5E5E5";
+const LINK_COLOR = "#007AFF";
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+  
+  // Summary mode styles
+  summaryHeader: {
+    paddingTop: 72,
+    paddingHorizontal: 24,
+    backgroundColor: "#FFFFFF",
+  },
+  summaryArea: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingTop: 40,
+  },
+  summaryBackButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  summaryChevron: {
+    fontSize: 24,
+    color: BACK_TEXT,
+    width: 24,
+    height: 24,
+    lineHeight: 24,
+    textAlign: "center",
+  },
+  summaryBackText: {
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    color: BACK_TEXT,
+    fontWeight: "400",
+  },
+  summaryTitle: {
+    flex: 1,
+    fontSize: 32,
+    fontFamily: "SF Pro Display",
+    fontWeight: "700",
+    color: TEXT_PRIMARY,
+    textAlign: "left",
+  },
+  summarySaveButton: {
+    padding: 8,
+  },
+  summarySaveIcon: {
+    width: 24,
+    height: 24,
+  },
+  summaryContent: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  summarySection: {
+    marginBottom: 0,
+  },
+  summarySectionTitle: {
+    fontSize: 24,
+    fontFamily: "SF Pro Display",
+    fontWeight: "600",
+    color: TEXT_PRIMARY,
+    marginBottom: 16,
+    marginTop: 48,
+  },
+  summaryArticleContainer: {
+    maxHeight: 96, // 4 lines * 24 lineHeight
+  },
+  summaryArticleText: {
+    fontSize: 16,
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
+    color: TEXT_SECONDARY,
+    lineHeight: 24,
+  },
+  summaryMoreButton: {
+    fontSize: 16,
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
+    color: LINK_COLOR,
+    marginTop: 8,
+  },
+  summaryDivider: {
+    height: 1,
+    backgroundColor: DIVIDER_COLOR,
+    marginTop: 48,
+  },
+  summaryOverviewText: {
+    fontSize: 16,
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
+    color: TEXT_SECONDARY,
+    lineHeight: 24,
+  },
+  claimContainer: {
+    marginBottom: 16,
+  },
+  claimHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    paddingVertical: 12,
+  },
+  claimTitle: {
+    flex: 1,
+    fontSize: 16,
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
+    color: TEXT_SECONDARY,
+    lineHeight: 24,
+  },
+  claimChevron: {
+    fontSize: 20,
+    color: TEXT_SECONDARY,
+    transform: [{ rotate: '-90deg' }],
+  },
+  claimChevronExpanded: {
+    transform: [{ rotate: '90deg' }],
+  },
+  claimContent: {
+    paddingTop: 8,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: DIVIDER_COLOR,
+  },
+  claimText: {
+    fontSize: 16,
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
+    color: TEXT_SECONDARY,
+    lineHeight: 24,
+  },
+  explanationSection: {
+    marginTop: 16,
+  },
+  explanationTitle: {
+    fontSize: 20,
+    fontFamily: "SF Pro Display",
+    fontWeight: "600",
+    color: TEXT_PRIMARY,
+    marginBottom: 12,
+  },
+  explanationText: {
+    fontSize: 16,
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
+    color: TEXT_SECONDARY,
+    lineHeight: 24,
+  },
+  ctaContainer: {
+    paddingVertical: 40,
+    gap: 16,
+  },
+  analyzeCTA: {
+    backgroundColor: "#1A1A1A",
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  analyzeCtaText: {
+    color: "#FFFFFF",
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    fontWeight: "600",
+  },
+  doneCTA: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E5E5E5",
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: "center",
+  },
+  doneCtaText: {
+    color: "#1A1A1A",
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    fontWeight: "600",
+  },
+  loadingCenterContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // Modal styles for key claims
+  stickyKeyClaims: {
+    position: 'absolute',
+    top: 140, // Adjust based on summary header height
+    left: 0,
+    right: 0,
+    zIndex: 10,
+    backgroundColor: '#fff',
+    paddingHorizontal: 24,
+  },
+  claimModalOverlay: {
+    flex: 1,
+    backgroundColor: 'transparent',
+    justifyContent: 'flex-end',
+  },
+  claimModalContent: {
+    display: 'flex',
+    padding: 40,
+    paddingTop: 40,
+    paddingRight: 57,
+    paddingBottom: 5,
+    paddingLeft: 40,
+    flexDirection: 'column',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    backgroundColor: '#FAFAFA',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 20,
+    elevation: 10,
+    borderTopLeftRadius: 16,
+    borderTopRightRadius: 16,
+  },
+  claimModalText: {
+    fontSize: 16,
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
+    color: TEXT_SECONDARY,
+    lineHeight: 24,
+    textAlign: 'left',
+    width: '100%',
+  },
+  
+  // Original analysis mode styles
   header: {
     flexDirection: 'row',
     alignItems: 'center',
