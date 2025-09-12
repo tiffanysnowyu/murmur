@@ -1,5 +1,5 @@
 // app/text.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   TextInput,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Pressable,
   Alert,
+  Animated,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 
@@ -14,6 +15,9 @@ export default function TextPage() {
   const { initialText, mode: initialMode } = useLocalSearchParams();
   const [text, setText] = useState('');
   const [mode, setMode] = useState<'analyze' | 'summarize' | null>(null);
+  
+  // Animation state
+  const continueButtonScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (initialText && typeof initialText === 'string') {
@@ -58,6 +62,21 @@ export default function TextPage() {
     } else {
       return 'Analyze Claim';
     }
+  };
+
+  // Continue button press animations
+  const handleContinueButtonPressIn = () => {
+    Animated.spring(continueButtonScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleContinueButtonPressOut = () => {
+    Animated.spring(continueButtonScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
   };
 
   // Mode selection screen
@@ -137,7 +156,7 @@ export default function TextPage() {
         style={styles.input}
         multiline
         placeholder="Paste text here..."
-        placeholderTextColor="#B0B0B8"
+        placeholderTextColor="#D1D1D6"
         value={text}
         onChangeText={setText}
       />
@@ -150,9 +169,13 @@ export default function TextPage() {
           pressed && text.trim() && styles.submitButtonPressed,
         ]}
         onPress={handleAnalyze}
+        onPressIn={text.trim() ? handleContinueButtonPressIn : undefined}
+        onPressOut={text.trim() ? handleContinueButtonPressOut : undefined}
         disabled={!text.trim()}
       >
-        <Text style={styles.submitButtonText}>Continue</Text>
+        <Animated.View style={{ transform: [{ scale: continueButtonScale }] }}>
+          <Text style={styles.submitButtonText}>Continue</Text>
+        </Animated.View>
       </Pressable>
     </View>
   );
@@ -200,14 +223,14 @@ const styles = StyleSheet.create({
   title: { 
     fontSize: 32,
     fontFamily: "SF Pro Display",
-    fontWeight: "700", 
+    fontWeight: "600", 
     color: "#1A1A1A",
   },
   subtitle: { 
     fontSize: 18,
     fontFamily: "SF Pro Display", 
     fontWeight: "400",
-    color: "#000000",
+    color: "#1A1A1A",
     paddingBottom: 24,
   },
   options: { 
@@ -254,7 +277,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     paddingTop: 80,
     paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: 64,
   },
   inputBackButton: {
     flexDirection: "row",
@@ -276,7 +299,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: "SF Pro Display",
     fontWeight: "400",
-    color: "#000000",
+    color: "#1A1A1A",
     lineHeight: 24,
   },
   divider: {
@@ -307,7 +330,7 @@ const styles = StyleSheet.create({
     marginTop: 40,
   },
   submitButtonPressed: {
-    backgroundColor: "#000000",
+    backgroundColor: "#1A1A1A",
   },
   submitButtonDisabled: {
     backgroundColor: "#D1D5DB",

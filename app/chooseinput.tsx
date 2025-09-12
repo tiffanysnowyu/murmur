@@ -93,7 +93,7 @@ const styles = StyleSheet.create({
   title: { 
     fontSize: 32,
     fontFamily: "SF Pro Display",
-    fontWeight: "700", 
+    fontWeight: "600", 
     color: "#1A1A1A",
   },
   subtitle: { 

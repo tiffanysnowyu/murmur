@@ -40,16 +40,23 @@ export default function ResponsePage() {
   
   // Animation states
   const scaleAnim = useRef(new Animated.Value(1)).current;
+  const analyzeCTAScale = useRef(new Animated.Value(1)).current;
+  const doneCTAScale = useRef(new Animated.Value(1)).current;
   const [isPressed, setIsPressed] = useState(false);
   
   // Summary-specific states
   const [showFullArticle, setShowFullArticle] = useState(false);
   const [expandedClaims, setExpandedClaims] = useState<Set<number>>(new Set());
+  const [showSummaryTitle, setShowSummaryTitle] = useState(true);
+  const [showCTAs, setShowCTAs] = useState(false);
   const [parsedSummary, setParsedSummary] = useState<{
     article: string;
     overview: string;
     keyClaims: Array<{ title: string; content: string }>;
   }>({ article: '', overview: '', keyClaims: [] });
+
+  // Used to track whether or not we have already called the AI model API (OpenAI or Anthropic)
+  const calledExternalModel = useRef(false);
 
   // Get the text from parameters
   const inputText = (claim || text) as string;
@@ -141,6 +148,35 @@ export default function ResponsePage() {
       newExpanded.add(index);
     }
     setExpandedClaims(newExpanded);
+  };
+
+  // CTA Press animations
+  const handleAnalyzeCTAPressIn = () => {
+    Animated.spring(analyzeCTAScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleAnalyzeCTAPressOut = () => {
+    Animated.spring(analyzeCTAScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleDoneCTAPressIn = () => {
+    Animated.spring(doneCTAScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleDoneCTAPressOut = () => {
+    Animated.spring(doneCTAScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
   };
 
   // Save insight to file
@@ -279,15 +315,15 @@ TASK: Provide a comprehensive analysis in EXACTLY this format:
 
 ## Key Claims
 **[First key claim stated clearly]**
-[Detailed explanation of this claim including evidence and context]
+[First sentence explaining this claim. Second sentence with additional context or evidence.]
 
 **[Second key claim stated clearly]**
-[Detailed explanation of this claim including evidence and context]
+[First sentence explaining this claim. Second sentence with additional context or evidence.]
 
 **[Third key claim stated clearly]**
-[Detailed explanation of this claim including evidence and context]
+[First sentence explaining this claim. Second sentence with additional context or evidence.]
 
-Include 3-5 key claims. Each must have a clear statement followed by explanation.
+Include 3-5 key claims. Each must have a clear statement followed by exactly two sentences of explanation.
 
 Note: The content may be incomplete due to technical limitations in extraction. Format with clear headings and be thorough with available information.`;
     } else if (isPreFactChecked) {
@@ -651,9 +687,13 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   };
 
   useEffect(() => {
+    // If we have already analyzed content, don't do it again
+    if (calledExternalModel.current) return;
+
     if (inputText && typeof inputText === 'string') {
       const analysisMode = currentMode || 'analyze';
       analyzeContentWithClaude(inputText, analysisMode);
+      calledExternalModel.current = true;
     }
   }, [inputText, currentMode]);
 
@@ -863,7 +903,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
       <View style={styles.container}>
         <View style={styles.summaryHeader}>
           <Pressable style={styles.summaryBackButton} onPress={goBack}>
-            <Text style={styles.summaryChevron}>‹</Text>
+            <Image source={require('../assets/images/chevron_back.png')} style={styles.summaryChevron} />
             <Text style={styles.summaryBackText}>Back</Text>
           </Pressable>
           
@@ -884,15 +924,29 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     return (
       <View style={styles.container}>
         {/* Header */}
-        <View style={styles.summaryHeader}>
+        <View style={[styles.summaryHeader, !showSummaryTitle && styles.summaryHeaderPinned]}>
           <Pressable style={styles.summaryBackButton} onPress={goBack}>
-            <Text style={styles.summaryChevron}>‹</Text>
+            <Image source={require('../assets/images/chevron_back.png')} style={styles.summaryChevron} />
             <Text style={styles.summaryBackText}>Back</Text>
           </Pressable>
 
-          <View style={styles.summaryArea}>
-            <Text style={styles.summaryTitle}>Summary</Text>
-            <Pressable style={styles.summarySaveButton} onPress={handleSaveButtonPress}>
+          {showSummaryTitle ? (
+            <View style={styles.summaryArea}>
+              <Text style={styles.summaryTitle}>Summary</Text>
+              <Pressable style={styles.summarySaveButton} onPress={handleSaveButtonPress}>
+                <Animated.Image 
+                  source={(isSaved || isPressed) ? require('../assets/images/save_summ_filled.png') : require('../assets/images/save_summ.png')} 
+                  style={[
+                    styles.summarySaveIcon,
+                    {
+                      transform: [{ scale: scaleAnim }]
+                    }
+                  ]}
+                />
+              </Pressable>
+            </View>
+          ) : (
+            <Pressable style={styles.summarySaveButtonPinned} onPress={handleSaveButtonPress}>
               <Animated.Image 
                 source={(isSaved || isPressed) ? require('../assets/images/save_summ_filled.png') : require('../assets/images/save_summ.png')} 
                 style={[
@@ -903,22 +957,47 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
                 ]}
               />
             </Pressable>
-          </View>
+          )}
         </View>
 
-        <ScrollView style={styles.summaryContent} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+          style={styles.summaryContent} 
+          showsVerticalScrollIndicator={false}
+          onScroll={(event) => {
+            const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+            const scrollY = contentOffset.y;
+            const scrollHeight = contentSize.height;
+            const screenHeight = layoutMeasurement.height;
+            
+            // Hide title after scrolling 20px
+            setShowSummaryTitle(scrollY < 20);
+            
+            // Show CTAs when scrolled past a certain point (e.g., 300px)
+            setShowCTAs(scrollY > 300);
+          }}
+          scrollEventThrottle={16}
+        >
           {/* Article Section */}
           <View style={styles.summarySection}>
             <Text style={styles.summarySectionTitle}>Article</Text>
-            <ScrollView 
-              style={styles.summaryArticleContainer}
-              showsVerticalScrollIndicator={true}
-              nestedScrollEnabled={true}
-            >
-              <Text style={styles.summaryArticleText}>
+            <View style={styles.summaryArticleContainer}>
+              <Text 
+                style={styles.summaryArticleText}
+                numberOfLines={showFullArticle ? undefined : 3}
+              >
                 {inputText}
               </Text>
-            </ScrollView>
+            </View>
+            {!showFullArticle && (
+              <Pressable onPress={() => setShowFullArticle(true)}>
+                <Text style={styles.summaryMoreButton}>More</Text>
+              </Pressable>
+            )}
+            {showFullArticle && (
+              <Pressable onPress={() => setShowFullArticle(false)}>
+                <Text style={styles.summaryMoreButton}>Less</Text>
+              </Pressable>
+            )}
           </View>
 
           {/* Divider */}
@@ -934,7 +1013,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
 
           {/* Key Claims Section */}
           {parsedSummary.keyClaims.length > 0 && (
-            <View style={styles.summarySection}>
+            <View style={[styles.summarySection, styles.keyClaimsSection]}>
               <Text style={styles.summarySectionTitle}>Key Claims</Text>
               
               {parsedSummary.keyClaims.map((claim, index) => (
@@ -947,29 +1026,75 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
                     <Text style={styles.claimTitle}>
                       {claim.title}
                     </Text>
-                    <Text style={[
-                      styles.claimChevron,
-                      expandedClaims.has(index) && styles.claimChevronExpanded
-                    ]}>
-                      ‹
-                    </Text>
+                    <Image 
+                      source={expandedClaims.has(index) 
+                        ? require('../assets/images/chevron_summ.png') 
+                        : require('../assets/images/chevron_list.png')
+                      }
+                      style={styles.claimChevronImage}
+                    />
                   </View>
                   
                   {expandedClaims.has(index) && (
-                    <View style={styles.claimContent}>
-                      <Text style={styles.claimText}>
-                        {claim.content}
-                      </Text>
-                      
-                      {/* Explanation section if it exists */}
-                      {claim.content.includes('Explanation:') && (
-                        <View style={styles.explanationSection}>
-                          <Text style={styles.explanationTitle}>Explanation</Text>
-                          <Text style={styles.explanationText}>
-                            • {claim.content.split('Explanation:')[1]?.trim()}
-                          </Text>
-                        </View>
-                      )}
+                    <View style={styles.explanationContentBox}>
+                      <Text style={styles.explanationHeader}>Explanation</Text>
+                      {(() => {
+                        // Split content into sentences accounting for abbreviations and edge cases
+                        const splitIntoSentences = (text: string) => {
+                          // Common abbreviations that shouldn't trigger sentence breaks
+                          const abbreviations = [
+                            'u.s.', 'u.k.', 'e.g.', 'i.e.', 'etc.', 'vs.', 'mr.', 'mrs.', 'ms.', 'dr.', 'prof.',
+                            'inc.', 'ltd.', 'corp.', 'co.', 'govt.', 'dept.', 'min.', 'max.', 'approx.',
+                            'a.m.', 'p.m.', 'b.c.', 'a.d.', 'ph.d.', 'm.d.', 'b.a.', 'm.a.', 'j.d.',
+                            'no.', 'vol.', 'ch.', 'sec.', 'fig.', 'ref.', 'ed.', 'rev.', 'st.', 'ave.',
+                            'jan.', 'feb.', 'mar.', 'apr.', 'jun.', 'jul.', 'aug.', 'sep.', 'oct.', 'nov.', 'dec.'
+                          ];
+                          
+                          // Replace abbreviations temporarily with placeholders
+                          let tempText = text;
+                          const placeholders: { [key: string]: string } = {};
+                          abbreviations.forEach((abbr, index) => {
+                            const placeholder = `__ABBR_${index}__`;
+                            const regex = new RegExp(abbr.replace(/\./g, '\\.'), 'gi');
+                            tempText = tempText.replace(regex, (match) => {
+                              placeholders[placeholder] = match;
+                              return placeholder;
+                            });
+                          });
+                          
+                          // Split on sentence-ending punctuation followed by space and capital letter
+                          // or at the end of text
+                          const sentences = tempText
+                            .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=[.!?])$/)
+                            .map(s => s.trim())
+                            .filter(s => s.length > 0);
+                          
+                          // Restore abbreviations
+                          return sentences.map(sentence => {
+                            let restored = sentence;
+                            Object.entries(placeholders).forEach(([placeholder, original]) => {
+                              restored = restored.replace(new RegExp(placeholder, 'g'), original);
+                            });
+                            return restored;
+                          });
+                        };
+                        
+                        const sentences = splitIntoSentences(claim.content).slice(0, 2);
+                        
+                        return sentences.map((sentence, sentenceIndex) => (
+                          <React.Fragment key={sentenceIndex}>
+                            <View style={styles.bulletPointContainer}>
+                              <Text style={styles.bulletPoint}>•</Text>
+                              <Text style={styles.claimText}>
+                                {sentence}{sentence.match(/[.!?]$/) ? '' : '.'}
+                              </Text>
+                            </View>
+                            {sentenceIndex < sentences.length - 1 && (
+                              <View style={styles.claimDivider} />
+                            )}
+                          </React.Fragment>
+                        ));
+                      })()}
                     </View>
                   )}
                 </Pressable>
@@ -978,15 +1103,31 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           )}
 
           {/* CTA Buttons at the bottom */}
-          <View style={styles.ctaContainer}>
-            <Pressable style={styles.analyzeCTA} onPress={handleAnalyzeClaims}>
-              <Text style={styles.analyzeCtaText}>Analyze these claims</Text>
-            </Pressable>
-            
-            <Pressable style={styles.doneCTA} onPress={goBack}>
-              <Text style={styles.doneCtaText}>Done</Text>
-            </Pressable>
-          </View>
+          {showCTAs && (
+            <View style={styles.ctaContainer}>
+              <Pressable 
+                style={styles.analyzeCTA} 
+                onPress={handleAnalyzeClaims}
+                onPressIn={handleAnalyzeCTAPressIn}
+                onPressOut={handleAnalyzeCTAPressOut}
+              >
+                <Animated.View style={{ transform: [{ scale: analyzeCTAScale }] }}>
+                  <Text style={styles.analyzeCtaText}>Analyze these claims</Text>
+                </Animated.View>
+              </Pressable>
+              
+              <Pressable 
+                style={styles.doneCTA} 
+                onPress={goBack}
+                onPressIn={handleDoneCTAPressIn}
+                onPressOut={handleDoneCTAPressOut}
+              >
+                <Animated.View style={{ transform: [{ scale: doneCTAScale }] }}>
+                  <Text style={styles.doneCtaText}>Done</Text>
+                </Animated.View>
+              </Pressable>
+            </View>
+          )}
         </ScrollView>
 
       </View>
@@ -1246,7 +1387,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
 const BACK_TEXT = "#B0B0B8";
 const TEXT_PRIMARY = "#1A1A1A";
 const TEXT_SECONDARY = "#595959";
-const DIVIDER_COLOR = "#E5E5E5";
+const DIVIDER_COLOR = "#D1D1D6";
 const LINK_COLOR = "#007AFF";
 
 const styles = StyleSheet.create({
@@ -1257,6 +1398,9 @@ const styles = StyleSheet.create({
     paddingTop: 72,
     paddingHorizontal: 24,
     backgroundColor: "#FFFFFF",
+  },
+  summaryHeaderPinned: {
+    paddingBottom: 16,
   },
   summaryArea: {
     flexDirection: "row",
@@ -1270,12 +1414,8 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   summaryChevron: {
-    fontSize: 24,
-    color: BACK_TEXT,
     width: 24,
     height: 24,
-    lineHeight: 24,
-    textAlign: "center",
   },
   summaryBackText: {
     fontSize: 17,
@@ -1287,12 +1427,17 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 32,
     fontFamily: "SF Pro Display",
-    fontWeight: "700",
+    fontWeight: "600",
     color: TEXT_PRIMARY,
     textAlign: "left",
   },
   summarySaveButton: {
-    padding: 8,
+    padding: 0,
+  },
+  summarySaveButtonPinned: {
+    position: 'absolute',
+    right: 24, // Adjust for padding to align with page margin
+    top: 72, // Vertically center with back button
   },
   summarySaveIcon: {
     width: 24,
@@ -1305,30 +1450,37 @@ const styles = StyleSheet.create({
   summarySection: {
     marginBottom: 0,
   },
+  keyClaimsSection: {
+    marginBottom: 72,
+  },
   summarySectionTitle: {
     fontSize: 24,
     fontFamily: "SF Pro Display",
     fontWeight: "600",
     color: TEXT_PRIMARY,
-    marginBottom: 16,
+    marginBottom: 32,
     marginTop: 48,
   },
   summaryArticleContainer: {
-    maxHeight: 96, // 4 lines * 24 lineHeight
+    overflow: 'hidden',
   },
   summaryArticleText: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: "SF Pro Display",
     fontWeight: "400",
-    color: TEXT_SECONDARY,
-    lineHeight: 24,
+    color: '#1A1A1A',
+    lineHeight: 27, // 150% of 18px
+    letterSpacing: -0.198,
   },
   summaryMoreButton: {
-    fontSize: 16,
+    color: '#248E9C',
     fontFamily: "SF Pro Display",
-    fontWeight: "400",
-    color: LINK_COLOR,
-    marginTop: 8,
+    fontSize: 14,
+    fontWeight: "600",
+    lineHeight: 21, // 150% of 14px
+    letterSpacing: -0.154,
+    alignSelf: 'stretch',
+    marginTop: 16,
   },
   summaryDivider: {
     height: 1,
@@ -1336,36 +1488,36 @@ const styles = StyleSheet.create({
     marginTop: 48,
   },
   summaryOverviewText: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: "SF Pro Display",
     fontWeight: "400",
-    color: TEXT_SECONDARY,
-    lineHeight: 24,
+    color: '#1A1A1A',
+    lineHeight: 27, // 150% of 18px
+    letterSpacing: -0.198,
   },
   claimContainer: {
-    marginBottom: 16,
+    marginBottom: 0,
   },
   claimHeader: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    width: 345,
+    justifyContent: "center",
     alignItems: "flex-start",
-    paddingVertical: 12,
+    gap: 8,
+    paddingBottom: 32,
   },
   claimTitle: {
-    flex: 1,
-    fontSize: 16,
+    width: 313,
+    color: '#1A1A1A',
     fontFamily: "SF Pro Display",
+    fontSize: 18,
     fontWeight: "400",
-    color: TEXT_SECONDARY,
-    lineHeight: 24,
+    lineHeight: 27, // 150% of 18px
+    letterSpacing: -0.198,
   },
-  claimChevron: {
-    fontSize: 20,
-    color: TEXT_SECONDARY,
-    transform: [{ rotate: '-90deg' }],
-  },
-  claimChevronExpanded: {
-    transform: [{ rotate: '90deg' }],
+  claimChevronImage: {
+    width: 24,
+    height: 24,
   },
   claimContent: {
     paddingTop: 8,
@@ -1374,21 +1526,69 @@ const styles = StyleSheet.create({
     borderTopColor: DIVIDER_COLOR,
   },
   claimText: {
-    fontSize: 16,
+    fontSize: 18,
     fontFamily: "SF Pro Display",
     fontWeight: "400",
-    color: TEXT_SECONDARY,
-    lineHeight: 24,
+    color: '#595959',
+    lineHeight: 27, // 150% of 18px
+    letterSpacing: -0.198,
+    textAlign: 'left',
+    flex: 1,
+    marginBottom: 0,
   },
-  explanationSection: {
-    marginTop: 16,
+  bulletPointContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    width: '100%',
+    marginBottom: 0,
   },
-  explanationTitle: {
-    fontSize: 20,
+  bulletPoint: {
+    fontSize: 18,
     fontFamily: "SF Pro Display",
-    fontWeight: "600",
-    color: TEXT_PRIMARY,
-    marginBottom: 12,
+    fontWeight: "400",
+    color: '#595959',
+    lineHeight: 27,
+    letterSpacing: -0.198,
+    marginRight: 12,
+  },
+  claimDivider: {
+    width: 264,
+    height: 1,
+    backgroundColor: '#D1D1D6',
+    alignSelf: 'center',
+    marginTop: 24,
+    marginBottom: 24,
+  },
+  explanationHeader: {
+    alignSelf: 'stretch',
+    color: '#5C5C6A',
+    fontFamily: 'SF Pro',
+    fontSize: 20,
+    fontWeight: '600',
+    lineHeight: 30, // 150% of 20px
+    letterSpacing: -0.22,
+    marginBottom: 24,
+  },
+  explanationContentBox: {
+    width: 393,
+    paddingTop: 48,
+    paddingHorizontal: 48,
+    paddingBottom: 40,
+    flexDirection: 'column',
+    justifyContent: 'flex-start',
+    alignItems: 'center',
+    backgroundColor: '#F9F9F9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+    elevation: 10,
+    borderTopLeftRadius: 0, 
+    borderTopRightRadius: 0,
+    marginLeft: -24,
+    marginRight: -24,
+    marginBottom: 72,
+    alignSelf: 'center',
   },
   explanationText: {
     fontSize: 16,
@@ -1398,8 +1598,9 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   ctaContainer: {
-    paddingVertical: 40,
+    paddingVertical: 0,
     gap: 16,
+    marginBottom: 64,
   },
   analyzeCTA: {
     backgroundColor: "#1A1A1A",
@@ -1434,38 +1635,10 @@ const styles = StyleSheet.create({
   },
   
   // Modal styles for key claims
-  stickyKeyClaims: {
-    position: 'absolute',
-    top: 140, // Adjust based on summary header height
-    left: 0,
-    right: 0,
-    zIndex: 10,
-    backgroundColor: '#fff',
-    paddingHorizontal: 24,
-  },
   claimModalOverlay: {
     flex: 1,
     backgroundColor: 'transparent',
     justifyContent: 'flex-end',
-  },
-  claimModalContent: {
-    display: 'flex',
-    padding: 40,
-    paddingTop: 40,
-    paddingRight: 57,
-    paddingBottom: 5,
-    paddingLeft: 40,
-    flexDirection: 'column',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-    backgroundColor: '#FAFAFA',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.07,
-    shadowRadius: 20,
-    elevation: 10,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
   },
   claimModalText: {
     fontSize: 16,
@@ -1490,7 +1663,7 @@ const styles = StyleSheet.create({
   },
   backButton: { marginRight: 16 },
   backButtonText: { fontSize: 16, color: '#32535F', fontWeight: '600' },
-  title: { fontSize: 20, fontWeight: 'bold', color: '#333', flex: 1 },
+  title: { fontSize: 20, fontWeight: '600', color: '#333', flex: 1 },
   saveButton: { padding: 8 },
   saveButtonText: { fontSize: 20 },
   content: { flex: 1, padding: 16 },
@@ -1539,7 +1712,7 @@ const styles = StyleSheet.create({
   warningText: { fontSize: 12, color: '#856404', fontStyle: 'italic' },
 
   responseSection: { flex: 1 },
-  sectionTitle: { fontSize: 18, fontWeight: 'bold', color: '#333', marginBottom: 16 },
+  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A', marginBottom: 16 },
 
   loadingContainer: { alignItems: 'center', paddingVertical: 40 },
   loadingText: { marginTop: 12, fontSize: 16, color: '#666', textAlign: 'center', fontWeight: '600' },
@@ -1560,7 +1733,7 @@ const styles = StyleSheet.create({
   // Titles for H2 sections (outside of collapsibles)
   h2Title: {
     fontSize: 17,
-    fontWeight: '700',
+    fontWeight: '600',
     color: '#32535F',
     marginBottom: 8,
   },
@@ -1581,7 +1754,6 @@ const styles = StyleSheet.create({
     fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
   },
   boldText: { fontWeight: 'bold', fontSize: 16, lineHeight: 24, color: '#333' },
-  bulletPoint: { fontSize: 16, lineHeight: 24, color: '#333', paddingLeft: 20, marginVertical: 4 },
   sourceText: { fontWeight: 'bold', color: '#32535F' },
 
   // Collapsible styles (for sub-items)
@@ -1662,7 +1834,7 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  modalTitle: { fontSize: 20, fontWeight: 'bold', color: '#28a745', marginBottom: 12 },
+  modalTitle: { fontSize: 20, fontWeight: '600', color: '#28a745', marginBottom: 12 },
   modalMessage: { fontSize: 16, color: '#333', textAlign: 'center', lineHeight: 24, marginBottom: 20 },
   modalButton: { backgroundColor: '#32535F', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
   modalButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
