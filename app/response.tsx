@@ -22,7 +22,7 @@ import { findSourcesFirst, formatSourceReferences } from '../utils/sourceFirst';
 const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
 
 export default function ResponsePage() {
-  const { claim, text, mode, previousClaim } = useLocalSearchParams();
+  const { claim, text, mode, previousClaim, savedResponse } = useLocalSearchParams();
   const [response, setResponse] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -54,6 +54,12 @@ export default function ResponsePage() {
     overview: string;
     keyClaims: Array<{ title: string; content: string }>;
   }>({ article: '', overview: '', keyClaims: [] });
+
+  const [parsedAnalysis, setParsedAnalysis] = useState<{
+    overview: string;
+    keyClaims: Array<{ title: string; content: string }>;
+    bottomLine: string;
+  }>({ overview: '', keyClaims: [], bottomLine: '' });
 
   // Used to track whether or not we have already called the AI model API (OpenAI or Anthropic)
   const calledExternalModel = useRef(false);
@@ -138,6 +144,44 @@ export default function ResponsePage() {
     });
 
     setParsedSummary({ article, overview, keyClaims });
+  };
+
+  const parseAnalyzeResponse = (responseText: string) => {
+    const sections = responseText.split(/^##\s+/m).filter(s => s.trim());
+
+    const splitByBottomLine = responseText.split('Bottom line')
+    let overview = splitByBottomLine[0].replace(':', '').trim()
+    let bottomLine = splitByBottomLine.length > 1 ? splitByBottomLine[1].replace(':', '').trim() : ''
+    // console.log('BEFORE BOTTOM LINE:', beforeottomLine, '\n\n')
+    
+   
+    // SEEMS LIKE THIS CODE IS NOT DOING ANYTHING
+    const keyClaims: Array<{ title: string; content: string }> = [];
+
+    // sections.forEach(section => {
+    //   const lines = section.trim().split('\n');
+    //   const sectionTitle = lines[0].trim().toLowerCase();
+    //   const content = lines.slice(1).join('\n').trim();
+
+    //   if (sectionTitle.includes('overview') || sectionTitle.includes('summary')) {
+    //     overview = content;
+    //   } else if (sectionTitle.includes('bottom line') || sectionTitle.includes('conclusion')) {
+    //     bottomLine = content;
+    //   } else if (sectionTitle.includes('key') && (sectionTitle.includes('claims') || sectionTitle.includes('findings'))) {
+    //     // Parse key claims
+    //     const claimMatches = content.matchAll(/\*\*([^*]+)\*\*\n([^*]+)(?=\*\*|$)/g);
+    //     for (const match of claimMatches) {
+    //       keyClaims.push({
+    //         title: match[1].trim(),
+    //         content: match[2].trim()
+    //       });
+    //     }
+    //   }
+    // });
+    // console.log('OVERVIEW:', overview, '\n\n')
+    // console.log('BOTTOM LINE:', bottomLine, '\n\n')
+    // console.log('KEY CLAIMS:', keyClaims, '\n\n')
+    return { overview, keyClaims, bottomLine };
   };
 
   const toggleClaim = (index: number) => {
@@ -661,6 +705,10 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         // Parse summary if in summary mode
         if (analysisMode === 'summarize') {
           parseSummaryResponse(reply);
+        } else {
+          // Parse analyze response for structured display
+          const parsed = parseAnalyzeResponse(reply);
+          setParsedAnalysis(parsed);
         }
         
         setAnalysisStep('');
@@ -690,12 +738,29 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     // If we have already analyzed content, don't do it again
     if (calledExternalModel.current) return;
 
+    // If we have a saved response, use it instead of calling API
+    if (savedResponse && typeof savedResponse === 'string') {
+      setResponse(savedResponse);
+      const analysisMode = currentMode || 'analyze';
+      
+      // Parse the saved response
+      if (analysisMode === 'summarize') {
+        parseSummaryResponse(savedResponse);
+      } else {
+        const parsed = parseAnalyzeResponse(savedResponse);
+        setParsedAnalysis(parsed);
+      }
+      
+      calledExternalModel.current = true;
+      return;
+    }
+
     if (inputText && typeof inputText === 'string') {
       const analysisMode = currentMode || 'analyze';
       analyzeContentWithClaude(inputText, analysisMode);
       calledExternalModel.current = true;
     }
-  }, [inputText, currentMode]);
+  }, [inputText, currentMode, savedResponse]);
 
   const handleRetry = () => {
     if (inputText && typeof inputText === 'string') {
@@ -721,7 +786,9 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   };
 
   const goBack = () => {
-    if (previousClaim) {
+    if (savedResponse) {
+      router.push('/insights');
+    } else if (previousClaim) {
       router.push({
         pathname: '/response',
         params: { text: previousClaim, mode: currentMode },
@@ -740,7 +807,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
     if (isSummaryMode) return 'Summary';
     if (isPreFactChecked) return 'Fact-Check Analysis';
-    return 'Claim Analysis';
+    return 'Analysis';
   };
 
   const getContentLabel = () => {
@@ -904,7 +971,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         <View style={styles.summaryHeader}>
           <Pressable style={styles.summaryBackButton} onPress={goBack}>
             <Image source={require('../assets/images/chevron_back.png')} style={styles.summaryChevron} />
-            <Text style={styles.summaryBackText}>Back</Text>
+            <Text style={styles.summaryBackText}>{savedResponse ? 'Saved Insights' : 'Back'}</Text>
           </Pressable>
           
           <Text style={styles.summaryTitle}>Summary</Text>
@@ -927,7 +994,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         <View style={[styles.summaryHeader, !showSummaryTitle && styles.summaryHeaderPinned]}>
           <Pressable style={styles.summaryBackButton} onPress={goBack}>
             <Image source={require('../assets/images/chevron_back.png')} style={styles.summaryChevron} />
-            <Text style={styles.summaryBackText}>Back</Text>
+            <Text style={styles.summaryBackText}>{savedResponse ? 'Saved Insights' : 'Back'}</Text>
           </Pressable>
 
           {showSummaryTitle ? (
@@ -935,7 +1002,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
               <Text style={styles.summaryTitle}>Summary</Text>
               <Pressable style={styles.summarySaveButton} onPress={handleSaveButtonPress}>
                 <Animated.Image 
-                  source={(isSaved || isPressed) ? require('../assets/images/save_summ_filled.png') : require('../assets/images/save_summ.png')} 
+                  source={(isSaved || isPressed || savedResponse) ? require('../assets/images/save_summ_filled.png') : require('../assets/images/save_summ.png')} 
                   style={[
                     styles.summarySaveIcon,
                     {
@@ -948,7 +1015,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           ) : (
             <Pressable style={styles.summarySaveButtonPinned} onPress={handleSaveButtonPress}>
               <Animated.Image 
-                source={(isSaved || isPressed) ? require('../assets/images/save_summ_filled.png') : require('../assets/images/save_summ.png')} 
+                source={(isSaved || isPressed || savedResponse) ? require('../assets/images/save_summ_filled.png') : require('../assets/images/save_summ.png')} 
                 style={[
                   styles.summarySaveIcon,
                   {
@@ -1103,7 +1170,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           )}
 
           {/* CTA Buttons at the bottom */}
-          {showCTAs && (
+          {showCTAs && !savedResponse && (
             <View style={styles.ctaContainer}>
               <Pressable 
                 style={styles.analyzeCTA} 
@@ -1139,19 +1206,57 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   // =========================
   return (
     <View style={styles.container}>
-     <View style={styles.header}>
-        <TouchableOpacity onPress={goBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.title}>{getTitle()}</Text>
-        {response && !loading && (
-          <TouchableOpacity onPress={handleSaveButtonPress} style={styles.saveButton}>
-            <Text style={styles.saveButtonText}>{isSaved ? '✓' : '💾'}</Text>
-          </TouchableOpacity>
+      {/* Header */}
+      <View style={[styles.summaryHeader, !showSummaryTitle && styles.summaryHeaderPinned]}>
+        <Pressable style={styles.summaryBackButton} onPress={goBack}>
+          <Image source={require('../assets/images/chevron_back.png')} style={styles.summaryChevron} />
+          <Text style={styles.summaryBackText}>Back</Text>
+        </Pressable>
+
+        {showSummaryTitle ? (
+          <View style={styles.summaryArea}>
+            <Text style={styles.summaryTitle}>{getTitle()}</Text>
+            {response && !loading && (
+              <Pressable style={styles.summarySaveButton} onPress={handleSaveButtonPress}>
+                <Animated.Image 
+                  source={(isSaved || isPressed || savedResponse) ? require('../assets/images/save_analysis_filled.png') : require('../assets/images/save_analysis.png')} 
+                  style={[
+                    styles.summarySaveIcon,
+                    {
+                      transform: [{ scale: scaleAnim }]
+                    }
+                  ]}
+                />
+              </Pressable>
+            )}
+          </View>
+        ) : (
+          response && !loading && (
+            <Pressable style={styles.summarySaveButtonPinned} onPress={handleSaveButtonPress}>
+              <Animated.Image 
+                source={(isSaved || isPressed || savedResponse) ? require('../assets/images/save_analysis_filled.png') : require('../assets/images/save_analysis.png')} 
+                style={[
+                  styles.summarySaveIcon,
+                  {
+                    transform: [{ scale: scaleAnim }]
+                  }
+                ]}
+              />
+            </Pressable>
+          )
         )}
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={styles.summaryContent} 
+        showsVerticalScrollIndicator={false}
+        onScroll={(event) => {
+          const scrollY = event.nativeEvent.contentOffset.y;
+          setShowSummaryTitle(scrollY < 20);
+          setShowCTAs(scrollY > 300);
+        }}
+        scrollEventThrottle={16}
+      >
         {previousClaim && (
           <View style={styles.followUpFromSection}>
             <Text style={styles.followUpFromLabel}>Follow-up to:</Text>
@@ -1159,28 +1264,31 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           </View>
         )}
 
+        {/* Content to Analyze Section */}
         {inputText && (
-          <View style={styles.inputSection}>
-            <View
-              style={[
-                styles.typeIndicator,
-                inputText && detectPreFactCheckedContent(inputText) && styles.preFactCheckedIndicator,
-              ]}
-            >
-              <Text style={styles.typeText}>{getContentLabel()}</Text>
+          <View style={styles.summarySection}>
+            <Text style={styles.summarySectionTitle}>Content</Text>
+            <View style={styles.summaryArticleContainer}>
+              <Text 
+                style={styles.summaryArticleText}
+                numberOfLines={showFullArticle ? undefined : 3}
+              >
+                {inputText}
+              </Text>
             </View>
-            <Text style={styles.inputText}>{inputText || 'No content provided'}</Text>
+            {!showFullArticle && (
+              <Pressable onPress={() => setShowFullArticle(true)}>
+                <Text style={[styles.summaryMoreButton, { color: '#7A42F4' }]}>More</Text>
+              </Pressable>
+            )}
+            {showFullArticle && (
+              <Pressable onPress={() => setShowFullArticle(false)}>
+                <Text style={[styles.summaryMoreButton, { color: '#7A42F4' }]}>Less</Text>
+              </Pressable>
+            )}
           </View>
         )}
 
-        {sourceSearchTime && (
-          <View style={styles.sourceInfoSection}>
-            <Text style={styles.sourceInfoTitle}>🔍 Source Search {sourceSearchTime}</Text>
-            <Text style={styles.sourceInfoText}>
-              {foundSources.length > 0 ? `Found ${foundSources.length} sources for citations` : 'No sources found - analysis based on knowledge'}
-            </Text>
-          </View>
-        )}
 
         {articleData && isSummaryMode && (
           <View style={styles.articleInfoSection}>
@@ -1193,13 +1301,12 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           </View>
         )}
 
-        <View style={styles.responseSection}>
-          <Text style={styles.sectionTitle}>
-            {isSummaryMode
-              ? 'Analysis:'
-              : inputText && detectPreFactCheckedContent(inputText)
-              ? 'Meta-Analysis Results:'
-              : 'Fact-Check Results:'}
+        {/* Fact-Check Results Section */}
+        <View style={[styles.summarySection]}>
+          <Text style={styles.summarySectionTitle}>
+            {inputText && detectPreFactCheckedContent(inputText)
+              ? 'Meta-Analysis Results'
+              : 'Fact-Check Results'}
           </Text>
 
           {loading && (
@@ -1218,147 +1325,147 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
             </View>
           )}
 
-          {response && !loading && (
-            <View style={styles.responseContainer}>
-              {/* Break into H2 sections. Titles outside of collapsibles. */}
-              {splitByH2(response).map((sec, sIdx) => {
-                const title = sec.title?.trim() || 'Section';
-                const always = isAlwaysVisible(title);
-                const bodyForRender = stripDuplicateLeadBold(title, sec.body || '');
-
-                // Always-visible sections (Summary, Perspective, Relax, Bottom line...)
-                if (always) {
-                  const lines = bodyForRender.split('\n');
-                  return (
-                    <View key={`sec-${sIdx}`} style={{ marginBottom: 16 }}>
-                      <Text style={styles.h2Title}>{title}</Text>
-                      <View style={styles.sectionCard}>
-                        {lines.map((line, i) => {
-                          const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-');
-                          if (isBullet) {
-                            return (
-                              <Text key={i} style={styles.bulletPoint}>
-                                {renderInlineWithBold(line, styles.bulletPoint, true)}
-                              </Text>
-                            );
-                          }
-                          return (
-                            <Text key={i} style={styles.responseText}>
-                              {renderInlineWithBold(line, styles.responseText, true)}
-                              {i < lines.length - 1 ? '\n' : ''}
-                            </Text>
-                          );
-                        })}
-                      </View>
-                    </View>
-                  );
-                }
-
-                // Collapsible sub-items (built from bold subheads)
-                const items = buildSubItems(bodyForRender);
-
-                // If no subitems detected, render as a simple card (non-collapsible).
-                if (items.length === 0) {
-                  const lines = bodyForRender.split('\n');
-                  return (
-                    <View key={`sec-${sIdx}`} style={{ marginBottom: 16 }}>
-                      <Text style={styles.h2Title}>{title}</Text>
-                      <View style={styles.sectionCard}>
-                        {lines.map((line, i) => (
-                          <Text key={i} style={styles.responseText}>
-                            {renderInlineWithBold(line, styles.responseText, true)}
-                            {i < lines.length - 1 ? '\n' : ''}
-                          </Text>
-                        ))}
-                      </View>
-                    </View>
-                  );
-                }
-
-                // With subitems: title outside, collapsible cards underneath.
-                return (
-                  <View key={`sec-${sIdx}`} style={{ marginBottom: 16 }}>
-                    <Text style={styles.h2Title}>{title}</Text>
-                    {items.map((it, iIdx) => {
-                      const k = `${sIdx}-${iIdx}`;
-                      const expanded = expandedKeys.has(k);
-                      return (
-                        <View key={k} style={styles.sectionContainer}>
-                          <TouchableOpacity style={styles.sectionHeader} onPress={() => toggleKey(k)} activeOpacity={0.7}>
-                            <View style={styles.sectionTitleRow}>
-                              <Text style={styles.sectionTitleText}>{it.title}</Text>
-                              <Text style={styles.expandIcon}>{expanded ? '▲' : '▼'}</Text>
-                            </View>
-                            {!expanded && <Text style={styles.sectionSummary}>{it.summary}</Text>}
-                          </TouchableOpacity>
-                          {expanded && (
-                            <View style={styles.sectionContent}>
-                              {it.content.split('\n').map((line, lineIndex) => {
-                                const isBullet = line.trim().startsWith('•') || line.trim().startsWith('-');
-                                if (isBullet) {
-                                  return (
-                                    <Text key={lineIndex} style={styles.bulletPoint}>
-                                      {renderInlineWithBold(line, styles.bulletPoint, true)}
-                                    </Text>
-                                  );
-                                }
-                                return (
-                                  <Text key={lineIndex} style={styles.responseText}>
-                                    {renderInlineWithBold(line, styles.responseText, true)}
-                                    {lineIndex < it.content.split('\n').length - 1 ? '\n' : ''}
-                                  </Text>
-                                );
-                              })}
-                            </View>
-                          )}
-                        </View>
-                      );
-                    })}
-                  </View>
-                );
-              })}
-
-              {showAnalysisButton && (
-                <TouchableOpacity style={styles.analyzeButton} onPress={handleAnalyzeClaims}>
-                  <Text style={styles.analyzeButtonText}>🔍 Now Fact-Check Claims from This Article</Text>
-                </TouchableOpacity>
-              )}
-
-              {showFollowUp && followUpQuestions.length > 0 && (
-                <View style={styles.followUpContainer}>
-                  <Text style={styles.followUpLabel}>You might be wondering:</Text>
-                  {followUpQuestions.map((question, index) => (
-                    <TouchableOpacity
-                      key={index}
-                      style={[styles.followUpButton, index > 0 && styles.followUpButtonSpacing]}
-                      onPress={() => {
-                        router.push({
-                          pathname: '/response',
-                          params: {
-                            text: question.replace(/["""]/g, ''),
-                            mode: 'analyze',
-                            previousClaim: inputText,
-                          },
-                        });
-                      }}
-                    >
-                      <Text style={styles.followUpQuestion}>{question}</Text>
-                      <Text style={styles.followUpArrow}>→</Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              )}
-
-              <TouchableOpacity style={styles.nextButton} onPress={handleNext}>
-                <Text style={styles.nextButtonText}>Next →</Text>
-              </TouchableOpacity>
+          {response && !loading && parsedAnalysis.overview && (
+            <View>
+              <Text style={styles.summaryOverviewText}>
+                {parsedAnalysis.overview}
+              </Text>
             </View>
           )}
 
-          {!inputText && !loading && (
-            <Text style={styles.noContentText}>No content provided for analysis. Please go back and enter some content.</Text>
+          {response && !loading && !parsedAnalysis.overview && (
+            <View>
+              <Text style={styles.summaryOverviewText}>
+                {response}
+              </Text>
+            </View>
           )}
         </View>
+
+        {/* Key Claims Section */}
+        {response && !loading && parsedAnalysis.keyClaims.length > 0 && (
+          <View style={[styles.summarySection, { marginBottom: 78 }]}>
+            <Text style={styles.summarySectionTitle}>Key Claims</Text>
+            
+            {parsedAnalysis.keyClaims.map((claim, index) => (
+              <Pressable 
+                key={index}
+                style={styles.claimContainer}
+                onPress={() => toggleClaim(index)}
+              >
+                <View style={styles.claimHeader}>
+                  <Text style={styles.claimTitle}>
+                    {claim.title}
+                  </Text>
+                  <Image 
+                    source={expandedClaims.has(index) 
+                      ? require('../assets/images/chevron_analysis.png') 
+                      : require('../assets/images/chevron_list.png')
+                    }
+                    style={styles.claimChevronImage}
+                  />
+                </View>
+                
+                {expandedClaims.has(index) && (
+                  <View style={styles.explanationContentBox}>
+                    <Text style={styles.explanationHeader}>Explanation</Text>
+                    {(() => {
+                      // Split content into sentences accounting for abbreviations and edge cases
+                      const splitIntoSentences = (text: string) => {
+                        // Common abbreviations that shouldn't trigger sentence breaks
+                        const abbreviations = [
+                          'u.s.', 'u.k.', 'e.g.', 'i.e.', 'etc.', 'vs.', 'mr.', 'mrs.', 'ms.', 'dr.', 'prof.',
+                          'inc.', 'ltd.', 'corp.', 'co.', 'govt.', 'dept.', 'min.', 'max.', 'approx.',
+                          'ft.', 'st.', 'ave.', 'blvd.', 'rd.', 'no.', 'vol.', 'p.', 'pp.', 'fig.',
+                          'jan.', 'feb.', 'mar.', 'apr.', 'jun.', 'jul.', 'aug.', 'sep.', 'sept.', 
+                          'oct.', 'nov.', 'dec.', 'mon.', 'tue.', 'wed.', 'thu.', 'fri.', 'sat.', 'sun.'
+                        ];
+                        
+                        // Create placeholders for abbreviations
+                        const placeholders: { [key: string]: string } = {};
+                        let tempText = text.toLowerCase();
+                        
+                        abbreviations.forEach((abbr, index) => {
+                          const placeholder = `__ABBR_${index}__`;
+                          const regex = new RegExp(abbr.replace('.', '\\.'), 'gi');
+                          placeholders[placeholder] = abbr;
+                          tempText = tempText.replace(regex, placeholder);
+                        });
+                        
+                        // Split into sentences
+                        const sentences = tempText
+                          .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=[.!?])$/)
+                          .map(s => s.trim())
+                          .filter(s => s.length > 0);
+                        
+                        // Restore abbreviations
+                        return sentences.map(sentence => {
+                          let restored = sentence;
+                          Object.entries(placeholders).forEach(([placeholder, original]) => {
+                            restored = restored.replace(new RegExp(placeholder, 'g'), original);
+                          });
+                          return restored;
+                        });
+                      };
+                      
+                      const sentences = splitIntoSentences(claim.content).slice(0, 2);
+                      
+                      return sentences.map((sentence, sentenceIndex) => (
+                        <React.Fragment key={sentenceIndex}>
+                          <View style={styles.bulletPointContainer}>
+                            <Text style={styles.bulletPoint}>•</Text>
+                            <Text style={styles.claimText}>
+                              {sentence}{sentence.match(/[.!?]$/) ? '' : '.'}
+                            </Text>
+                          </View>
+                          {sentenceIndex < sentences.length - 1 && (
+                            <View style={styles.claimDivider} />
+                          )}
+                        </React.Fragment>
+                      ));
+                    })()}
+                  </View>
+                )}
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* Bottom Line Section */}
+        {response && !loading && parsedAnalysis.bottomLine && (
+          <View style={[styles.summarySection, { marginBottom: 78 }]}>
+            <Text style={styles.summarySectionTitle}>Bottom Line</Text>
+            <View>
+              <Text style={styles.summaryOverviewText}>
+                {parsedAnalysis.bottomLine}
+              </Text>
+            </View>
+            <View style={styles.bottomLineDivider} />
+            <Pressable onPress={() => {}}>
+              <Text style={[styles.summaryMoreButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
+            </Pressable>
+          </View>
+        )}
+
+        {!inputText && !loading && (
+          <Text style={styles.noContentText}>No content provided for analysis. Please go back and enter some content.</Text>
+        )}
+
+        {/* CTA Button at the bottom */}
+        {showCTAs && !savedResponse && (
+          <View style={styles.ctaContainer}>
+            <Pressable 
+              style={styles.analyzeCTA} 
+              onPress={() => router.push('/meditation')}
+              onPressIn={handleAnalyzeCTAPressIn}
+              onPressOut={handleAnalyzeCTAPressOut}
+            >
+              <Animated.View style={{ transform: [{ scale: analyzeCTAScale }] }}>
+                <Text style={styles.analyzeCtaText}>Continue</Text>
+              </Animated.View>
+            </Pressable>
+          </View>
+        )}
       </ScrollView>
 
       <Modal
@@ -1486,6 +1593,13 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: DIVIDER_COLOR,
     marginTop: 48,
+  },
+  bottomLineDivider: {
+    width: 264,
+    height: 1,
+    backgroundColor: '#D1D1D6',
+    marginTop: 16,
+    marginBottom: 16,
   },
   summaryOverviewText: {
     fontSize: 18,

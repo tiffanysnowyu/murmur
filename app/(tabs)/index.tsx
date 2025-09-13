@@ -55,7 +55,7 @@ export default function AnimatedWave() {
   const [renderIndex, setRenderIndex] = useState(0);
   useEffect(() => {
     let mounted = true;
-    let animationTimeout: NodeJS.Timeout;
+    let animationTimeout: NodeJS.Timeout | number;
     
     const loop = () => {
       if (!mounted) return;
@@ -133,8 +133,8 @@ export default function AnimatedWave() {
         />
       </View>
 
-      {/* Check button - your exact original code */}
-      <Link href="./chooseinput" asChild>
+      {/* Check button - leads to onboarding */}
+      <Link href="./murmurscreen" asChild>
         <TouchableOpacity
           style={styles.checkWrapper}
           activeOpacity={0.8}

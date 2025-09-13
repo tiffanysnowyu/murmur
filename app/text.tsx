@@ -161,22 +161,22 @@ export default function TextPage() {
         onChangeText={setText}
       />
 
-      {/* Submit button */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.submitButton,
-          !text.trim() && styles.submitButtonDisabled,
-          pressed && text.trim() && styles.submitButtonPressed,
-        ]}
-        onPress={handleAnalyze}
-        onPressIn={text.trim() ? handleContinueButtonPressIn : undefined}
-        onPressOut={text.trim() ? handleContinueButtonPressOut : undefined}
-        disabled={!text.trim()}
-      >
-        <Animated.View style={{ transform: [{ scale: continueButtonScale }] }}>
-          <Text style={styles.submitButtonText}>Continue</Text>
-        </Animated.View>
-      </Pressable>
+      {/* Submit button - show on both modes when text is entered */}
+      {text.trim() && (
+        <Pressable
+          style={({ pressed }) => [
+            styles.submitButton,
+            pressed && styles.submitButtonPressed,
+          ]}
+          onPress={handleAnalyze}
+          onPressIn={handleContinueButtonPressIn}
+          onPressOut={handleContinueButtonPressOut}
+        >
+          <Animated.View style={{ transform: [{ scale: continueButtonScale }] }}>
+            <Text style={styles.submitButtonText}>Continue</Text>
+          </Animated.View>
+        </Pressable>
+      )}
     </View>
   );
 }

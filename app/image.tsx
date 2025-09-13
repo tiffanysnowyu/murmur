@@ -5,6 +5,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   Image,
   Alert,
   ActivityIndicator,
@@ -213,8 +214,18 @@ export default function ImagePage() {
     router.push('/text');
   };
 
+  const handleBack = () => {
+    router.push('/chooseinput');
+  };
+
   return (
     <View style={styles.container}>
+      {/* Back button */}
+      <Pressable style={styles.backButton} onPress={handleBack}>
+        <Text style={styles.chevron}>‹</Text>
+        <Text style={styles.backText}>Back</Text>
+      </Pressable>
+
       <Text style={styles.title}>Scan Image for Text</Text>
       <Text style={styles.subtitle}>
         Upload an image containing text you'd like to fact-check
@@ -271,6 +282,26 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#fff',
     paddingTop: 60,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginBottom: 40,
+  },
+  chevron: {
+    fontSize: 24,
+    color: "#B0B0B8",
+    width: 24,
+    height: 24,
+    lineHeight: 24,
+    textAlign: "center",
+  },
+  backText: {
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    color: "#B0B0B8",
+    fontWeight: "400",
   },
   title: {
     fontSize: 28,

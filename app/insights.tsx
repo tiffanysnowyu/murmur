@@ -7,8 +7,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   Alert,
-  Modal,
-  SafeAreaView,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
@@ -24,8 +23,6 @@ interface Insight {
 
 export default function InsightsPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
-  const [selectedInsight, setSelectedInsight] = useState<Insight | null>(null);
-  const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
     loadInsights();
@@ -48,40 +45,38 @@ export default function InsightsPage() {
           onPress: async () => {
             await insightsStorage.deleteInsight(id);
             await loadInsights(); // Reload the list
-            setModalVisible(false);
           },
         },
       ]
     );
   };
 
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
+  const openInsight = (insight: Insight) => {
+    router.push({
+      pathname: '/response',
+      params: {
+        text: insight.claim,
+        mode: insight.mode,
+        savedResponse: insight.analysis,
+      },
     });
   };
 
-  const openInsight = (insight: Insight) => {
-    setSelectedInsight(insight);
-    setModalVisible(true);
-  };
-
   const goBack = () => {
-    router.back();
+    router.push('/');
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={goBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+        <TouchableOpacity style={styles.backButton} onPress={goBack}>
+          <Image source={require('../assets/images/chevron_back.png')} style={styles.chevron} />
+          <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.title}>Saved Insights</Text>
+        
+        {/* <Text style={styles.title}>Saved Insights</Text> */}
+        
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -100,65 +95,31 @@ export default function InsightsPage() {
               style={styles.insightCard}
               onPress={() => openInsight(insight)}
             >
-              <View style={styles.insightHeader}>
-                <Text style={styles.insightType}>
-                  {insight.mode === 'summarize' ? '📄 Article' : '🔍 Fact Check'}
+              <View style={styles.cardContent}>
+                <Image 
+                  source={insight.mode === 'summarize' ? require('../assets/images/icon_summ.png') : require('../assets/images/icon_analysis.png')}
+                  style={styles.cardIcon}
+                />
+                <Text style={styles.cardText} numberOfLines={1}>
+                  {insight.title}
                 </Text>
-                <Text style={styles.insightDate}>{formatDate(insight.savedAt)}</Text>
+                <TouchableOpacity 
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleDeleteInsight(insight.id);
+                  }}
+                  style={styles.trashButton}
+                >
+                  <Image 
+                    source={require('../assets/images/trash.png')}
+                    style={styles.trashIcon}
+                  />
+                </TouchableOpacity>
               </View>
-              <Text style={styles.insightTitle} numberOfLines={2}>
-                {insight.title}
-              </Text>
-              <Text style={styles.insightPreview} numberOfLines={3}>
-                {insight.claim}
-              </Text>
             </TouchableOpacity>
           ))
         )}
       </ScrollView>
-
-      {/* Detail Modal */}
-      <Modal
-        animationType="slide"
-        transparent={false}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
-        <SafeAreaView style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity onPress={() => setModalVisible(false)} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>← Back</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => selectedInsight && handleDeleteInsight(selectedInsight.id)}
-              style={styles.deleteButton}
-            >
-              <Text style={styles.deleteButtonText}>🗑️</Text>
-            </TouchableOpacity>
-          </View>
-
-          {selectedInsight && (
-            <ScrollView style={styles.modalContent} showsVerticalScrollIndicator={false}>
-              <View style={styles.modalTypeContainer}>
-                <Text style={styles.modalType}>
-                  {selectedInsight.mode === 'summarize' ? '📄 Article Analysis' : '🔍 Fact Check'}
-                </Text>
-                <Text style={styles.modalDate}>{formatDate(selectedInsight.savedAt)}</Text>
-              </View>
-
-              <View style={styles.modalSection}>
-                <Text style={styles.modalSectionTitle}>Original Content</Text>
-                <Text style={styles.modalClaim}>{selectedInsight.claim}</Text>
-              </View>
-
-              <View style={styles.modalSection}>
-                <Text style={styles.modalSectionTitle}>Analysis</Text>
-                <Text style={styles.modalAnalysis}>{selectedInsight.analysis}</Text>
-              </View>
-            </ScrollView>
-          )}
-        </SafeAreaView>
-      </Modal>
     </View>
   );
 }
@@ -166,30 +127,39 @@ export default function InsightsPage() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F4F4F9',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#f8f9fa',
+    paddingTop: 72,
+    paddingHorizontal: 24,
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingBottom: 40,
   },
   backButton: {
-    marginRight: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
-  backButtonText: {
-    fontSize: 16,
-    color: '#32535F',
-    fontWeight: '600',
+  chevron: {
+    width: 24,
+    height: 24,
+  },
+  backText: {
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    color: "#B0B0B8",
+    fontWeight: "400",
   },
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+    fontSize: 32,
+    fontFamily: "SF Pro Display",
+    fontWeight: "600",
+    color: "#1A1A1A",
+    textAlign: "center",
+    flex: 1,
   },
   content: {
     flex: 1,
@@ -217,103 +187,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   insightCard: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    padding: 16,
+    height: 76,
+    padding: 24,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 10,
+    alignSelf: 'stretch',
+    borderRadius: 20,
+    backgroundColor: '#FFF',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 30,
+    elevation: 5,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
   },
-  insightHeader: {
+  cardContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    flex: 1,
+    width: '100%',
   },
-  insightType: {
-    fontSize: 14,
-    color: '#666',
+  cardIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 16,
   },
-  insightDate: {
-    fontSize: 12,
-    color: '#999',
-  },
-  insightTitle: {
+  cardText: {
+    flex: 1,
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginBottom: 8,
+    marginRight: 16,
   },
-  insightPreview: {
-    fontSize: 14,
-    color: '#666',
-    lineHeight: 20,
+  trashButton: {
+    padding: 4,
+    marginLeft: 'auto',
   },
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  closeButton: {
-    padding: 8,
-  },
-  closeButtonText: {
-    fontSize: 16,
-    color: '#32535F',
-    fontWeight: '600',
-  },
-  deleteButton: {
-    padding: 8,
-  },
-  deleteButtonText: {
-    fontSize: 20,
-  },
-  modalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  modalTypeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalType: {
-    fontSize: 16,
-    color: '#666',
-  },
-  modalDate: {
-    fontSize: 14,
-    color: '#999',
-  },
-  modalSection: {
-    marginBottom: 24,
-  },
-  modalSectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 12,
-  },
-  modalClaim: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#666',
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 8,
-  },
-  modalAnalysis: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
+  trashIcon: {
+    width: 20,
+    height: 20,
   },
 });
