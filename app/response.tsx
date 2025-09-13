@@ -32,6 +32,8 @@ export default function ResponsePage() {
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [savedInsightId, setSavedInsightId] = useState<string | null>(null);
   const [foundSources, setFoundSources] = useState<any[]>([]);
+  const [stillUneasyResponse, setStillUneasyResponse] = useState<string>('');
+  const [stillUneasyLoading, setStillUneasyLoading] = useState<boolean>(false);
 
   // Animation states
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -144,7 +146,10 @@ export default function ResponsePage() {
   const parseAnalyzeResponse = (responseText: string) => {
     const sections = responseText.split(/^##\s+/m).filter(s => s.trim());
 
-    const splitByBottomLine = responseText.split('Bottom line')
+    let splitByBottomLine = responseText.split('Bottom line')
+    if (splitByBottomLine.length < 2) {
+      splitByBottomLine = responseText.split('Bottom Line')
+    }
     let overview = splitByBottomLine[0].replace(':', '').trim()
     let bottomLine = splitByBottomLine.length > 1 ? splitByBottomLine[1].replace(':', '').trim() : ''
     // console.log('BEFORE BOTTOM LINE:', beforeottomLine, '\n\n')
@@ -778,6 +783,24 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     }
   };
 
+  const fetchStillUneasyResponse = async () => {
+    try {
+      setStillUneasyLoading(true);
+      
+      // Simulate an API call - replace this with actual implementation
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // This is a placeholder response - replace with actual API call
+      const response = "Here's some additional guidance to help ease your concerns...";
+      setStillUneasyResponse(response);
+      
+    } catch (error) {
+      console.error('Error fetching still uneasy response:', error);
+      setStillUneasyResponse('Sorry, we encountered an error. Please try again.');
+    } finally {
+      setStillUneasyLoading(false);
+    }
+  };
 
   const getTitle = () => {
     const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
@@ -1263,19 +1286,34 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
 
         {/* Bottom Line Section */}
         {response && !loading && parsedAnalysis.bottomLine && (
-          <View style={[styles.summarySection, { marginBottom: 78 }]}>
+          <View style={[styles.summarySection]}>
             <Text style={styles.summarySectionTitle}>Bottom Line</Text>
             <View>
               <Text style={styles.summaryOverviewText}>
                 {parsedAnalysis.bottomLine}
               </Text>
             </View>
-            <View style={styles.bottomLineDivider} />
-            <Pressable onPress={() => {}}>
-              <Text style={[styles.summaryMoreButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
-            </Pressable>
           </View>
         )}
+
+        <View style={[styles.summarySection, { marginBottom: 78 }]}>
+          <View style={styles.bottomLineDivider} />
+          <Pressable onPress={fetchStillUneasyResponse}>
+            <Text style={[styles.summaryMoreButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
+          </Pressable>
+          
+          {stillUneasyLoading && (
+            <View style={styles.stillUneasyLoadingContainer}>
+              <ActivityIndicator size="small" color="#7A42F4" />
+            </View>
+          )}
+          
+          {stillUneasyResponse && (
+            <View style={styles.stillUneasyResponseContainer}>
+              <Text style={styles.stillUneasyResponseText}>{stillUneasyResponse}</Text>
+            </View>
+          )}
+        </View>
 
         {!inputText && !loading && (
           <Text style={styles.noContentText}>No content provided for analysis. Please go back and enter some content.</Text>
@@ -1430,6 +1468,25 @@ const styles = StyleSheet.create({
     backgroundColor: '#D1D1D6',
     marginTop: 16,
     marginBottom: 16,
+  },
+  stillUneasyLoadingContainer: {
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  stillUneasyResponseContainer: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderLeftWidth: 3,
+    borderLeftColor: '#7A42F4',
+  },
+  stillUneasyResponseText: {
+    fontSize: 16,
+    fontFamily: 'SF Pro Display',
+    fontWeight: '400',
+    color: '#1A1A1A',
+    lineHeight: 24,
   },
   summaryOverviewText: {
     fontSize: 18,
