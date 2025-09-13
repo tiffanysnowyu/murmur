@@ -27,17 +27,12 @@ export default function ResponsePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [analysisStep, setAnalysisStep] = useState('');
-  const [showAnalysisButton, setShowAnalysisButton] = useState(false);
-  const [followUpQuestions, setFollowUpQuestions] = useState<string[]>([]);
-  const [showFollowUp, setShowFollowUp] = useState(false);
   const [articleData, setArticleData] = useState<any>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [showSavedModal, setShowSavedModal] = useState(false);
   const [savedInsightId, setSavedInsightId] = useState<string | null>(null);
   const [foundSources, setFoundSources] = useState<any[]>([]);
-  const [sourceSearchTime, setSourceSearchTime] = useState('');
-  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set()); // collapsible state
-  
+
   // Animation states
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const analyzeCTAScale = useRef(new Animated.Value(1)).current;
@@ -555,9 +550,7 @@ Dynamically structure your response based on what would be most helpful. Conside
             const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 5000));
             sourceResult = (await Promise.race([sourcePromise, timeout])) as any;
             setFoundSources(sourceResult.sources);
-            setSourceSearchTime(`${sourceResult.searchTime}ms`);
           } catch {
-            setSourceSearchTime('timeout');
           }
 
           let searchResults: any[] = [];
@@ -649,7 +642,6 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
       setAnalysisStep('');
       setLoading(false);
       setFoundSources([]);
-      setSourceSearchTime('');
     }
   };
 
@@ -712,20 +704,6 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         }
         
         setAnalysisStep('');
-        if (analysisMode === 'summarize') setShowAnalysisButton(true);
-
-        const followUpMatch = reply.match(/\*\*You might be wondering:\*\*\s*\n(.+?)(?=\n\n|\n\*\*|$)/s);
-        if (followUpMatch) {
-          const questionsText = followUpMatch[1].trim();
-          const questions = questionsText
-            .split('\n')
-            .map(q => q.trim())
-            .filter(q => q.length > 0 && !q.startsWith('*') && !q.match(/^question \d/i));
-          if (questions.length > 0) {
-            setFollowUpQuestions(questions);
-            setShowFollowUp(true);
-          }
-        }
       } else {
         throw new Error('No response received from Claude.');
       }
@@ -766,7 +744,6 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     if (inputText && typeof inputText === 'string') {
       setError('');
       setFoundSources([]);
-      setSourceSearchTime('');
       const analysisMode = currentMode || 'analyze';
       analyzeContentWithClaude(inputText, analysisMode);
     }
@@ -801,7 +778,6 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     }
   };
 
-  const handleNext = () => router.push('/followup');
 
   const getTitle = () => {
     const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
@@ -810,156 +786,10 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     return 'Analysis';
   };
 
-  const getContentLabel = () => {
-    const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
-    if (isSummaryMode) return isUrl(inputText || '') ? '🔗 Article URL' : '📄 Article Headline/Content';
-    if (isPreFactChecked) return '✅ Pre-Fact-Checked Content';
-    return '🔍 Content to Analyze';
-  };
 
-  // =========================
-  //   COLLAPSIBLE PARSING
-  // =========================
 
-  // Only these stay non-collapsible; titles are shown outside any card.
-  const ALWAYS_VISIBLE_HEADINGS = [
-    'summary',
-    'keeping things in perspective',
-    'perspective that reduces anxiety',
-    'why you can relax',
-    "here's why you can relax",
-    'bottom line',
-  ];
 
-  const normalize = (s: string) => s.normalize('NFKD').replace(/[^\w\s]/g, '').trim().toLowerCase();
-
-  const isAlwaysVisible = (title: string) => {
-    const t = normalize(title);
-    return ALWAYS_VISIBLE_HEADINGS.some(h => t.includes(normalize(h)));
-  };
-
-  type TopSection = { title: string; body: string };
-
-  // Split into top-level sections by markdown "## ..."
-  const splitByH2 = (text: string): TopSection[] => {
-    if (!text || !text.trim()) return [];
-    const lines = text.split('\n');
-
-    const sections: TopSection[] = [];
-    let currentTitle: string | null = null;
-    let currentBody: string[] = [];
-
-    const push = () => {
-      if (currentTitle || currentBody.length) {
-        sections.push({
-          title: currentTitle || 'Summary',
-          body: currentBody.join('\n').trim(),
-        });
-      }
-      currentTitle = null;
-      currentBody = [];
-    };
-
-    for (const line of lines) {
-      const h2 = line.match(/^\s*##\s+(.*)\s*$/);
-      if (h2) {
-        push();
-        currentTitle = h2[1].trim(); // drop the ##
-      } else {
-        currentBody.push(line);
-      }
-    }
-    push();
-    return sections.filter(s => s.title || s.body);
-  };
-
-  type SubItem = { title: string; content: string; summary: string };
-
-  // Build collapsible subitems from bold subheads inside a section (**Subhead**)
-  const buildSubItems = (body: string): SubItem[] => {
-    const lines = body.split('\n');
-
-    const items: SubItem[] = [];
-    let currentTitle: string | null = null;
-    let currentContent: string[] = [];
-
-    const push = () => {
-      const full = currentContent.join('\n').trim();
-      if (!full) {
-        currentTitle = null;
-        currentContent = [];
-        return;
-      }
-      const summary =
-        full
-          .replace(/\*\*[^*]+\*\*/g, '')
-          .split('\n')
-          .find(l => l.trim())?.slice(0, 140) + (full.length > 140 ? '…' : '') || '';
-      items.push({
-        title: currentTitle || 'Details',
-        content: full,
-        summary,
-      });
-      currentTitle = null;
-      currentContent = [];
-    };
-
-    for (const l of lines) {
-      const m = l.match(/^\s*\*\*([^*]+)\*\*\s*[:.]*\s*$/); // **Title** or **Title:** line
-      if (m) {
-        push();
-        currentTitle = m[1].trim();
-      } else {
-        currentContent.push(l);
-      }
-    }
-    push();
-    return items.filter(it => it.content && it.content.trim().length > 0);
-  };
-
-  // Remove a duplicated leading bold line that matches the section title
-  const stripDuplicateLeadBold = (title: string, body: string) => {
-    const lines = body.split('\n');
-    if (!lines.length) return body;
-    const first = lines[0].trim();
-    const m = first.match(/^\s*\*\*([^*]+)\*\*\s*[:\-–—.]?\s*$/);
-    if (m) {
-      const a = normalize(m[1]);
-      const b = normalize(title);
-      if (a === b || a.includes(b) || b.includes(a)) {
-        lines.shift();
-        return lines.join('\n').trim();
-      }
-    }
-    return body;
-  };
-
-  const toggleKey = (key: string) => {
-    const next = new Set(expandedKeys);
-    if (next.has(key)) next.delete(key);
-    else next.add(key);
-    setExpandedKeys(next);
-  };
-
-  const renderInlineWithBold = (content: string, baseStyle: any, sourceAware = false) => {
-    const isSourceLine = sourceAware && (content.includes('**Sources Consulted:**') || content.includes('**Sources:**'));
-    const parts = content.split(/(\*\*[^*]+\*\*)/);
-    return (
-      <Text style={baseStyle}>
-        {parts.map((part, idx) => {
-          if (part.startsWith('**') && part.endsWith('**')) {
-            const boldText = part.replace(/\*\*/g, '');
-            return (
-              <Text key={idx} style={isSourceLine ? styles.sourceText : styles.boldText}>
-                {boldText}
-              </Text>
-            );
-          }
-          return <Text key={idx}>{part}</Text>;
-        })}
-      </Text>
-    );
-  };
+ 
 
   // =========================
   //   RENDER FOR SUMMARY MODE
