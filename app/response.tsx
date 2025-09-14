@@ -155,7 +155,7 @@ export default function ResponsePage() {
     // console.log('BEFORE BOTTOM LINE:', beforeottomLine, '\n\n')
     
    
-    // SEEMS LIKE THIS CODE IS NOT DOING ANYTHING
+    // THE CODE IN THIS FUNCTION BELOW HERE IS NOT DOING ANYTHING
     const keyClaims: Array<{ title: string; content: string }> = [];
 
     // sections.forEach(section => {
@@ -768,6 +768,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   };
 
   const goBack = () => {
+    console.log(`\nGO BACK CALLED WITH SAVED RESPONSE ${savedResponse} PREVIOUS CLAIM ${previousClaim} MODE ${currentMode}\n`)
     if (savedResponse) {
       router.push('/insights');
     } else if (previousClaim) {
@@ -776,10 +777,11 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         params: { text: previousClaim, mode: currentMode },
       });
     } else {
-      router.push({
-        pathname: '/text',
-        params: { initialText: inputText, mode: currentMode },
-      });
+      // router.push({
+      //   pathname: '/text',
+      //   params: { initialText: inputText, mode: currentMode },
+      // });
+      router.back()
     }
   };
 
@@ -1038,7 +1040,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
               
               <Pressable 
                 style={styles.doneCTA} 
-                onPress={goBack}
+                onPress={() => router.dismissAll()}
                 onPressIn={handleDoneCTAPressIn}
                 onPressOut={handleDoneCTAPressOut}
               >
@@ -1296,24 +1298,26 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           </View>
         )}
 
-        <View style={[styles.summarySection, { marginBottom: 78 }]}>
-          <View style={styles.bottomLineDivider} />
-          <Pressable onPress={fetchStillUneasyResponse}>
-            <Text style={[styles.summaryMoreButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
-          </Pressable>
-          
-          {stillUneasyLoading && (
-            <View style={styles.stillUneasyLoadingContainer}>
-              <ActivityIndicator size="small" color="#7A42F4" />
-            </View>
-          )}
-          
-          {stillUneasyResponse && (
-            <View style={styles.stillUneasyResponseContainer}>
-              <Text style={styles.stillUneasyResponseText}>{stillUneasyResponse}</Text>
-            </View>
-          )}
-        </View>
+        {!loading && 
+          <View style={[styles.summarySection, { marginBottom: 78 }]}>
+            <View style={styles.bottomLineDivider} />
+            <Pressable onPress={fetchStillUneasyResponse}>
+              <Text style={[styles.summaryMoreButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
+            </Pressable>
+            
+            {stillUneasyLoading && (
+              <View style={styles.stillUneasyLoadingContainer}>
+                <ActivityIndicator size="small" color="#7A42F4" />
+              </View>
+            )}
+            
+            {stillUneasyResponse && (
+              <View style={styles.stillUneasyResponseContainer}>
+                <Text style={styles.stillUneasyResponseText}>{stillUneasyResponse}</Text>
+              </View>
+            )}
+          </View>
+        }
 
         {!inputText && !loading && (
           <Text style={styles.noContentText}>No content provided for analysis. Please go back and enter some content.</Text>

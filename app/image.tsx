@@ -19,6 +19,7 @@ export default function ImagePage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
+  const [imageExtractedText, setImageExtractedText] = useState<string | null>(null);
 
   // Debug helper
   const addDebugInfo = (info: string) => {
@@ -152,38 +153,40 @@ export default function ImagePage() {
           return;
         }
         
-        Alert.alert(
-          'Text Extracted!',
-          `Found text: "${extractedText.substring(0, 100)}${extractedText.length > 100 ? '...' : ''}"`,
-          [
-            {
-              text: 'Edit Text',
-              onPress: () => {
-                addDebugInfo('Navigating to text editor');
-                router.push({
-                  pathname: '/text',
-                  params: {
-                    initialText: extractedText,
-                    mode: 'analyze'
-                  }
-                });
-              }
-            },
-            {
-              text: 'Analyze Now',
-              onPress: () => {
-                addDebugInfo('Navigating to analysis');
-                router.push({
-                  pathname: '/response',
-                  params: {
-                    text: extractedText,
-                    mode: 'analyze'
-                  }
-                });
-              }
-            }
-          ]
-        );
+        setImageExtractedText(extractedText);
+
+        // Alert.alert(
+        //   'Text Extracted!',
+        //   `Found text: "${extractedText.substring(0, 100)}${extractedText.length > 100 ? '...' : ''}"`,
+        //   [
+        //     {
+        //       text: 'Edit Text',
+        //       onPress: () => {
+        //         addDebugInfo('Navigating to text editor');
+        //         router.push({
+        //           pathname: '/text',
+        //           params: {
+        //             initialText: extractedText,
+        //             mode: 'analyze'
+        //           }
+        //         });
+        //       }
+        //     },
+        //     {
+        //       text: 'Analyze Now',
+        //       onPress: () => {
+        //         addDebugInfo('Navigating to analysis');
+        //         router.push({
+        //           pathname: '/response',
+        //           params: {
+        //             text: extractedText,
+        //             mode: 'analyze'
+        //           }
+        //         });
+        //       }
+        //     }
+        //   ]
+        // );
       } catch (ocrError) {
         addDebugInfo(`OCR error: ${ocrError}`);
         setIsProcessing(false);
@@ -215,7 +218,7 @@ export default function ImagePage() {
   };
 
   const handleBack = () => {
-    router.push('/chooseinput');
+    router.back();
   };
 
   return (
@@ -272,6 +275,25 @@ export default function ImagePage() {
         <Text style={styles.infoText}>• Use good lighting</Text>
         <Text style={styles.infoText}>• Avoid blurry or angled photos</Text>
       </View>
+
+      {selectedImage && !isProcessing && imageExtractedText && (
+        <Pressable
+          style={({ pressed }) => [
+            styles.continueButton,
+            pressed && { opacity: 0.8 }
+          ]}
+          onPress={() => router.push({
+            pathname: '/text',
+            params: {
+              initialText: imageExtractedText,
+              mode: 'analyze',
+              cameFromImageScreen: 'true',
+            }
+          })}
+        >
+          <Text style={styles.continueButtonText}>Continue</Text>
+        </Pressable>
+      )}
     </View>
   );
 }
@@ -400,6 +422,23 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     resizeMode: 'cover',
+  },
+  continueButton: {
+    backgroundColor: '#1A1A1A',
+    paddingVertical: 18,
+    paddingHorizontal: 40,
+    borderRadius: 16,
+    width: 345,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 24,
+    alignSelf: 'center',
+  },
+  continueButtonText: {
+    color: '#FFFFFF',
+    fontSize: 17,
+    fontFamily: 'SF Pro Display',
+    fontWeight: '600',
   },
   resetButton: {
     backgroundColor: '#f0f0f0',

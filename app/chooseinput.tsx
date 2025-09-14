@@ -11,7 +11,8 @@ export default function ChooseInput() {
   return (
     <View style={styles.container}>
       {/* Back button */}
-      <Pressable style={styles.backButton} onPress={() => router.push('/(tabs)')}>
+      {/* <Pressable style={styles.backButton} onPress={() => router.push('/(tabs)')}> */}
+      <Pressable style={styles.backButton} onPress={() => router.dismissAll()}>
         <Text style={styles.chevron}>‹</Text>
         <Text style={styles.backText}>Home</Text>
       </Pressable>

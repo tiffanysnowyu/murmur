@@ -7,6 +7,7 @@ import {
   Pressable,
   SafeAreaView,
   Dimensions,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 
@@ -18,15 +19,19 @@ export default function MurmurScreen() {
   };
 
   const handleHome = () => {
-    router.push('/');
-  };
-
-  const handleSkip = () => {
-    router.push('/');
+    router.back();
   };
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Back button */}
+      <View style={styles.topNav}>
+        <Pressable onPress={handleHome} style={styles.backButton}>
+          <Image source={require('../assets/images/chevron_back.png')} style={styles.chevron} />
+          <Text style={styles.backText}>Back</Text>
+        </Pressable>
+      </View>
+
       <View style={styles.content}>
         {/* Title */}
         <View style={styles.titleContainer}>
@@ -44,16 +49,6 @@ export default function MurmurScreen() {
           <Text style={styles.continueButtonText}>Continue</Text>
         </Pressable>
       </View>
-
-      {/* Bottom Navigation Icons */}
-      <View style={styles.bottomNav}>
-        <Pressable onPress={handleHome} style={styles.navButton}>
-          <View style={styles.homeIcon} />
-        </Pressable>
-        <Pressable onPress={handleSkip} style={styles.navButton}>
-          <View style={styles.skipIcon} />
-        </Pressable>
-      </View>
     </SafeAreaView>
   );
 }
@@ -62,6 +57,26 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F5F5F5',
+  },
+  topNav: {
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 16,
+  },
+  backButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  chevron: {
+    width: 24,
+    height: 24,
+  },
+  backText: {
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    color: "#B0B0B8",
+    fontWeight: "400",
   },
   content: {
     flex: 1,
@@ -93,29 +108,5 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: 'SF Pro Display',
     fontWeight: '600',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 40,
-    paddingBottom: 34,
-  },
-  navButton: {
-    padding: 16,
-  },
-  homeIcon: {
-    width: 24,
-    height: 24,
-    backgroundColor: '#1A1A1A',
-    // Simple house shape approximation
-    borderRadius: 4,
-  },
-  skipIcon: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderColor: '#1A1A1A',
-    borderRadius: 12,
-    position: 'relative',
   },
 });

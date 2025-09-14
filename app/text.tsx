@@ -12,7 +12,7 @@ import {
 import { router, useLocalSearchParams } from 'expo-router';
 
 export default function TextPage() {
-  const { initialText, mode: initialMode } = useLocalSearchParams();
+  const { initialText, mode: initialMode, cameFromImageScreen } = useLocalSearchParams();
   const [text, setText] = useState('');
   const [mode, setMode] = useState<'analyze' | 'summarize' | null>(null);
   
@@ -28,7 +28,7 @@ export default function TextPage() {
     }
   }, [initialText, initialMode]);
 
-  const handleAnalyze = () => {
+  const handleContinueButton = () => {
     if (!text.trim()) {
       Alert.alert('Please enter some text.');
       return;
@@ -84,7 +84,7 @@ export default function TextPage() {
     return (
       <View style={styles.container}>
         {/* Back button */}
-        <Pressable style={styles.backButton} onPress={() => router.push('/chooseinput')}>
+        <Pressable style={styles.backButton} onPress={() => router.back()}>
           <Text style={styles.chevron}>‹</Text>
           <Text style={styles.backText}>Back</Text>
         </Pressable>
@@ -127,11 +127,15 @@ export default function TextPage() {
     );
   }
 
-  // Text input screen
+  console.log('CAME FROM IMAGE SCREEN:', cameFromImageScreen)
+
+
+  // Text input screen after the mode is selected
   return (
     <View style={styles.inputContainer}>
-      {/* Back button - SEPARATE */}
-      <Pressable style={styles.inputBackButton} onPress={() => setMode(null)}>
+      {/* Back button - SEPARATE. In this case just reset the mode to null to show the mode selection screen.
+        If the original screen was the image screen then go back to that. */}
+      <Pressable style={styles.inputBackButton} onPress={() => cameFromImageScreen ? router.back() : setMode(null)}>
         <Text style={styles.chevron}>‹</Text>
         <Text style={styles.backText}>Back</Text>
       </Pressable>
@@ -168,7 +172,7 @@ export default function TextPage() {
             styles.submitButton,
             pressed && styles.submitButtonPressed,
           ]}
-          onPress={handleAnalyze}
+          onPress={handleContinueButton}
           onPressIn={handleContinueButtonPressIn}
           onPressOut={handleContinueButtonPressOut}
         >

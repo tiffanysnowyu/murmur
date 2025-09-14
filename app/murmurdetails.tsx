@@ -7,6 +7,7 @@ import {
   Pressable,
   SafeAreaView,
   Dimensions,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 
@@ -18,7 +19,7 @@ export default function MurmurDetails() {
   };
 
   const handleBack = () => {
-    router.push('/murmurscreen');
+    router.back();
   };
 
   const handleHome = () => {
@@ -34,7 +35,8 @@ export default function MurmurDetails() {
       {/* Back Button */}
       <View style={styles.topNav}>
         <Pressable onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>← Back</Text>
+          <Image source={require('../assets/images/chevron_back.png')} style={styles.chevron} />
+          <Text style={styles.backText}>Back</Text>
         </Pressable>
       </View>
 
@@ -58,16 +60,6 @@ export default function MurmurDetails() {
           <Text style={styles.continueButtonText}>Continue</Text>
         </Pressable>
       </View>
-
-      {/* Bottom Navigation Icons */}
-      <View style={styles.bottomNav}>
-        <Pressable onPress={handleHome} style={styles.navButton}>
-          <View style={styles.homeIcon} />
-        </Pressable>
-        <Pressable onPress={handleSkip} style={styles.navButton}>
-          <View style={styles.skipIcon} />
-        </Pressable>
-      </View>
     </SafeAreaView>
   );
 }
@@ -83,13 +75,19 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
   },
   backButton: {
-    padding: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
-  backButtonText: {
+  chevron: {
+    width: 24,
+    height: 24,
+  },
+  backText: {
     fontSize: 17,
-    fontFamily: 'SF Pro Display',
-    color: '#4A90A4',
-    fontWeight: '400',
+    fontFamily: "SF Pro Display",
+    color: "#B0B0B8",
+    fontWeight: "400",
   },
   content: {
     flex: 1,
@@ -131,27 +129,5 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: 'SF Pro Display',
     fontWeight: '600',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 40,
-    paddingBottom: 34,
-  },
-  navButton: {
-    padding: 16,
-  },
-  homeIcon: {
-    width: 24,
-    height: 24,
-    backgroundColor: '#1A1A1A',
-    borderRadius: 4,
-  },
-  skipIcon: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderColor: '#1A1A1A',
-    borderRadius: 12,
   },
 });

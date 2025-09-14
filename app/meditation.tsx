@@ -20,7 +20,7 @@ export default function MeditationScreen() {
 
   const handleNextTime = () => {
     // Navigate to home screen
-    router.push('/');
+    router.dismissAll();
   };
 
   return (
