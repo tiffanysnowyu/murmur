@@ -62,14 +62,10 @@ export default function InsightsPage() {
     });
   };
 
-  const goBack = () => {
-    router.push('/');
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={goBack}>
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <Image source={require('../assets/images/chevron_back.png')} style={styles.chevron} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>

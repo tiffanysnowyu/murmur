@@ -770,17 +770,14 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   const goBack = () => {
     console.log(`\nGO BACK CALLED WITH SAVED RESPONSE ${savedResponse} PREVIOUS CLAIM ${previousClaim} MODE ${currentMode}\n`)
     if (savedResponse) {
-      router.push('/insights');
+      router.back()
     } else if (previousClaim) {
+      // Not sure if this code path is ever hit but leaving it here just in case
       router.push({
         pathname: '/response',
         params: { text: previousClaim, mode: currentMode },
       });
     } else {
-      // router.push({
-      //   pathname: '/text',
-      //   params: { initialText: inputText, mode: currentMode },
-      // });
       router.back()
     }
   };
