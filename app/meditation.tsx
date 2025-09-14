@@ -6,11 +6,9 @@ import {
   StyleSheet,
   Pressable,
   SafeAreaView,
-  Dimensions,
 } from 'react-native';
 import { router } from 'expo-router';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function MeditationScreen() {
   const handleDidIt = () => {
