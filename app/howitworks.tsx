@@ -4,15 +4,9 @@ import {
   View,
   Text,
   StyleSheet,
-  Pressable,
-  SafeAreaView,
-  Dimensions,
-  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { BackButton, CtaButton, MainScreen } from '@/components/Common';
-
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function HowItWorks() {
   const handleContinue = () => {
@@ -21,14 +15,6 @@ export default function HowItWorks() {
 
   const handleBack = () => {
     router.back();
-  };
-
-  const handleHome = () => {
-    router.push('/');
-  };
-
-  const handleSkip = () => {
-    router.push('/');
   };
 
   return (

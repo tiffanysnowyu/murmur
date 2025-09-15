@@ -129,8 +129,6 @@ export default function TextPage() {
 
   // Text input screen after the mode is selected
   return (
-    // <SafeAreaView style={styles.safeAreaContainer}>
-    //   <View style={styles.inputContainer}>
     <MainScreen>
         {/* Back button - SEPARATE. In this case just reset the mode to null to show the mode selection screen.
           If the original screen was the image screen then go back to that. */}

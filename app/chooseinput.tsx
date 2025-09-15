@@ -56,7 +56,6 @@ const BORDER = "#CCE5E7";
 const FILL = "#F3F8FA";         
 const TEXT_PRIMARY = "#4A4A4A"; 
 const TEXT_SECONDARY = "#595959";
-const BACK_TEXT = "#B0B0B8";
 
 const styles = StyleSheet.create({
   header: {

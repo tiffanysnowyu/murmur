@@ -35,17 +35,6 @@ export default function MurmurScreen() {
         <View style={styles.titleContainer}>
           <Text style={styles.title}>Murmur</Text>
         </View>
-
-        {/* Continue Button */}
-        {/* <Pressable
-          style={({ pressed }) => [
-            styles.continueButton,
-            pressed && { opacity: 0.8 }
-          ]}
-          onPress={handleContinue}
-        >
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </Pressable> */}
       </View>
       <CtaButton onPress={handleContinue} buttonText="Continue" />
     </MainScreen>

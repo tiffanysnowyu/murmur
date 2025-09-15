@@ -46,17 +46,6 @@ export default function MurmurDetails() {
         <Text style={styles.subtitle}>
           Murmur helps you understand what matters{'\n'}and leave the rest behind
         </Text>
-
-        {/* Continue Button */}
-        {/* <Pressable
-          style={({ pressed }) => [
-            styles.continueButton,
-            pressed && { opacity: 0.8 }
-          ]}
-          onPress={handleContinue}
-        >
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </Pressable> */}
         
       </View>
       <CtaButton onPress={handleContinue} buttonText="Continue" />
