@@ -8,9 +8,10 @@ import {
   Pressable,
   Alert,
   Animated,
+  SafeAreaView,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { BackButton, CtaButton } from '@/components/Common';
+import { BackButton, CtaButton, MainScreen } from '@/components/Common';
 
 export default function TextPage() {
   const { initialText, mode: initialMode, cameFromImageScreen } = useLocalSearchParams();
@@ -83,7 +84,7 @@ export default function TextPage() {
   // Mode selection screen
   if (!mode) {
     return (
-      <View style={styles.container}>
+      <MainScreen>
         {/* Back button */}
         <BackButton onPress={() => router.back()} />
         
@@ -122,61 +123,63 @@ export default function TextPage() {
             <Text style={styles.pillDesc}>Check claims directly</Text>
           </Pressable>
         </View>
-      </View>
+      </MainScreen>
     );
   }
 
   // Text input screen after the mode is selected
   return (
-    <View style={styles.inputContainer}>
-      {/* Back button - SEPARATE. In this case just reset the mode to null to show the mode selection screen.
-        If the original screen was the image screen then go back to that. */}
-      <BackButton onPress={() => cameFromImageScreen ? router.back() : setMode(null)} />
+    // <SafeAreaView style={styles.safeAreaContainer}>
+    //   <View style={styles.inputContainer}>
+    <MainScreen>
+        {/* Back button - SEPARATE. In this case just reset the mode to null to show the mode selection screen.
+          If the original screen was the image screen then go back to that. */}
+        <BackButton onPress={() => cameFromImageScreen ? router.back() : setMode(null)} />
 
 
-      {/* Title and description - NO BACK BUTTON HERE */}
-      <View style={styles.inputHeader}>
-        <Text style={styles.inputTitle}>
-          {mode === 'summarize' ? 'Summarize' : 'Analyze'}
-        </Text>
-        <Text style={styles.inputDescription}>
-          {mode === 'summarize' 
-            ? "Too long to read? Paste the article and we'll pull out the key points and claims (you can analyze them afterwards)."
-            : "Type or paste any claim, headline, or statement you want to fact-check."}
-        </Text>
-      </View>
+        {/* Title and description - NO BACK BUTTON HERE */}
+        <View style={styles.inputHeader}>
+          <Text style={styles.inputTitle}>
+            {mode === 'summarize' ? 'Summarize' : 'Analyze'}
+          </Text>
+          <Text style={styles.inputDescription}>
+            {mode === 'summarize' 
+              ? "Too long to read? Paste the article and we'll pull out the key points and claims (you can analyze them afterwards)."
+              : "Type or paste any claim, headline, or statement you want to fact-check."}
+          </Text>
+        </View>
 
-      {/* Divider line */}
-      <View style={styles.divider} />
+        {/* Divider line */}
+        <View style={styles.divider} />
 
-      {/* Text input */}
-      <TextInput
-        style={styles.input}
-        multiline
-        placeholder="Paste text here..."
-        placeholderTextColor="#D1D1D6"
-        value={text}
-        onChangeText={setText}
-      />
+        {/* Text input */}
+        <TextInput
+          style={styles.input}
+          multiline
+          placeholder="Paste text here..."
+          placeholderTextColor="#D1D1D6"
+          value={text}
+          onChangeText={setText}
+        />
 
-      {/* Submit button - show on both modes when text is entered */}
-      {text.trim() && (
-        // <Pressable
-        //   style={({ pressed }) => [
-        //     styles.submitButton,
-        //     pressed && styles.submitButtonPressed,
-        //   ]}
-        //   onPress={handleContinueButton}
-        //   onPressIn={handleContinueButtonPressIn}
-        //   onPressOut={handleContinueButtonPressOut}
-        // >
-        //   <Animated.View style={{ transform: [{ scale: continueButtonScale }] }}>
-        //     <Text style={styles.submitButtonText}>Continue</Text>
-        //   </Animated.View>
-        // </Pressable>
-        <CtaButton onPress={handleContinueButton} buttonText="Continue" />
-      )}
-    </View>
+        {/* Submit button - show on both modes when text is entered */}
+        {text.trim() && (
+          // <Pressable
+          //   style={({ pressed }) => [
+          //     styles.submitButton,
+          //     pressed && styles.submitButtonPressed,
+          //   ]}
+          //   onPress={handleContinueButton}
+          //   onPressIn={handleContinueButtonPressIn}
+          //   onPressOut={handleContinueButtonPressOut}
+          // >
+          //   <Animated.View style={{ transform: [{ scale: continueButtonScale }] }}>
+          //     <Text style={styles.submitButtonText}>Continue</Text>
+          //   </Animated.View>
+          // </Pressable>
+          <CtaButton onPress={handleContinueButton} buttonText="Continue" />
+        )}
+      </MainScreen>
   );
 }
 
@@ -189,16 +192,9 @@ const PRIMARY = "#32535F";
 const PRIMARY_PRESSED = "#2A454F";
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    paddingTop: 80,
-    paddingHorizontal: 24,
-    paddingBottom: 270,
-    gap: 40,
-  },
   header: {
     gap: 16,
+    paddingTop: 8,
   },
   title: { 
     fontSize: 32,
@@ -250,17 +246,9 @@ const styles = StyleSheet.create({
     lineHeight: 22.5,
     letterSpacing: -0.165,
   },
-  
-  // Input screen styles
-  inputContainer: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    paddingTop: 80,
-    paddingHorizontal: 24,
-    paddingBottom: 64,
-  },
   inputHeader: {
     marginBottom: 48, // 48px to divider
+    paddingTop: 8,
   },
   inputTitle: {
     fontSize: 32,

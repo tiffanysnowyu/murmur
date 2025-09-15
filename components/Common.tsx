@@ -1,15 +1,16 @@
 import { useRef } from "react";
-import { View, Text, StyleSheet, Pressable, Animated } from "react-native";
+import { View, Text, StyleSheet, Pressable, Animated, SafeAreaView } from "react-native";
 
-// export const MainContainer = () => {
-//   return (
-//     <View style={styles.container}>
-//       <View style={styles.topNav}>
-//         <BackButton onPress={handleBack} buttonText={'Back'} />
-//       </View>
-//     </View>
-//   )
-// }
+export const MainScreen = ({ children, backgroundColor = "#F5F5F5" }: {
+  children: React.ReactNode;
+  backgroundColor?: string;
+}) => {
+  return (
+    <SafeAreaView style={[styles.screen, { backgroundColor, borderWidth: 5, borderColor: "green" }]}>
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24, borderWidth: 5, borderColor: "blue" }}>{children}</View>
+    </SafeAreaView>
+  )
+}
 
 export const BackButton = ({ onPress, buttonText = 'Back' }: {
   onPress: () => void;
@@ -64,6 +65,9 @@ export const CtaButton = ({ onPress, buttonText = 'Continue', colorStyle = 'prim
 const BACK_TEXT = "#B0B0B8";
 
 const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
   backButton: {
     flexDirection: "row",
     alignItems: "center",
