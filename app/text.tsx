@@ -10,7 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { BackButton } from '@/components/Common';
+import { BackButton, CtaButton } from '@/components/Common';
 
 export default function TextPage() {
   const { initialText, mode: initialMode, cameFromImageScreen } = useLocalSearchParams();
@@ -161,19 +161,20 @@ export default function TextPage() {
 
       {/* Submit button - show on both modes when text is entered */}
       {text.trim() && (
-        <Pressable
-          style={({ pressed }) => [
-            styles.submitButton,
-            pressed && styles.submitButtonPressed,
-          ]}
-          onPress={handleContinueButton}
-          onPressIn={handleContinueButtonPressIn}
-          onPressOut={handleContinueButtonPressOut}
-        >
-          <Animated.View style={{ transform: [{ scale: continueButtonScale }] }}>
-            <Text style={styles.submitButtonText}>Continue</Text>
-          </Animated.View>
-        </Pressable>
+        // <Pressable
+        //   style={({ pressed }) => [
+        //     styles.submitButton,
+        //     pressed && styles.submitButtonPressed,
+        //   ]}
+        //   onPress={handleContinueButton}
+        //   onPressIn={handleContinueButtonPressIn}
+        //   onPressOut={handleContinueButtonPressOut}
+        // >
+        //   <Animated.View style={{ transform: [{ scale: continueButtonScale }] }}>
+        //     <Text style={styles.submitButtonText}>Continue</Text>
+        //   </Animated.View>
+        // </Pressable>
+        <CtaButton onPress={handleContinueButton} buttonText="Continue" />
       )}
     </View>
   );

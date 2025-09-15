@@ -14,6 +14,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { extractTextFromImage } from '../utils/ocr';
+import { CtaButton } from '@/components/Common';
 
 export default function ImagePage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -277,22 +278,30 @@ export default function ImagePage() {
       </View>
 
       {selectedImage && !isProcessing && imageExtractedText && (
-        <Pressable
-          style={({ pressed }) => [
-            styles.continueButton,
-            pressed && { opacity: 0.8 }
-          ]}
-          onPress={() => router.push({
-            pathname: '/text',
-            params: {
-              initialText: imageExtractedText,
-              mode: 'analyze',
-              cameFromImageScreen: 'true',
-            }
-          })}
-        >
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </Pressable>
+        // <Pressable
+        //   style={({ pressed }) => [
+        //     styles.continueButton,
+        //     pressed && { opacity: 0.8 }
+        //   ]}
+        //   onPress={() => router.push({
+        //     pathname: '/text',
+        //     params: {
+        //       initialText: imageExtractedText,
+        //       mode: 'analyze',
+        //       cameFromImageScreen: 'true',
+        //     }
+        //   })}
+        // >
+        //   <Text style={styles.continueButtonText}>Continue</Text>
+        // </Pressable>
+        <CtaButton onPress={() => router.push({
+          pathname: '/text',
+          params: {
+            initialText: imageExtractedText,
+            mode: 'analyze',
+            cameFromImageScreen: 'true',
+          }
+        })} buttonText="Continue" />
       )}
     </View>
   );

@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { router } from 'expo-router';
-import { BackButton } from '@/components/Common';
+import { BackButton, CtaButton } from '@/components/Common';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -37,7 +37,7 @@ export default function MurmurScreen() {
         </View>
 
         {/* Continue Button */}
-        <Pressable
+        {/* <Pressable
           style={({ pressed }) => [
             styles.continueButton,
             pressed && { opacity: 0.8 }
@@ -45,7 +45,8 @@ export default function MurmurScreen() {
           onPress={handleContinue}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
-        </Pressable>
+        </Pressable> */}
+        <CtaButton onPress={handleContinue} buttonText="Continue" />
       </View>
     </SafeAreaView>
   );

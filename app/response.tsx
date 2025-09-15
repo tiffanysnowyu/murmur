@@ -18,7 +18,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
 import { searchRecent, needsRecentInfo, formatSearchResults } from '../utils/simpleSearch';
 import { findSourcesFirst, formatSourceReferences } from '../utils/sourceFirst';
-import { BackButton } from '@/components/Common';
+import { BackButton, CtaButton } from '@/components/Common';
 
 const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
 
@@ -887,7 +887,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
             setShowSummaryTitle(scrollY < 20);
             
             // Show CTAs when scrolled past a certain point (e.g., 300px)
-            setShowCTAs(scrollY > 300);
+            setShowCTAs(scrollY > 200);
           }}
           scrollEventThrottle={16}
         >
@@ -1019,7 +1019,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           {/* CTA Buttons at the bottom */}
           {showCTAs && !savedResponse && (
             <View style={styles.ctaContainer}>
-              <Pressable 
+              {/* <Pressable 
                 style={styles.analyzeCTA} 
                 onPress={handleAnalyzeClaims}
                 onPressIn={handleAnalyzeCTAPressIn}
@@ -1039,7 +1039,10 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
                 <Animated.View style={{ transform: [{ scale: doneCTAScale }] }}>
                   <Text style={styles.doneCtaText}>Done</Text>
                 </Animated.View>
-              </Pressable>
+              </Pressable> */}
+            
+              <CtaButton onPress={handleAnalyzeClaims} buttonText="Analyze these claims" />
+              <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
             </View>
           )}
         </ScrollView>
@@ -1097,7 +1100,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         onScroll={(event) => {
           const scrollY = event.nativeEvent.contentOffset.y;
           setShowSummaryTitle(scrollY < 20);
-          setShowCTAs(scrollY > 300);
+          setShowCTAs(scrollY > 200);
         }}
         scrollEventThrottle={16}
       >
@@ -1314,18 +1317,20 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
 
         {/* CTA Button at the bottom */}
         {showCTAs && !savedResponse && (
-          <View style={styles.ctaContainer}>
-            <Pressable 
-              style={styles.analyzeCTA} 
-              onPress={() => router.push('/meditation')}
-              onPressIn={handleAnalyzeCTAPressIn}
-              onPressOut={handleAnalyzeCTAPressOut}
-            >
-              <Animated.View style={{ transform: [{ scale: analyzeCTAScale }] }}>
-                <Text style={styles.analyzeCtaText}>Continue</Text>
-              </Animated.View>
-            </Pressable>
-          </View>
+          // <View style={styles.ctaContainer}>
+          //   <Pressable 
+          //     style={styles.analyzeCTA} 
+          //     onPress={() => router.push('/meditation')}
+          //     onPressIn={handleAnalyzeCTAPressIn}
+          //     onPressOut={handleAnalyzeCTAPressOut}
+          //   >
+          //     <Animated.View style={{ transform: [{ scale: analyzeCTAScale }] }}>
+          //       <Text style={styles.analyzeCtaText}>Continue</Text>
+          //     </Animated.View>
+          //   </Pressable>
+          // </View>
+
+          <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue" />
         )}
       </ScrollView>
 
@@ -1579,32 +1584,32 @@ const styles = StyleSheet.create({
     gap: 16,
     marginBottom: 64,
   },
-  analyzeCTA: {
-    backgroundColor: "#1A1A1A",
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  analyzeCtaText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontFamily: "SF Pro Display",
-    fontWeight: "600",
-  },
-  doneCTA: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  doneCtaText: {
-    color: "#1A1A1A",
-    fontSize: 17,
-    fontFamily: "SF Pro Display",
-    fontWeight: "600",
-  },
+  // analyzeCTA: {
+  //   backgroundColor: "#1A1A1A",
+  //   paddingVertical: 18,
+  //   borderRadius: 16,
+  //   alignItems: "center",
+  // },
+  // analyzeCtaText: {
+  //   color: "#FFFFFF",
+  //   fontSize: 17,
+  //   fontFamily: "SF Pro Display",
+  //   fontWeight: "600",
+  // },
+  // doneCTA: {
+  //   backgroundColor: "#FFFFFF",
+  //   borderWidth: 1,
+  //   borderColor: "#E5E5E5",
+  //   paddingVertical: 18,
+  //   borderRadius: 16,
+  //   alignItems: "center",
+  // },
+  // doneCtaText: {
+  //   color: "#1A1A1A",
+  //   fontSize: 17,
+  //   fontFamily: "SF Pro Display",
+  //   fontWeight: "600",
+  // },
   loadingCenterContainer: {
     flex: 1,
     justifyContent: 'center',
