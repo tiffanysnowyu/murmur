@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
+import { BackButton } from '@/components/Common';
 
 interface Insight {
   id: string;
@@ -65,12 +66,7 @@ export default function InsightsPage() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Image source={require('../assets/images/chevron_back.png')} style={styles.chevron} />
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        
-        {/* <Text style={styles.title}>Saved Insights</Text> */}
+        <BackButton onPress={() => router.back()} buttonText="Back" />
         
         <View style={{ width: 40 }} />
       </View>

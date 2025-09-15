@@ -10,6 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
+import { BackButton } from '@/components/Common';
 
 export default function TextPage() {
   const { initialText, mode: initialMode, cameFromImageScreen } = useLocalSearchParams();
@@ -84,10 +85,8 @@ export default function TextPage() {
     return (
       <View style={styles.container}>
         {/* Back button */}
-        <Pressable style={styles.backButton} onPress={() => router.back()}>
-          <Text style={styles.chevron}>‹</Text>
-          <Text style={styles.backText}>Back</Text>
-        </Pressable>
+        <BackButton onPress={() => router.back()} />
+        
 
         {/* Heading */}
         <View style={styles.header}>
@@ -127,18 +126,13 @@ export default function TextPage() {
     );
   }
 
-  console.log('CAME FROM IMAGE SCREEN:', cameFromImageScreen)
-
-
   // Text input screen after the mode is selected
   return (
     <View style={styles.inputContainer}>
       {/* Back button - SEPARATE. In this case just reset the mode to null to show the mode selection screen.
         If the original screen was the image screen then go back to that. */}
-      <Pressable style={styles.inputBackButton} onPress={() => cameFromImageScreen ? router.back() : setMode(null)}>
-        <Text style={styles.chevron}>‹</Text>
-        <Text style={styles.backText}>Back</Text>
-      </Pressable>
+      <BackButton onPress={() => cameFromImageScreen ? router.back() : setMode(null)} />
+
 
       {/* Title and description - NO BACK BUTTON HERE */}
       <View style={styles.inputHeader}>
@@ -202,25 +196,6 @@ const styles = StyleSheet.create({
     paddingBottom: 270,
     gap: 40,
   },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  chevron: {
-    fontSize: 24,
-    color: BACK_TEXT,
-    width: 24,
-    height: 24,
-    lineHeight: 24,
-    textAlign: "center",
-  },
-  backText: {
-    fontSize: 17,
-    fontFamily: "SF Pro Display",
-    color: BACK_TEXT,
-    fontWeight: "400",
-  },
   header: {
     gap: 16,
   },
@@ -282,12 +257,6 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     paddingHorizontal: 24,
     paddingBottom: 64,
-  },
-  inputBackButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginBottom: 40,
   },
   inputHeader: {
     marginBottom: 48, // 48px to divider

@@ -10,6 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { router } from 'expo-router';
+import { BackButton } from '@/components/Common';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -34,10 +35,7 @@ export default function HowItWorks() {
     <SafeAreaView style={styles.container}>
       {/* Back Button */}
       <View style={styles.topNav}>
-        <Pressable onPress={handleBack} style={styles.backButton}>
-          <Image source={require('../assets/images/chevron_back.png')} style={styles.chevron} />
-          <Text style={styles.backText}>Back</Text>
-        </Pressable>
+        <BackButton onPress={handleBack} buttonText={'Back'} />
       </View>
 
       <View style={styles.content}>
@@ -85,21 +83,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 16,
     paddingBottom: 16,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  chevron: {
-    width: 24,
-    height: 24,
-  },
-  backText: {
-    fontSize: 17,
-    fontFamily: "SF Pro Display",
-    color: "#B0B0B8",
-    fontWeight: "400",
   },
   content: {
     flex: 1,

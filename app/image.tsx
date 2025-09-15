@@ -300,10 +300,16 @@ export default function ImagePage() {
 
 const styles = StyleSheet.create({
   container: {
+    // flex: 1,
+    // padding: 24,
+    // backgroundColor: '#fff',
+    // paddingTop: 60,
     flex: 1,
-    padding: 24,
-    backgroundColor: '#fff',
-    paddingTop: 60,
+    backgroundColor: "#FFFFFF",
+    paddingTop: 80, 
+    paddingHorizontal: 24, 
+    paddingBottom: 270, 
+    gap: 40,
   },
   backButton: {
     flexDirection: "row",

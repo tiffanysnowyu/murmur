@@ -18,6 +18,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
 import { searchRecent, needsRecentInfo, formatSearchResults } from '../utils/simpleSearch';
 import { findSourcesFirst, formatSourceReferences } from '../utils/sourceFirst';
+import { BackButton } from '@/components/Common';
 
 const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
 
@@ -821,10 +822,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     return (
       <View style={styles.container}>
         <View style={styles.summaryHeader}>
-          <Pressable style={styles.summaryBackButton} onPress={goBack}>
-            <Image source={require('../assets/images/chevron_back.png')} style={styles.summaryChevron} />
-            <Text style={styles.summaryBackText}>{savedResponse ? 'Saved Insights' : 'Back'}</Text>
-          </Pressable>
+          <BackButton onPress={goBack} buttonText={savedResponse ? 'Saved Insights' : 'Back'} />
           
           <Text style={styles.summaryTitle}>Summary</Text>
           
@@ -844,10 +842,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
       <View style={styles.container}>
         {/* Header */}
         <View style={[styles.summaryHeader, !showSummaryTitle && styles.summaryHeaderPinned]}>
-          <Pressable style={styles.summaryBackButton} onPress={goBack}>
-            <Image source={require('../assets/images/chevron_back.png')} style={styles.summaryChevron} />
-            <Text style={styles.summaryBackText}>{savedResponse ? 'Saved Insights' : 'Back'}</Text>
-          </Pressable>
+          <BackButton onPress={goBack} buttonText={savedResponse ? 'Saved Insights' : 'Back'} />
 
           {showSummaryTitle ? (
             <View style={styles.summaryArea}>
@@ -1060,10 +1055,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     <View style={styles.container}>
       {/* Header */}
       <View style={[styles.summaryHeader, !showSummaryTitle && styles.summaryHeaderPinned]}>
-        <Pressable style={styles.summaryBackButton} onPress={goBack}>
-          <Image source={require('../assets/images/chevron_back.png')} style={styles.summaryChevron} />
-          <Text style={styles.summaryBackText}>Back</Text>
-        </Pressable>
+        <BackButton onPress={goBack} buttonText="Back" />
 
         {showSummaryTitle ? (
           <View style={styles.summaryArea}>
@@ -1360,11 +1352,9 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
 }
 
 // Summary-specific styles
-const BACK_TEXT = "#B0B0B8";
 const TEXT_PRIMARY = "#1A1A1A";
 const TEXT_SECONDARY = "#595959";
 const DIVIDER_COLOR = "#D1D1D6";
-const LINK_COLOR = "#007AFF";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
@@ -1383,21 +1373,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingTop: 40,
-  },
-  summaryBackButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  summaryChevron: {
-    width: 24,
-    height: 24,
-  },
-  summaryBackText: {
-    fontSize: 17,
-    fontFamily: "SF Pro Display",
-    color: BACK_TEXT,
-    fontWeight: "400",
   },
   summaryTitle: {
     flex: 1,
@@ -1663,8 +1638,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e0e0e0',
     backgroundColor: '#f8f9fa',
   },
-  backButton: { marginRight: 16 },
-  backButtonText: { fontSize: 16, color: '#32535F', fontWeight: '600' },
   title: { fontSize: 20, fontWeight: '600', color: '#333', flex: 1 },
   saveButton: { padding: 8 },
   saveButtonText: { fontSize: 20 },

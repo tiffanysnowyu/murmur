@@ -2,6 +2,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { router } from "expo-router";
+import { BackButton } from "@/components/Common";
 
 export default function ChooseInput() {
   const handleChoice = (choice: "text" | "image") => {
@@ -11,12 +12,8 @@ export default function ChooseInput() {
   return (
     <View style={styles.container}>
       {/* Back button */}
-      {/* <Pressable style={styles.backButton} onPress={() => router.push('/(tabs)')}> */}
-      <Pressable style={styles.backButton} onPress={() => router.dismissAll()}>
-        <Text style={styles.chevron}>‹</Text>
-        <Text style={styles.backText}>Home</Text>
-      </Pressable>
-
+      <BackButton onPress={() => router.dismissAll()} buttonText="Home" />
+        
       {/* Heading */}
       <View style={styles.header}>
         <Text style={styles.title}>Choose content type</Text>
@@ -69,24 +66,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24, 
     paddingBottom: 270, 
     gap: 40, 
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4, 
-  },
-  chevron: {
-    fontSize: 24,
-    color: BACK_TEXT,
-    width: 24,
-    height: 24,
-    lineHeight: 24,
-    textAlign: "center",
-  },
-  backText: {
-    fontSize: 17,
-    color: BACK_TEXT,
-    fontWeight: "400",
   },
   header: {
     gap: 16, 
