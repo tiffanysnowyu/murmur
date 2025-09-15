@@ -5,7 +5,6 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  Pressable,
   Image,
   Alert,
   ActivityIndicator,
@@ -14,7 +13,7 @@ import {
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
 import { extractTextFromImage } from '../utils/ocr';
-import { CtaButton } from '@/components/Common';
+import { BackButton, CtaButton, MainScreen } from '@/components/Common';
 
 export default function ImagePage() {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
@@ -155,39 +154,6 @@ export default function ImagePage() {
         }
         
         setImageExtractedText(extractedText);
-
-        // Alert.alert(
-        //   'Text Extracted!',
-        //   `Found text: "${extractedText.substring(0, 100)}${extractedText.length > 100 ? '...' : ''}"`,
-        //   [
-        //     {
-        //       text: 'Edit Text',
-        //       onPress: () => {
-        //         addDebugInfo('Navigating to text editor');
-        //         router.push({
-        //           pathname: '/text',
-        //           params: {
-        //             initialText: extractedText,
-        //             mode: 'analyze'
-        //           }
-        //         });
-        //       }
-        //     },
-        //     {
-        //       text: 'Analyze Now',
-        //       onPress: () => {
-        //         addDebugInfo('Navigating to analysis');
-        //         router.push({
-        //           pathname: '/response',
-        //           params: {
-        //             text: extractedText,
-        //             mode: 'analyze'
-        //           }
-        //         });
-        //       }
-        //     }
-        //   ]
-        // );
       } catch (ocrError) {
         addDebugInfo(`OCR error: ${ocrError}`);
         setIsProcessing(false);
@@ -208,27 +174,14 @@ export default function ImagePage() {
     setIsProcessing(false);
   };
 
-  const testSimpleAlert = () => {
-    addDebugInfo('Testing simple alert');
-    Alert.alert('Test', 'This is a test alert');
-  };
-
-  const testNavigation = () => {
-    addDebugInfo('Testing navigation to text page');
-    router.push('/text');
-  };
-
   const handleBack = () => {
     router.back();
   };
 
   return (
-    <View style={styles.container}>
+    <MainScreen>
       {/* Back button */}
-      <Pressable style={styles.backButton} onPress={handleBack}>
-        <Text style={styles.chevron}>‹</Text>
-        <Text style={styles.backText}>Back</Text>
-      </Pressable>
+      <BackButton onPress={handleBack} buttonText="Back" />
 
       <Text style={styles.title}>Scan Image for Text</Text>
       <Text style={styles.subtitle}>
@@ -278,22 +231,6 @@ export default function ImagePage() {
       </View>
 
       {selectedImage && !isProcessing && imageExtractedText && (
-        // <Pressable
-        //   style={({ pressed }) => [
-        //     styles.continueButton,
-        //     pressed && { opacity: 0.8 }
-        //   ]}
-        //   onPress={() => router.push({
-        //     pathname: '/text',
-        //     params: {
-        //       initialText: imageExtractedText,
-        //       mode: 'analyze',
-        //       cameFromImageScreen: 'true',
-        //     }
-        //   })}
-        // >
-        //   <Text style={styles.continueButtonText}>Continue</Text>
-        // </Pressable>
         <CtaButton onPress={() => router.push({
           pathname: '/text',
           params: {
@@ -303,43 +240,11 @@ export default function ImagePage() {
           }
         })} buttonText="Continue" />
       )}
-    </View>
+    </MainScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    // flex: 1,
-    // padding: 24,
-    // backgroundColor: '#fff',
-    // paddingTop: 60,
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    paddingTop: 80, 
-    paddingHorizontal: 24, 
-    paddingBottom: 270, 
-    gap: 40,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginBottom: 40,
-  },
-  chevron: {
-    fontSize: 24,
-    color: "#B0B0B8",
-    width: 24,
-    height: 24,
-    lineHeight: 24,
-    textAlign: "center",
-  },
-  backText: {
-    fontSize: 17,
-    fontFamily: "SF Pro Display",
-    color: "#B0B0B8",
-    fontWeight: "400",
-  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',

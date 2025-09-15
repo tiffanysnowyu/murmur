@@ -10,7 +10,7 @@ import {
   Image,
 } from 'react-native';
 import { router } from 'expo-router';
-import { BackButton, CtaButton } from '@/components/Common';
+import { BackButton, CtaButton, MainScreen } from '@/components/Common';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -24,7 +24,7 @@ export default function MurmurScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <MainScreen>
       {/* Back button */}
       <View style={styles.topNav}>
         <BackButton onPress={handleHome} buttonText={'Back'} />  
@@ -46,17 +46,13 @@ export default function MurmurScreen() {
         >
           <Text style={styles.continueButtonText}>Continue</Text>
         </Pressable> */}
-        <CtaButton onPress={handleContinue} buttonText="Continue" />
       </View>
-    </SafeAreaView>
+      <CtaButton onPress={handleContinue} buttonText="Continue" />
+    </MainScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
   topNav: {
     paddingHorizontal: 24,
     paddingTop: 16,
@@ -66,7 +62,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 24,
   },
   titleContainer: {
     marginBottom: screenHeight * 0.3,

@@ -8,6 +8,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
+import { MainScreen } from '@/components/Common';
 
 
 export default function MeditationScreen() {
@@ -22,40 +23,38 @@ export default function MeditationScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.content}>
-        {/* Main Title */}
-        <Text style={styles.mainTitle}>Take a breath</Text>
+    <MainScreen>
+      {/* Main Title */}
+      <Text style={styles.mainTitle}>Take a breath</Text>
 
-        {/* Subtitle */}
-        <Text style={styles.subtitle}>Clear your mind</Text>
+      {/* Subtitle */}
+      <Text style={styles.subtitle}>Clear your mind</Text>
 
-        {/* Buttons Container */}
-        <View style={styles.buttonsContainer}>
-          {/* I did it Button */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.didItButton,
-              pressed && { opacity: 0.8 }
-            ]}
-            onPress={handleDidIt}
-          >
-            <Text style={styles.didItButtonText}>I did it</Text>
-          </Pressable>
+      {/* Buttons Container */}
+      <View style={styles.buttonsContainer}>
+        {/* I did it Button */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.didItButton,
+            pressed && { opacity: 0.8 }
+          ]}
+          onPress={handleDidIt}
+        >
+          <Text style={styles.didItButtonText}>I did it</Text>
+        </Pressable>
 
-          {/* Next time Button */}
-          <Pressable
-            style={({ pressed }) => [
-              styles.nextTimeButton,
-              pressed && { opacity: 0.8 }
-            ]}
-            onPress={handleNextTime}
-          >
-            <Text style={styles.nextTimeButtonText}>Next time</Text>
-          </Pressable>
-        </View>
+        {/* Next time Button */}
+        <Pressable
+          style={({ pressed }) => [
+            styles.nextTimeButton,
+            pressed && { opacity: 0.8 }
+          ]}
+          onPress={handleNextTime}
+        >
+          <Text style={styles.nextTimeButtonText}>Next time</Text>
+        </Pressable>
       </View>
-    </SafeAreaView>
+    </MainScreen>
   );
 }
 

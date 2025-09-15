@@ -1,13 +1,13 @@
 import { useRef } from "react";
 import { View, Text, StyleSheet, Pressable, Animated, SafeAreaView } from "react-native";
 
-export const MainScreen = ({ children, backgroundColor = "#F5F5F5" }: {
+export const MainScreen = ({ children, backgroundColor = "#FFFFFF" }: {
   children: React.ReactNode;
   backgroundColor?: string;
 }) => {
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor, borderWidth: 5, borderColor: "green" }]}>
-      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24, borderWidth: 5, borderColor: "blue" }}>{children}</View>
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40, borderWidth: 5, borderColor: "blue"  }}>{children}</View>
     </SafeAreaView>
   )
 }
@@ -72,6 +72,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 4, 
+    paddingBottom: 40,
   },
   chevron: {
     fontSize: 24,

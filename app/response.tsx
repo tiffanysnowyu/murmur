@@ -18,7 +18,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
 import { searchRecent, needsRecentInfo, formatSearchResults } from '../utils/simpleSearch';
 import { findSourcesFirst, formatSourceReferences } from '../utils/sourceFirst';
-import { BackButton, CtaButton } from '@/components/Common';
+import { BackButton, CtaButton, MainScreen } from '@/components/Common';
 
 const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
 
@@ -786,8 +786,8 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   const fetchStillUneasyResponse = async () => {
     try {
       setStillUneasyLoading(true);
-      
-      // Simulate an API call - replace this with actual implementation
+
+      // TODO: REPLACE THIS LINE OF CODE WITH SOMETHING THAT CALLS THE CLAUDE API TO GET THE STILL UNEASY RESPONSE
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // This is a placeholder response - replace with actual API call
@@ -818,10 +818,11 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   //   RENDER FOR SUMMARY MODE
   // =========================
   // Show loading state for summary mode
-  if (isSummaryMode && loading) {
+  if (isSummaryMode && loading) { 
+  // if (true) {
     return (
-      <View style={styles.container}>
-        <View style={styles.summaryHeader}>
+      <MainScreen>
+        <View style={{display: 'flex'}}>
           <BackButton onPress={goBack} buttonText={savedResponse ? 'Saved Insights' : 'Back'} />
           
           <Text style={styles.summaryTitle}>Summary</Text>
@@ -833,15 +834,15 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           <ActivityIndicator size="large" color="#32535F" />
           <Text style={styles.loadingText}>{analysisStep || 'Analyzing...'}</Text>
         </View>
-      </View>
+      </MainScreen>
     );
   }
 
   if (isSummaryMode && !loading && !error && parsedSummary.article) {
     return (
-      <View style={styles.container}>
+      <MainScreen>
         {/* Header */}
-        <View style={[styles.summaryHeader, !showSummaryTitle && styles.summaryHeaderPinned]}>
+        <View style={[!showSummaryTitle && styles.summaryHeaderPinned]}>
           <BackButton onPress={goBack} buttonText={savedResponse ? 'Saved Insights' : 'Back'} />
 
           {showSummaryTitle ? (
@@ -887,7 +888,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
             setShowSummaryTitle(scrollY < 20);
             
             // Show CTAs when scrolled past a certain point (e.g., 300px)
-            setShowCTAs(scrollY > 200);
+            setShowCTAs(scrollY > 300);
           }}
           scrollEventThrottle={16}
         >
@@ -1016,38 +1017,17 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
             </View>
           )}
 
-          {/* CTA Buttons at the bottom */}
-          {showCTAs && !savedResponse && (
-            <View style={styles.ctaContainer}>
-              {/* <Pressable 
-                style={styles.analyzeCTA} 
-                onPress={handleAnalyzeClaims}
-                onPressIn={handleAnalyzeCTAPressIn}
-                onPressOut={handleAnalyzeCTAPressOut}
-              >
-                <Animated.View style={{ transform: [{ scale: analyzeCTAScale }] }}>
-                  <Text style={styles.analyzeCtaText}>Analyze these claims</Text>
-                </Animated.View>
-              </Pressable>
-              
-              <Pressable 
-                style={styles.doneCTA} 
-                onPress={() => router.dismissAll()}
-                onPressIn={handleDoneCTAPressIn}
-                onPressOut={handleDoneCTAPressOut}
-              >
-                <Animated.View style={{ transform: [{ scale: doneCTAScale }] }}>
-                  <Text style={styles.doneCtaText}>Done</Text>
-                </Animated.View>
-              </Pressable> */}
-            
-              <CtaButton onPress={handleAnalyzeClaims} buttonText="Analyze these claims" />
-              <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
-            </View>
-          )}
+   
         </ScrollView>
 
-      </View>
+       {/* CTA Buttons at the bottom */}
+        {showCTAs && !savedResponse && (
+          <View style={styles.ctaContainer}>
+            <CtaButton onPress={handleAnalyzeClaims} buttonText="Analyze these claims" />
+            <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
+          </View>
+        )}
+      </MainScreen>
     );
   }
 
@@ -1055,9 +1035,9 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   //   REGULAR RENDER (ANALYSIS MODE)
   // =========================
   return (
-    <View style={styles.container}>
+    <MainScreen>
       {/* Header */}
-      <View style={[styles.summaryHeader, !showSummaryTitle && styles.summaryHeaderPinned]}>
+      <View style={[!showSummaryTitle && styles.summaryHeaderPinned]}>
         <BackButton onPress={goBack} buttonText="Back" />
 
         {showSummaryTitle ? (
@@ -1100,7 +1080,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         onScroll={(event) => {
           const scrollY = event.nativeEvent.contentOffset.y;
           setShowSummaryTitle(scrollY < 20);
-          setShowCTAs(scrollY > 200);
+          setShowCTAs(scrollY > 300);
         }}
         scrollEventThrottle={16}
       >
@@ -1352,7 +1332,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           </View>
         </View>
       </Modal>
-    </View>
+    </MainScreen>
   );
 }
 
@@ -1365,11 +1345,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   
   // Summary mode styles
-  summaryHeader: {
-    paddingTop: 72,
-    paddingHorizontal: 24,
-    backgroundColor: "#FFFFFF",
-  },
   summaryHeaderPinned: {
     paddingBottom: 16,
   },
@@ -1377,7 +1352,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingTop: 40,
+    // paddingTop: 16,
   },
   summaryTitle: {
     flex: 1,
@@ -1392,8 +1367,8 @@ const styles = StyleSheet.create({
   },
   summarySaveButtonPinned: {
     position: 'absolute',
-    right: 24, // Adjust for padding to align with page margin
-    top: 72, // Vertically center with back button
+    right: 0, // Adjust for padding to align with page margin
+    top: 0, // Vertically center with back button
   },
   summarySaveIcon: {
     width: 24,
@@ -1401,7 +1376,6 @@ const styles = StyleSheet.create({
   },
   summaryContent: {
     flex: 1,
-    paddingHorizontal: 24,
   },
   summarySection: {
     marginBottom: 0,
@@ -1582,7 +1556,7 @@ const styles = StyleSheet.create({
   ctaContainer: {
     paddingVertical: 0,
     gap: 16,
-    marginBottom: 64,
+    // marginBottom: 64,
   },
   // analyzeCTA: {
   //   backgroundColor: "#1A1A1A",

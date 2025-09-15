@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
-import { BackButton } from '@/components/Common';
+import { BackButton, MainScreen } from '@/components/Common';
 
 interface Insight {
   id: string;
@@ -64,13 +64,8 @@ export default function InsightsPage() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <BackButton onPress={() => router.back()} buttonText="Back" />
-        
-        <View style={{ width: 40 }} />
-      </View>
-
+    <MainScreen backgroundColor='#F4F4F9'>
+      <BackButton onPress={() => router.back()} buttonText="Back" />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {insights.length === 0 ? (
           <View style={styles.emptyState}>
@@ -112,7 +107,7 @@ export default function InsightsPage() {
           ))
         )}
       </ScrollView>
-    </View>
+    </MainScreen>
   );
 }
 
@@ -155,7 +150,8 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 16,
+    // Undo the 40 padding set in the MainScreen component
+    marginBottom: -40,
   },
   emptyState: {
     alignItems: 'center',

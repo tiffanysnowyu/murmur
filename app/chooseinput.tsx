@@ -2,7 +2,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Pressable } from "react-native";
 import { router } from "expo-router";
-import { BackButton } from "@/components/Common";
+import { BackButton, MainScreen } from "@/components/Common";
 
 export default function ChooseInput() {
   const handleChoice = (choice: "text" | "image") => {
@@ -10,7 +10,7 @@ export default function ChooseInput() {
   };
 
   return (
-    <View style={styles.container}>
+    <MainScreen>
       {/* Back button */}
       <BackButton onPress={() => router.dismissAll()} buttonText="Home" />
         
@@ -48,7 +48,7 @@ export default function ChooseInput() {
           <Text style={styles.pillDesc}>Upload or snap a screenshot</Text>
         </Pressable>
       </View>
-    </View>
+    </MainScreen>
   );
 }
 
@@ -59,14 +59,6 @@ const TEXT_SECONDARY = "#595959";
 const BACK_TEXT = "#B0B0B8";
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    paddingTop: 80, 
-    paddingHorizontal: 24, 
-    paddingBottom: 270, 
-    gap: 40, 
-  },
   header: {
     gap: 16, 
   },

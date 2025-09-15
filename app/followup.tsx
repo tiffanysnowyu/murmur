@@ -8,6 +8,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
+import { MainScreen } from '@/components/Common';
 
 export default function FollowUpPage() {
   const [showGoodNews, setShowGoodNews] = useState(false);
@@ -21,7 +22,7 @@ export default function FollowUpPage() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <MainScreen>
       <View style={styles.content}>
         <View style={styles.header}>
           <Text style={styles.title}>What would you like to do next?</Text>
@@ -75,7 +76,7 @@ export default function FollowUpPage() {
           )}
         </View>
       </View>
-    </SafeAreaView>
+    </MainScreen>
   );
 }
 

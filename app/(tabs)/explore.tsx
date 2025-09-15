@@ -8,6 +8,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { router } from 'expo-router';
+import { MainScreen } from '@/components/Common';
 
 export default function TabTwoScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
@@ -21,7 +22,7 @@ export default function TabTwoScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <MainScreen>
       {/* Hamburger Menu Button */}
       <TouchableOpacity 
         style={styles.menuButton} 
@@ -63,7 +64,7 @@ export default function TabTwoScreen() {
           </SafeAreaView>
         </TouchableOpacity>
       </Modal>
-    </View>
+    </MainScreen>
   );
 }
 

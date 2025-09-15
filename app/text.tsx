@@ -164,19 +164,6 @@ export default function TextPage() {
 
         {/* Submit button - show on both modes when text is entered */}
         {text.trim() && (
-          // <Pressable
-          //   style={({ pressed }) => [
-          //     styles.submitButton,
-          //     pressed && styles.submitButtonPressed,
-          //   ]}
-          //   onPress={handleContinueButton}
-          //   onPressIn={handleContinueButtonPressIn}
-          //   onPressOut={handleContinueButtonPressOut}
-          // >
-          //   <Animated.View style={{ transform: [{ scale: continueButtonScale }] }}>
-          //     <Text style={styles.submitButtonText}>Continue</Text>
-          //   </Animated.View>
-          // </Pressable>
           <CtaButton onPress={handleContinueButton} buttonText="Continue" />
         )}
       </MainScreen>
@@ -187,14 +174,10 @@ const BORDER = "#CCE5E7";
 const FILL = "#F3F8FA";         
 const TEXT_PRIMARY = "#4A4A4A"; 
 const TEXT_SECONDARY = "#595959";
-const BACK_TEXT = "#B0B0B8";
-const PRIMARY = "#32535F";
-const PRIMARY_PRESSED = "#2A454F";
 
 const styles = StyleSheet.create({
   header: {
     gap: 16,
-    paddingTop: 8,
   },
   title: { 
     fontSize: 32,
@@ -248,7 +231,6 @@ const styles = StyleSheet.create({
   },
   inputHeader: {
     marginBottom: 48, // 48px to divider
-    paddingTop: 8,
   },
   inputTitle: {
     fontSize: 32,
