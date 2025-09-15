@@ -1342,7 +1342,6 @@ const TEXT_SECONDARY = "#595959";
 const DIVIDER_COLOR = "#D1D1D6";
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
   
   // Summary mode styles
   summaryHeaderPinned: {
@@ -1475,12 +1474,6 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
   },
-  claimContent: {
-    paddingTop: 8,
-    paddingBottom: 16,
-    borderTopWidth: 1,
-    borderTopColor: DIVIDER_COLOR,
-  },
   claimText: {
     fontSize: 18,
     fontFamily: "SF Pro Display",
@@ -1546,13 +1539,6 @@ const styles = StyleSheet.create({
     marginBottom: 72,
     alignSelf: 'center',
   },
-  explanationText: {
-    fontSize: 16,
-    fontFamily: "SF Pro Display",
-    fontWeight: "400",
-    color: TEXT_SECONDARY,
-    lineHeight: 24,
-  },
   ctaContainer: {
     paddingVertical: 0,
     gap: 16,
@@ -1590,37 +1576,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   
-  // Modal styles for key claims
-  claimModalOverlay: {
-    flex: 1,
-    backgroundColor: 'transparent',
-    justifyContent: 'flex-end',
-  },
-  claimModalText: {
-    fontSize: 16,
-    fontFamily: "SF Pro Display",
-    fontWeight: "400",
-    color: TEXT_SECONDARY,
-    lineHeight: 24,
-    textAlign: 'left',
-    width: '100%',
-  },
-  
   // Original analysis mode styles
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: 60,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-    backgroundColor: '#f8f9fa',
-  },
-  title: { fontSize: 20, fontWeight: '600', color: '#333', flex: 1 },
-  saveButton: { padding: 8 },
-  saveButtonText: { fontSize: 20 },
-  content: { flex: 1, padding: 16 },
   followUpFromSection: {
     marginBottom: 16,
     backgroundColor: '#e8f4fd',
@@ -1637,21 +1593,6 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   followUpFromText: { fontSize: 14, color: '#0D47A1', fontStyle: 'italic' },
-  inputSection: { marginBottom: 16, backgroundColor: '#f8f9fa', borderRadius: 8, overflow: 'hidden' },
-  typeIndicator: { backgroundColor: '#32535F', paddingHorizontal: 16, paddingVertical: 8 },
-  preFactCheckedIndicator: { backgroundColor: '#28a745' },
-  typeText: { color: 'white', fontSize: 14, fontWeight: '600' },
-  inputText: { padding: 16, fontSize: 16, lineHeight: 24, color: '#333' },
-  sourceInfoSection: {
-    marginBottom: 16,
-    backgroundColor: '#e8f5e8',
-    borderRadius: 8,
-    padding: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#4CAF50',
-  },
-  sourceInfoTitle: { fontSize: 14, fontWeight: '600', color: '#2E7D32', marginBottom: 4 },
-  sourceInfoText: { fontSize: 14, color: '#388E3C' },
   articleInfoSection: {
     marginBottom: 16,
     backgroundColor: '#fff3cd',
@@ -1665,9 +1606,6 @@ const styles = StyleSheet.create({
   articleMeta: { fontSize: 14, color: '#856404', marginBottom: 8 },
   warningText: { fontSize: 12, color: '#856404', fontStyle: 'italic' },
 
-  responseSection: { flex: 1 },
-  sectionTitle: { fontSize: 18, fontWeight: '600', color: '#1A1A1A', marginBottom: 16 },
-
   loadingContainer: { alignItems: 'center', paddingVertical: 40 },
   loadingText: { marginTop: 12, fontSize: 16, color: '#666', textAlign: 'center', fontWeight: '600' },
 
@@ -1675,104 +1613,6 @@ const styles = StyleSheet.create({
   errorText: { fontSize: 16, color: '#d32f2f', textAlign: 'center', marginBottom: 16 },
   retryButton: { backgroundColor: '#32535F', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 6 },
   retryButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
-
-  responseContainer: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    padding: 16,
-  },
-
-  // Titles for H2 sections (outside of collapsibles)
-  h2Title: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: '#32535F',
-    marginBottom: 8,
-  },
-
-  // Simple non-collapsible card
-  sectionCard: {
-    backgroundColor: '#ffffff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    padding: 16,
-  },
-
-  responseText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  },
-  boldText: { fontWeight: 'bold', fontSize: 16, lineHeight: 24, color: '#333' },
-  sourceText: { fontWeight: 'bold', color: '#32535F' },
-
-  // Collapsible styles (for sub-items)
-  sectionContainer: {
-    marginBottom: 12,
-    borderRadius: 8,
-    backgroundColor: '#f8f9fa',
-    overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  sectionHeader: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  sectionTitleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  sectionTitleText: { fontSize: 17, fontWeight: '600', color: '#32535F', flex: 1 },
-  expandIcon: { fontSize: 14, color: '#666', marginLeft: 8 },
-  sectionSummary: { marginTop: 8, fontSize: 14, color: '#666', lineHeight: 20, fontStyle: 'italic' },
-  sectionContent: { padding: 16, backgroundColor: '#ffffff' },
-
-  analyzeButton: {
-    backgroundColor: '#32535F',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  analyzeButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
-
-  followUpContainer: {
-    marginTop: 20,
-    padding: 16,
-    backgroundColor: '#f0f8ff',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e0e8f0',
-  },
-  followUpLabel: { fontSize: 14, color: '#666', marginBottom: 8, fontWeight: '500' },
-  followUpButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: '#ffffff',
-    borderRadius: 6,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#d0d0d0',
-  },
-  followUpButtonSpacing: { marginTop: 12 },
-  followUpQuestion: { fontSize: 16, color: '#32535F', fontWeight: '500', flex: 1, paddingRight: 10 },
-  followUpArrow: { fontSize: 20, color: '#32535F', fontWeight: 'bold' },
-
-  nextButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  nextButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
 
   noContentText: { fontSize: 16, color: '#666', textAlign: 'center', fontStyle: 'italic', paddingVertical: 40 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },

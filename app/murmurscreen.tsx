@@ -62,19 +62,4 @@ const styles = StyleSheet.create({
     color: '#4A90A4',
     textAlign: 'center',
   },
-  continueButton: {
-    backgroundColor: '#1A1A1A',
-    paddingVertical: 18,
-    paddingHorizontal: 40,
-    borderRadius: 16,
-    width: 345,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontFamily: 'SF Pro Display',
-    fontWeight: '600',
-  },
 });

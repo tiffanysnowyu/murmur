@@ -59,13 +59,6 @@ export default function MeditationScreen() {
 }
 
 const styles = StyleSheet.create({
-  content: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingBottom: 100,
-  },
   mainTitle: {
     fontSize: 32,
     fontFamily: 'SF Pro Display',

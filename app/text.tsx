@@ -259,28 +259,4 @@ const styles = StyleSheet.create({
     fontFamily: "SF Pro Display",
     color: "#1A1A1A",
   },
-  submitButton: {
-    backgroundColor: "#1A1A1A",
-    width: 345,
-    height: 64,
-    paddingVertical: 18,
-    paddingHorizontal: 39,
-    borderRadius: 16,
-    alignItems: "center",
-    justifyContent: "center",
-    alignSelf: "center",
-    marginTop: 40,
-  },
-  submitButtonPressed: {
-    backgroundColor: "#1A1A1A",
-  },
-  submitButtonDisabled: {
-    backgroundColor: "#D1D5DB",
-  },
-  submitButtonText: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontFamily: "SF Pro Display",
-    fontWeight: "600",
-  },
 });

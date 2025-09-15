@@ -112,42 +112,6 @@ export default function InsightsPage() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F4F4F9',
-  },
-  header: {
-    paddingTop: 72,
-    paddingHorizontal: 24,
-    backgroundColor: "#FFFFFF",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingBottom: 40,
-  },
-  backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  chevron: {
-    width: 24,
-    height: 24,
-  },
-  backText: {
-    fontSize: 17,
-    fontFamily: "SF Pro Display",
-    color: "#B0B0B8",
-    fontWeight: "400",
-  },
-  title: {
-    fontSize: 32,
-    fontFamily: "SF Pro Display",
-    fontWeight: "600",
-    color: "#1A1A1A",
-    textAlign: "center",
-    flex: 1,
-  },
   content: {
     flex: 1,
     // Undo the 40 padding set in the MainScreen component

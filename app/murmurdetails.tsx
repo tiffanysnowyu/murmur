@@ -54,10 +54,6 @@ export default function MurmurDetails() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F5F5F5',
-  },
   topNav: {
     paddingHorizontal: 24,
     paddingTop: 16,
@@ -88,20 +84,5 @@ const styles = StyleSheet.create({
     marginBottom: 120,
     lineHeight: 26,
     maxWidth: 300,
-  },
-  continueButton: {
-    backgroundColor: '#1A1A1A',
-    paddingVertical: 18,
-    paddingHorizontal: 40,
-    borderRadius: 16,
-    width: 345,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontFamily: 'SF Pro Display',
-    fontWeight: '600',
   },
 });

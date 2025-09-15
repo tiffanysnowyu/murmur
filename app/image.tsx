@@ -259,38 +259,6 @@ const styles = StyleSheet.create({
     color: '#666',
     lineHeight: 24,
   },
-  debugSection: {
-    backgroundColor: '#f0f0f0',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  debugTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 4,
-  },
-  debugText: {
-    fontSize: 12,
-    color: '#666',
-    fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace',
-  },
-  testSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 20,
-  },
-  testButton: {
-    backgroundColor: '#ff9800',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-  },
-  testButtonText: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
-  },
   uploadSection: {
     alignItems: 'center',
     marginBottom: 40,
@@ -342,23 +310,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginBottom: 16,
     resizeMode: 'cover',
-  },
-  continueButton: {
-    backgroundColor: '#1A1A1A',
-    paddingVertical: 18,
-    paddingHorizontal: 40,
-    borderRadius: 16,
-    width: 345,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 24,
-    alignSelf: 'center',
-  },
-  continueButtonText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontFamily: 'SF Pro Display',
-    fontWeight: '600',
   },
   resetButton: {
     backgroundColor: '#f0f0f0',
