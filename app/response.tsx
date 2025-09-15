@@ -769,7 +769,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   };
 
   const goBack = () => {
-    console.log(`\nGO BACK CALLED WITH SAVED RESPONSE ${savedResponse} PREVIOUS CLAIM ${previousClaim} MODE ${currentMode}\n`)
+    // console.log(`\nGO BACK CALLED WITH SAVED RESPONSE ${savedResponse} PREVIOUS CLAIM ${previousClaim} MODE ${currentMode}\n`)
     if (savedResponse) {
       router.back()
     } else if (previousClaim) {
@@ -1542,34 +1542,7 @@ const styles = StyleSheet.create({
   ctaContainer: {
     paddingVertical: 0,
     gap: 16,
-    // marginBottom: 64,
   },
-  // analyzeCTA: {
-  //   backgroundColor: "#1A1A1A",
-  //   paddingVertical: 18,
-  //   borderRadius: 16,
-  //   alignItems: "center",
-  // },
-  // analyzeCtaText: {
-  //   color: "#FFFFFF",
-  //   fontSize: 17,
-  //   fontFamily: "SF Pro Display",
-  //   fontWeight: "600",
-  // },
-  // doneCTA: {
-  //   backgroundColor: "#FFFFFF",
-  //   borderWidth: 1,
-  //   borderColor: "#E5E5E5",
-  //   paddingVertical: 18,
-  //   borderRadius: 16,
-  //   alignItems: "center",
-  // },
-  // doneCtaText: {
-  //   color: "#1A1A1A",
-  //   fontSize: 17,
-  //   fontFamily: "SF Pro Display",
-  //   fontWeight: "600",
-  // },
   loadingCenterContainer: {
     flex: 1,
     justifyContent: 'center',
