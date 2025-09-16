@@ -1655,12 +1655,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 40,
-  },
   loadingContainerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1722,7 +1716,6 @@ const styles = StyleSheet.create({
   articleMeta: { fontSize: 14, color: '#856404', marginBottom: 8 },
   warningText: { fontSize: 12, color: '#856404', fontStyle: 'italic' },
 
-  loadingContainer: { alignItems: 'center', paddingVertical: 40 },
   loadingText: { marginTop: 12, fontSize: 16, color: '#666', textAlign: 'center', fontWeight: '600' },
 
   errorContainer: { alignItems: 'center', paddingVertical: 20 },

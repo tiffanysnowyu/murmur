@@ -186,7 +186,7 @@ export default function MeditationScreen() {
   };
 
   const handleDone = () => {
-    router.push('/');
+    router.dismissAll();
   };
 
   const handleDoItAgain = () => {
