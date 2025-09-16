@@ -1568,7 +1568,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "flex-start",
     gap: 8,
-    paddingTop: 24,
     paddingBottom: 32,
   },
   claimTitle: {
@@ -1593,7 +1592,6 @@ const styles = StyleSheet.create({
     letterSpacing: -0.198,
     textAlign: 'left',
     flex: 1,
-    marginBottom: 0,
   },
   bulletPointContainer: {
     flexDirection: 'row',
@@ -1629,7 +1627,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   explanationContentBox: {
-    paddingTop: 48,
+    paddingTop: 40,
     paddingBottom: 40,
     flexDirection: 'column',
     justifyContent: 'flex-start',
@@ -1645,6 +1643,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -24,
     paddingHorizontal: 48,
     alignSelf: 'center',
+    marginBottom: 64,
   },
   ctaContainer: {
     paddingVertical: 0,

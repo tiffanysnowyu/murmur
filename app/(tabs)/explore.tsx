@@ -6,6 +6,8 @@ import {
   Text,
   Modal,
   SafeAreaView,
+  Image,
+  ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
 import { MainScreen } from '@/components/Common';
@@ -23,15 +25,39 @@ export default function TabTwoScreen() {
 
   return (
     <MainScreen>
-      {/* Hamburger Menu Button */}
+      {/* Black top container */}
+      <View style={styles.topContainer} />
+      
+      {/* Menu Button */}
       <TouchableOpacity 
         style={styles.menuButton} 
         onPress={() => setMenuVisible(true)}
       >
-        <View style={styles.hamburgerLine} />
-        <View style={styles.hamburgerLine} />
-        <View style={styles.hamburgerLine} />
+        <Image 
+          source={require('../../assets/images/icon_ellipses.png')} 
+          style={styles.ellipsesIcon}
+          resizeMode="contain"
+        />
       </TouchableOpacity>
+
+      {/* Scrollable Content */}
+      <ScrollView 
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        bounces={true}
+        alwaysBounceVertical={true}
+      >
+        {/* Centered Discovery Content */}
+        <View style={styles.discoveryContainer}>
+          <Image 
+            source={require('../../assets/images/turtle_discovery.png')} 
+            style={styles.turtleImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.discoveryText}>Discovery content coming soon.</Text>
+        </View>
+      </ScrollView>
 
       {/* Menu Modal */}
       <Modal
@@ -50,16 +76,7 @@ export default function TabTwoScreen() {
               style={styles.menuItem}
               onPress={() => handleMenuOption('insights')}
             >
-              <Text style={styles.menuIcon}>💡</Text>
               <Text style={styles.menuText}>Saved Insights</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => setMenuVisible(false)}
-            >
-              <Text style={styles.menuIcon}>❌</Text>
-              <Text style={styles.menuText}>Close</Text>
             </TouchableOpacity>
           </SafeAreaView>
         </TouchableOpacity>
@@ -68,56 +85,96 @@ export default function TabTwoScreen() {
   );
 }
 
+const MENU_BUTTON_TOP = 72;
+const MENU_DROPDOWN_SPACING = 12; // Distance between icon and modal
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
   },
+  topContainer: {
+    position: 'absolute',
+    top: -24,
+    left: -24,
+    right: -24,
+    height: 84,
+    // backgroundColor: '#7A42F4',
+    zIndex: 1,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  discoveryContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 24,
+    marginBottom: 86, // Compensate for MainScreen's paddingBottom: 40, then -40 + 126 = 86
+  },
+  turtleImage: {
+    width: 250,
+    height: 262,
+    marginBottom: 32,
+  },
+  discoveryText: {
+    width: '100%',
+    color: '#B0B0B8',
+    textAlign: 'center',
+    fontFamily: 'SF Pro Display',
+    fontSize: 24,
+    fontWeight: '400',
+    lineHeight: 48,
+    letterSpacing: -0.264,
+  },
   menuButton: {
     position: 'absolute',
-    top: 72,
+    top: 50, // 84px container - 24px MainScreen padding - 10px padding = 50px to touch the bottom of purple container
     right: 24,
     zIndex: 10,
     padding: 10,
   },
-  hamburgerLine: {
+  ellipsesIcon: {
     width: 24,
-    height: 2,
-    backgroundColor: '#1A1A1A',
-    marginVertical: 4,
-    borderRadius: 2,
+    height: 24,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'transparent',
   },
   menuContainer: {
     position: 'absolute',
-    top: 80,
+    top: 50 + 24 + 10 + MENU_DROPDOWN_SPACING, // button top + icon height + padding + spacing
     right: 20,
-    backgroundColor: 'white',
+    display: 'flex',
+    paddingVertical: 12,
+    flexDirection: 'column',
+    alignItems: 'flex-start',
+    gap: 12,
+    alignSelf: 'stretch',
     borderRadius: 12,
-    padding: 8,
-    elevation: 5,
+    backgroundColor: '#FFF',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.07,
+    shadowRadius: 20,
+    elevation: 10,
   },
   menuItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
     minWidth: 180,
   },
-  menuIcon: {
-    fontSize: 20,
-    marginRight: 12,
-  },
   menuText: {
-    fontSize: 16,
     color: '#1A1A1A',
-    fontWeight: '500',
+    textAlign: 'center',
+    fontFamily: 'SF Pro Display',
+    fontSize: 15,
+    fontWeight: '400',
+    lineHeight: 30,
+    letterSpacing: -0.165,
   },
 });
