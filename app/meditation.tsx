@@ -18,6 +18,7 @@ export default function MeditationScreen() {
   const [showPinkFlower, setShowPinkFlower] = useState(false);
   const [showCTAs, setShowCTAs] = useState(false);
   const [subtitleText, setSubtitleText] = useState("Inhale slowly for 4s");
+  const [introSkipped, setIntroSkipped] = useState(false);
   
   // Animation values
   const titleOpacity = useRef(new Animated.Value(0)).current;
@@ -29,9 +30,26 @@ export default function MeditationScreen() {
   // Keep reference to pulse animation to stop it
   const pulseAnimationRef = useRef<{ stop: () => void } | null>(null);
   const animationStopped = useRef(false);
-  const flowerTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const flowerTimerRef = useRef<NodeJS.Timeout | number | null>(null);
+  const textTimerRef = useRef<NodeJS.Timeout | number | null>(null);
 
   useEffect(() => {
+    setIntroSkipped(false);
+    startTextSequence();
+    startFlowerSequence();
+
+    return () => {
+      if (flowerTimerRef.current) {
+        clearTimeout(flowerTimerRef.current);
+      }
+      if (textTimerRef.current) {
+        clearTimeout(textTimerRef.current);
+      }
+    };
+  }, []);
+
+  // Helper function for text animation sequence
+  const startTextSequence = () => {
     // Start title fade-in immediately
     Animated.timing(titleOpacity, {
       toValue: 1,
@@ -45,26 +63,109 @@ export default function MeditationScreen() {
         useNativeDriver: true,
       }).start(() => {
         // After 4 seconds (inhale duration), change subtitle to exhale
-        setTimeout(() => {
+        textTimerRef.current = setTimeout(() => {
           // Fade out current subtitle
           Animated.timing(subtitleOpacity, {
             toValue: 0,
-            duration: 500,
+            duration: 1000,
             useNativeDriver: true,
           }).start(() => {
             // Change subtitle text and fade back in
             setSubtitleText("Exhale slowly for 6s");
             Animated.timing(subtitleOpacity, {
               toValue: 1,
-              duration: 500,
+              duration: 1000,
               useNativeDriver: true,
             }).start();
           });
         }, 4000); // 4 seconds for inhale phase
       });
     });
+  };
 
-    // Show flower after 10.5 seconds (4s inhale + 6s exhale + 0.5s fade)
+  // Helper function for color pulse animation
+  const startColorPulseAnimation = () => {
+    setShowPinkFlower(true);
+    let cycleCount = 0;
+    
+    const pulseWithColorChange = () => {
+      if (animationStopped.current || cycleCount >= 3) return;
+      
+      cycleCount++;
+      
+      // Expand and transition to pink
+      Animated.parallel([
+        Animated.timing(flowerScale, {
+          toValue: 1.25, // Scale to 357px (286 * 1.25)
+          duration: 3000, // 3 seconds for deep breath in
+          useNativeDriver: true,
+        }),
+        Animated.timing(blueFlowerOpacity, {
+          toValue: 0,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(pinkFlowerOpacity, {
+          toValue: 1,
+          duration: 2500,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        if (animationStopped.current) return;
+        
+        // Contract and transition back to blue
+        Animated.parallel([
+          Animated.timing(flowerScale, {
+            toValue: 1,
+            duration: 3000, // 3 seconds for deep breath out
+            useNativeDriver: true,
+          }),
+          Animated.timing(blueFlowerOpacity, {
+            toValue: 1,
+            duration: 2500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pinkFlowerOpacity, {
+            toValue: 0,
+            duration: 2500,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          // Continue the loop if not stopped and haven't reached 5 cycles
+          if (!animationStopped.current && cycleCount < 3) {
+            pulseWithColorChange();
+          } else if (cycleCount >= 3) {
+            // After 3 cycles, show CTAs
+            setTimeout(() => setShowCTAs(true), 500);
+          }
+        });
+      });
+    };
+
+    pulseAnimationRef.current = { 
+      stop: () => {
+        animationStopped.current = true;
+      }
+    };
+    pulseWithColorChange();
+  };
+
+  // Helper function for starting flower display and animation
+  const startFlowerAnimation = () => {
+    setShowFlower(true);
+    
+    Animated.timing(blueFlowerOpacity, {
+      toValue: 1,
+      duration: 1000,
+      useNativeDriver: true,
+    }).start();
+
+    startColorPulseAnimation();
+  };
+
+  // Helper function for flower animation sequence
+  const startFlowerSequence = () => {
+    // Show flower after 14 seconds (timeline from user modification)
     flowerTimerRef.current = setTimeout(() => {
       // First fade out the text
       Animated.parallel([
@@ -79,92 +180,10 @@ export default function MeditationScreen() {
           useNativeDriver: true,
         }),
       ]).start(() => {
-        // Then show and fade in the blue flower
-        setShowFlower(true);
-        
-        Animated.timing(blueFlowerOpacity, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }).start();
-
-        // Start pulsing animation with color transitions
-        const startColorPulseAnimation = () => {
-          setShowPinkFlower(true);
-          let cycleCount = 0;
-          
-          const pulseWithColorChange = () => {
-            if (animationStopped.current || cycleCount >= 3) return;
-            
-            cycleCount++;
-            
-            // Expand and transition to pink
-            Animated.parallel([
-              Animated.timing(flowerScale, {
-                toValue: 1.25, // Scale to 357px (286 * 1.25)
-                duration: 3000, // 3 seconds for deep breath in
-                useNativeDriver: true,
-              }),
-              Animated.timing(blueFlowerOpacity, {
-                toValue: 0,
-                duration: 2500,
-                useNativeDriver: true,
-              }),
-              Animated.timing(pinkFlowerOpacity, {
-                toValue: 1,
-                duration: 2500,
-                useNativeDriver: true,
-              }),
-            ]).start(() => {
-              if (animationStopped.current) return;
-              
-              // Contract and transition back to blue
-              Animated.parallel([
-                Animated.timing(flowerScale, {
-                  toValue: 1,
-                  duration: 3000, // 3 seconds for deep breath out
-                  useNativeDriver: true,
-                }),
-                Animated.timing(blueFlowerOpacity, {
-                  toValue: 1,
-                  duration: 2500,
-                  useNativeDriver: true,
-                }),
-                Animated.timing(pinkFlowerOpacity, {
-                  toValue: 0,
-                  duration: 2500,
-                  useNativeDriver: true,
-                }),
-              ]).start(() => {
-                // Continue the loop if not stopped and haven't reached 5 cycles
-                if (!animationStopped.current && cycleCount < 3) {
-                  pulseWithColorChange();
-                } else if (cycleCount >= 3) {
-                  // After 3 cycles, show CTAs
-                  setTimeout(() => setShowCTAs(true), 500);
-                }
-              });
-            });
-          };
-
-          pulseAnimationRef.current = { 
-            stop: () => {
-              animationStopped.current = true;
-            }
-          };
-          pulseWithColorChange();
-        };
-
-        startColorPulseAnimation();
+        startFlowerAnimation();
       });
-    }, 10500);
-
-    return () => {
-      if (flowerTimerRef.current) {
-        clearTimeout(flowerTimerRef.current);
-      }
-    };
-  }, []);
+    }, 14000);
+  };
 
   const handleDone = () => {
     router.push('/');
@@ -182,6 +201,7 @@ export default function MeditationScreen() {
     setShowFlower(false);
     setShowPinkFlower(false);
     setShowCTAs(false);
+    setIntroSkipped(false);
     setSubtitleText("Inhale slowly for 4s"); // Reset subtitle text
     titleOpacity.setValue(0);
     subtitleOpacity.setValue(0);
@@ -189,153 +209,45 @@ export default function MeditationScreen() {
     pinkFlowerOpacity.setValue(0);
     flowerScale.setValue(1);
     
-    // Restart the sequence
-    Animated.timing(titleOpacity, {
-      toValue: 1,
-      duration: 1000,
-      useNativeDriver: true,
-    }).start(() => {
-      Animated.timing(subtitleOpacity, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }).start(() => {
-        // After 4 seconds (inhale duration), change subtitle to exhale
-        setTimeout(() => {
-          // Fade out current subtitle
-          Animated.timing(subtitleOpacity, {
-            toValue: 0,
-            duration: 500,
-            useNativeDriver: true,
-          }).start(() => {
-            // Change subtitle text and fade back in
-            setSubtitleText("Exhale slowly for 6s");
-            Animated.timing(subtitleOpacity, {
-              toValue: 1,
-              duration: 500,
-              useNativeDriver: true,
-            }).start();
-          });
-        }, 4000); // 4 seconds for inhale phase
-      });
-    });
-
-    const flowerTimer = setTimeout(() => {
-      Animated.parallel([
-        Animated.timing(titleOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(subtitleOpacity, {
-          toValue: 0,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setShowFlower(true);
-        
-        Animated.timing(blueFlowerOpacity, {
-          toValue: 1,
-          duration: 1000,
-          useNativeDriver: true,
-        }).start();
-
-        // Start pulsing animation with color transitions
-        const startColorPulseAnimation = () => {
-          setShowPinkFlower(true);
-          let cycleCount = 0;
-          
-          const pulseWithColorChange = () => {
-            if (animationStopped.current || cycleCount >= 3) return;
-            
-            cycleCount++;
-            
-            // Expand and transition to pink
-            Animated.parallel([
-              Animated.timing(flowerScale, {
-                toValue: 1.25, // Scale to 357px (286 * 1.25)
-                duration: 3000, // 3 seconds for deep breath in
-                useNativeDriver: true,
-              }),
-              Animated.timing(blueFlowerOpacity, {
-                toValue: 0,
-                duration: 2500,
-                useNativeDriver: true,
-              }),
-              Animated.timing(pinkFlowerOpacity, {
-                toValue: 1,
-                duration: 2500,
-                useNativeDriver: true,
-              }),
-            ]).start(() => {
-              if (animationStopped.current) return;
-              
-              // Contract and transition back to blue
-              Animated.parallel([
-                Animated.timing(flowerScale, {
-                  toValue: 1,
-                  duration: 3000, // 3 seconds for deep breath out
-                  useNativeDriver: true,
-                }),
-                Animated.timing(blueFlowerOpacity, {
-                  toValue: 1,
-                  duration: 2500,
-                  useNativeDriver: true,
-                }),
-                Animated.timing(pinkFlowerOpacity, {
-                  toValue: 0,
-                  duration: 2500,
-                  useNativeDriver: true,
-                }),
-              ]).start(() => {
-                // Continue the loop if not stopped and haven't reached 5 cycles
-                if (!animationStopped.current && cycleCount < 3) {
-                  pulseWithColorChange();
-                } else if (cycleCount >= 3) {
-                  // After 3 cycles, show CTAs
-                  setTimeout(() => setShowCTAs(true), 500);
-                }
-              });
-            });
-          };
-
-          pulseAnimationRef.current = { 
-            stop: () => {
-              animationStopped.current = true;
-            }
-          };
-          pulseWithColorChange();
-        };
-
-        startColorPulseAnimation();
-      });
-    }, 10500);
+    // Restart the sequence using helper functions
+    startTextSequence();
+    startFlowerSequence();
   };
 
   return (
     <MainScreen>
       <View style={styles.container}>
         {/* Text content */}
-        <View style={styles.textContainer}>
-          <Animated.Text style={[styles.mainTitle, { opacity: titleOpacity }]}>
-            Clear your mind
-          </Animated.Text>
-          <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
-            {subtitleText}
-          </Animated.Text>
-        </View>
+        {!introSkipped && (
+          <View style={styles.textContainer}>
+            <Animated.Text style={[styles.mainTitle, { opacity: titleOpacity }]}>
+              Clear your mind
+            </Animated.Text>
+            <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
+              {subtitleText}
+            </Animated.Text>
+          </View>
+        )}
 
         {/* Skip Intro button - only show during text phase */}
         {!showFlower && !showCTAs && (
           <View style={styles.skipContainer}>
             <CtaButton 
               onPress={() => {
-                // Clear any existing timers
+                setIntroSkipped(true);
+                // Clear any existing timers to stop text animations
                 if (flowerTimerRef.current) {
                   clearTimeout(flowerTimerRef.current);
                   flowerTimerRef.current = null;
                 }
+                if (textTimerRef.current) {
+                  clearTimeout(textTimerRef.current);
+                  textTimerRef.current = null;
+                }
+                
+                // Stop any running text animations
+                titleOpacity.stopAnimation();
+                subtitleOpacity.stopAnimation();
                 
                 // Reset animation stopped flag
                 animationStopped.current = false;
@@ -343,82 +255,8 @@ export default function MeditationScreen() {
                 // Skip text phase and go directly to flower animation
                 titleOpacity.setValue(0);
                 subtitleOpacity.setValue(0);
-                setShowFlower(true);
                 
-                Animated.timing(blueFlowerOpacity, {
-                  toValue: 1,
-                  duration: 1000,
-                  useNativeDriver: true,
-                }).start();
-
-                // Start pulsing animation with color transitions
-                const startColorPulseAnimation = () => {
-                  setShowPinkFlower(true);
-                  let cycleCount = 0;
-                  
-                  const pulseWithColorChange = () => {
-                    if (animationStopped.current || cycleCount >= 3) return;
-                    
-                    cycleCount++;
-                    
-                    // Expand and transition to pink
-                    Animated.parallel([
-                      Animated.timing(flowerScale, {
-                        toValue: 1.25,
-                        duration: 3000,
-                        useNativeDriver: true,
-                      }),
-                      Animated.timing(blueFlowerOpacity, {
-                        toValue: 0,
-                        duration: 2500,
-                        useNativeDriver: true,
-                      }),
-                      Animated.timing(pinkFlowerOpacity, {
-                        toValue: 1,
-                        duration: 2500,
-                        useNativeDriver: true,
-                      }),
-                    ]).start(() => {
-                      if (animationStopped.current) return;
-                      
-                      // Contract and transition back to blue
-                      Animated.parallel([
-                        Animated.timing(flowerScale, {
-                          toValue: 1,
-                          duration: 3000,
-                          useNativeDriver: true,
-                        }),
-                        Animated.timing(blueFlowerOpacity, {
-                          toValue: 1,
-                          duration: 2500,
-                          useNativeDriver: true,
-                        }),
-                        Animated.timing(pinkFlowerOpacity, {
-                          toValue: 0,
-                          duration: 2500,
-                          useNativeDriver: true,
-                        }),
-                      ]).start(() => {
-                        // Continue the loop if not stopped and haven't reached 5 cycles
-                        if (!animationStopped.current && cycleCount < 3) {
-                          pulseWithColorChange();
-                        } else if (cycleCount >= 3) {
-                          // After 3 cycles, show CTAs
-                          setTimeout(() => setShowCTAs(true), 500);
-                        }
-                      });
-                    });
-                  };
-
-                  pulseAnimationRef.current = { 
-                    stop: () => {
-                      animationStopped.current = true;
-                    }
-                  };
-                  pulseWithColorChange();
-                };
-
-                startColorPulseAnimation();
+                startFlowerAnimation();
               }} 
               buttonText="Skip Intro" 
               colorStyle="tertiary" 
