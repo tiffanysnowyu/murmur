@@ -13,6 +13,7 @@ import {
   Pressable,
   Image,
   Animated,
+  Easing,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
@@ -41,6 +42,10 @@ export default function ResponsePage() {
   const analyzeCTAScale = useRef(new Animated.Value(1)).current;
   const doneCTAScale = useRef(new Animated.Value(1)).current;
   const [isPressed, setIsPressed] = useState(false);
+  
+  // Loading animations
+  const loadingOpacity = useRef(new Animated.Value(0.6)).current;
+  const loadingRotation = useRef(new Animated.Value(0)).current;
   
   // Summary-specific states
   const [showFullArticle, setShowFullArticle] = useState(false);
@@ -718,6 +723,48 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     }
   };
 
+  // Loading animations effect
+  useEffect(() => {
+    let opacityAnimation: Animated.CompositeAnimation;
+    let rotationAnimation: Animated.CompositeAnimation;
+    
+    if (loading) {
+      // Start opacity pulse animation
+      opacityAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(loadingOpacity, {
+            toValue: 1.0,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(loadingOpacity, {
+            toValue: 0.6,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      
+      // Start rotation animation
+      rotationAnimation = Animated.loop(
+        Animated.timing(loadingRotation, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+          easing: Easing.linear,
+        })
+      );
+      
+      opacityAnimation.start();
+      rotationAnimation.start();
+    }
+    
+    return () => {
+      if (opacityAnimation) opacityAnimation.stop();
+      if (rotationAnimation) rotationAnimation.stop();
+    };
+  }, [loading]);
+
   useEffect(() => {
     // If we have already analyzed content, don't do it again
     if (calledExternalModel.current) return;
@@ -820,20 +867,63 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   // Show loading state for summary mode
   if (isSummaryMode && loading) { 
   // if (true) {
+    const spin = loadingRotation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg'],
+    });
+
     return (
       <MainScreen>
-        <View style={{display: 'flex'}}>
+        {/* Header */}
+        <View>
           <BackButton onPress={goBack} buttonText={savedResponse ? 'Saved Insights' : 'Back'} />
           
-          <Text style={styles.summaryTitle}>Summary</Text>
-          
-          <View style={{ width: 40 }} />
+          <View style={styles.summaryArea}>
+            <Text style={styles.summaryTitle}>Summary</Text>
+          </View>
         </View>
         
-        <View style={styles.loadingCenterContainer}>
-          <ActivityIndicator size="large" color="#32535F" />
-          <Text style={styles.loadingText}>{analysisStep || 'Analyzing...'}</Text>
-        </View>
+        <ScrollView style={styles.summaryContent} showsVerticalScrollIndicator={false}>
+          {/* Article Section */}
+          <View style={styles.summarySection}>
+            <Text style={styles.summarySectionTitle}>Article</Text>
+            <View style={styles.summaryArticleContainer}>
+              <Text style={styles.summaryArticleText} numberOfLines={showFullArticle ? undefined : 3}>
+                {inputText}
+              </Text>
+            </View>
+            {!showFullArticle && (
+              <Pressable onPress={() => setShowFullArticle(true)}>
+                <Text style={styles.summaryMoreButton}>More</Text>
+              </Pressable>
+            )}
+            {showFullArticle && (
+              <Pressable onPress={() => setShowFullArticle(false)}>
+                <Text style={styles.summaryMoreButton}>Less</Text>
+              </Pressable>
+            )}
+          </View>
+
+          {/* Divider */}
+          <View style={styles.summaryDivider} />
+
+          {/* Overview Section with Loading */}
+          <View style={styles.summarySection}>
+            <Text style={styles.summarySectionTitle}>Overview</Text>
+            <View style={styles.loadingContainerLeft}>
+              <Animated.Image 
+                source={require('../assets/images/icon_loading.png')}
+                style={[
+                  styles.loadingIcon,
+                  { transform: [{ rotate: spin }] }
+                ]}
+              />
+              <Animated.Text style={[styles.loadingTextEnhancedLeft, { opacity: loadingOpacity }]}>
+                Loading...
+              </Animated.Text>
+            </View>
+          </View>
+        </ScrollView>
       </MainScreen>
     );
   }
@@ -1136,12 +1226,27 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
               : 'Fact-Check Results'}
           </Text>
 
-          {loading && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#32535F" />
-              <Text style={styles.loadingText}>{analysisStep || 'Analyzing...'}</Text>
-            </View>
-          )}
+          {loading && (() => {
+            const spin = loadingRotation.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0deg', '360deg'],
+            });
+            
+            return (
+              <View style={styles.loadingContainerLeft}>
+                <Animated.Image 
+                  source={require('../assets/images/icon_loading.png')}
+                  style={[
+                    styles.loadingIcon,
+                    { transform: [{ rotate: spin }] }
+                  ]}
+                />
+                <Animated.Text style={[styles.loadingTextEnhancedLeft, { opacity: loadingOpacity }]}>
+                  Loading...
+                </Animated.Text>
+              </View>
+            );
+          })()}
 
           {error && (
             <View style={styles.errorContainer}>
@@ -1547,6 +1652,42 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 40,
+  },
+  loadingContainerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingVertical: 0,
+    marginTop: 0,
+  },
+  loadingIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 4,
+  },
+  loadingTextEnhanced: {
+    color: '#B0B0B8',
+    textAlign: 'center',
+    fontFamily: 'SF Pro Display',
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 27, // 150% of 18px
+    letterSpacing: -0.198,
+  },
+  loadingTextEnhancedLeft: {
+    color: '#B0B0B8',
+    textAlign: 'left',
+    fontFamily: 'SF Pro Display',
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 27, // 150% of 18px
+    letterSpacing: -0.198,
   },
   
   // Original analysis mode styles

@@ -94,7 +94,7 @@ export default function ChooseInput() {
 }
 
 const BORDER = "#CCE5E7";       
-const FILL = "#F3F8FA";         
+const FILL = "#F6FBFB";         
 const TEXT_PRIMARY = "#4A4A4A"; 
 const TEXT_SECONDARY = "#595959";
 

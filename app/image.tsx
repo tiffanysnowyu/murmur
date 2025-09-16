@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Platform,
   Animated,
+  Easing,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -22,9 +23,15 @@ export default function ImagePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [imageExtractedText, setImageExtractedText] = useState<string | null>(null);
+  const [noTextFound, setNoTextFound] = useState(false);
   
   const uploadScale = useRef(new Animated.Value(1)).current;
   const captureScale = useRef(new Animated.Value(1)).current;
+  const resetScale = useRef(new Animated.Value(1)).current;
+  
+  // Loading animations
+  const loadingOpacity = useRef(new Animated.Value(0.6)).current;
+  const loadingRotation = useRef(new Animated.Value(0)).current;
 
   // Debug helper
   const addDebugInfo = (info: string) => {
@@ -36,6 +43,48 @@ export default function ImagePage() {
     addDebugInfo('Image page loaded');
     checkPermissions();
   }, []);
+
+  // Loading animations effect
+  useEffect(() => {
+    let opacityAnimation: Animated.CompositeAnimation;
+    let rotationAnimation: Animated.CompositeAnimation;
+    
+    if (isProcessing) {
+      // Start opacity pulse animation
+      opacityAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(loadingOpacity, {
+            toValue: 1.0,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+          Animated.timing(loadingOpacity, {
+            toValue: 0.6,
+            duration: 600,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      
+      // Start rotation animation
+      rotationAnimation = Animated.loop(
+        Animated.timing(loadingRotation, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+          easing: Easing.linear,
+        })
+      );
+      
+      opacityAnimation.start();
+      rotationAnimation.start();
+    }
+    
+    return () => {
+      if (opacityAnimation) opacityAnimation.stop();
+      if (rotationAnimation) rotationAnimation.stop();
+    };
+  }, [isProcessing]);
 
   const checkPermissions = async () => {
     try {
@@ -90,6 +139,8 @@ export default function ImagePage() {
 
       if (!result.canceled && result.assets && result.assets[0]) {
         addDebugInfo(`Selected image URI: ${result.assets[0].uri}`);
+        setNoTextFound(false); // Reset error state
+        setImageExtractedText(null); // Reset previous text
         setSelectedImage(result.assets[0].uri);
         await processImage(result.assets[0].uri);
       } else {
@@ -126,6 +177,8 @@ export default function ImagePage() {
 
       if (!result.canceled && result.assets && result.assets[0]) {
         addDebugInfo(`Captured image URI: ${result.assets[0].uri}`);
+        setNoTextFound(false); // Reset error state
+        setImageExtractedText(null); // Reset previous text
         setSelectedImage(result.assets[0].uri);
         await processImage(result.assets[0].uri);
       } else {
@@ -150,10 +203,11 @@ export default function ImagePage() {
         setIsProcessing(false);
         
         if (!extractedText || extractedText === 'No text found in image') {
+          setNoTextFound(true);
           Alert.alert(
             'No Text Found',
             'We couldn\'t find any text in this image. Please try another image with clearer text.',
-            [{ text: 'OK', onPress: resetImage }]
+            [{ text: 'OK' }]
           );
           return;
         }
@@ -162,10 +216,11 @@ export default function ImagePage() {
       } catch (ocrError) {
         addDebugInfo(`OCR error: ${ocrError}`);
         setIsProcessing(false);
+        setNoTextFound(true);
         Alert.alert(
           'Text Extraction Failed',
           'Could not extract text from this image. Please make sure the image contains clear, readable text.',
-          [{ text: 'Try Again', onPress: resetImage }]
+          [{ text: 'Try Again' }]
         );
       }
     } catch (error) {
@@ -177,6 +232,16 @@ export default function ImagePage() {
     addDebugInfo('Resetting image');
     setSelectedImage(null);
     setIsProcessing(false);
+    setImageExtractedText(null);
+    setNoTextFound(false);
+  };
+
+  const tryNewImage = () => {
+    addDebugInfo('Trying new image');
+    setSelectedImage(null);
+    setIsProcessing(false);
+    setImageExtractedText(null);
+    setNoTextFound(false);
   };
 
   const handleUploadPressIn = () => {
@@ -207,8 +272,30 @@ export default function ImagePage() {
     }).start();
   };
 
+  const handleResetPressIn = () => {
+    Animated.spring(resetScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleResetPressOut = () => {
+    Animated.spring(resetScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
   const handleBack = () => {
-    router.back();
+    if (selectedImage || noTextFound) {
+      // Reset to show the upload options again
+      setSelectedImage(null);
+      setIsProcessing(false);
+      setImageExtractedText(null);
+      setNoTextFound(false);
+    } else {
+      router.back();
+    }
   };
 
   return (
@@ -266,14 +353,52 @@ export default function ImagePage() {
         </View>
       )}
 
-      {selectedImage && !isProcessing && (
+      {selectedImage && !isProcessing && !noTextFound && (
         <View style={styles.imageContainer}>
           <Image source={{ uri: selectedImage }} style={styles.previewImage} />
           
           <View style={styles.resetButtonContainer}>
-            <TouchableOpacity style={styles.resetButton} onPress={resetImage}>
-              <Text style={styles.resetButtonText}>Choose New Image</Text>
-            </TouchableOpacity>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.resetButton,
+                pressed && styles.resetButtonPressed,
+              ]}
+              onPress={pickImageFromLibrary}
+              onPressIn={handleResetPressIn}
+              onPressOut={handleResetPressOut}
+            >
+              <Animated.View style={{ transform: [{ scale: resetScale }], flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={styles.resetButtonText}>Choose New Image</Text>
+              </Animated.View>
+            </Pressable>
+          </View>
+          
+          <Image source={require('../assets/images/icon_info.png')} style={styles.infoIcon} />
+          <Text style={styles.infoText}>Best results: upload a clean screenshot. If taking a photo, fill the frame and avoid glare.</Text>
+        </View>
+      )}
+
+      {selectedImage && !isProcessing && noTextFound && (
+        <View style={styles.imageContainer}>
+          <View style={styles.dashedBox}>
+            <Image source={require('../assets/images/icon_picture_gray.png')} style={styles.dashedBoxIcon} />
+            <Text style={styles.dashedBoxTitle}>Uploaded image will appear here</Text>
+          </View>
+          
+          <View style={styles.resetButtonContainer}>
+            <Pressable 
+              style={({ pressed }) => [
+                styles.resetButton,
+                pressed && styles.resetButtonPressed,
+              ]}
+              onPress={pickImageFromLibrary}
+              onPressIn={handleResetPressIn}
+              onPressOut={handleResetPressOut}
+            >
+              <Animated.View style={{ transform: [{ scale: resetScale }], flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Text style={styles.resetButtonText}>Choose New Image</Text>
+              </Animated.View>
+            </Pressable>
           </View>
           
           <Image source={require('../assets/images/icon_info.png')} style={styles.infoIcon} />
@@ -282,10 +407,22 @@ export default function ImagePage() {
       )}
 
       {isProcessing && (
-        <View style={styles.processingContainer}>
-          <ActivityIndicator size="large" color="#32535F" />
-          <Text style={styles.processingText}>Extracting text from image...</Text>
-          <Text style={styles.processingSubtext}>This may take a few seconds</Text>
+        <View style={[styles.imageContainer, styles.imageContainerLoading]}>
+          <View style={styles.loadingContainer}>
+            <Animated.Image 
+              source={require('../assets/images/icon_loading.png')}
+              style={[
+                styles.loadingIcon,
+                { transform: [{ rotate: loadingRotation.interpolate({
+                  inputRange: [0, 1],
+                  outputRange: ['0deg', '360deg'],
+                }) }] }
+              ]}
+            />
+            <Animated.Text style={[styles.loadingTextEnhanced, { opacity: loadingOpacity }]}>
+              Loading...
+            </Animated.Text>
+          </View>
         </View>
       )}
       </View>
@@ -309,29 +446,30 @@ export default function ImagePage() {
 }
 
 const BORDER = "#CCE5E7";       
-const FILL = "#F3F8FA";         
-const TEXT_PRIMARY = "#4A4A4A"; 
+const FILL = "#F6FBFB";         
+const TEXT_PRIMARY = "#1A1A1A"; 
 const TEXT_SECONDARY = "#595959";
+const TEXT_TERTIARY = "#B0B0B8";
 
 const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
   header: {
-    paddingBottom: 40,
+    paddingBottom: 64,
+    gap: 16,
   },
   title: { 
     fontSize: 32,
     fontFamily: "SF Pro Display",
     fontWeight: "600", 
-    color: "#1A1A1A",
+    color: TEXT_PRIMARY,
   },
   subtitle: { 
     fontSize: 18,
     fontFamily: "SF Pro Display", 
     fontWeight: "400",
-    color: "#1A1A1A",
-    paddingBottom: 64,
+    color: TEXT_PRIMARY,
   },
   options: { 
     alignItems: "center",
@@ -350,7 +488,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   pillPressed: { 
-    backgroundColor: FILL 
+    backgroundColor: FILL,
   },
   pillIcon: {
     width: 24,
@@ -370,6 +508,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingBottom: 40,
   },
+  imageContainerLoading: {
+    alignItems: 'flex-start',
+  },
   previewImage: {
     width: '100%',
     height: 200,
@@ -377,6 +518,31 @@ const styles = StyleSheet.create({
     marginRight: -24,
     paddingBottom: 16,
     resizeMode: 'cover',
+  },
+  dashedBox: {
+    width: 345,
+    height: 215,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#D1D1D6',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 16,
+  },
+  dashedBoxIcon: {
+    width: 24,
+    height: 24,
+    marginBottom: 8,
+  },
+  dashedBoxTitle: {
+    fontSize: 18,
+    fontFamily: 'SF Pro Display',
+    fontWeight: '500',
+    color: TEXT_TERTIARY,
+    textAlign: 'center',
+    lineHeight: 36,
+    letterSpacing: -0.264,
   },
   resetButtonContainer: {
     paddingBottom: 32,
@@ -393,6 +559,9 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: '#CCE5E7',
   },
+  resetButtonPressed: {
+    backgroundColor: FILL,
+  },
   resetButtonText: {
     color: '#4A4A4A',
     fontFamily: 'SF Pro Display',
@@ -407,26 +576,38 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   infoText: {
-    paddingTop: 16,
+    paddingTop: 8,
     fontSize: 16,
     fontFamily: 'SF Pro Display',
-    color: '#1A1A1A',
+    color: TEXT_PRIMARY,
     textAlign: 'left',
     lineHeight: 24,
   },
-  processingContainer: {
+  loadingPlaceholder: {
+    justifyContent: 'flex-start',
+    alignItems: 'flex-start',
+    paddingTop: 0,
+    paddingLeft: 24,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 40,
+    justifyContent: 'flex-start',
+    paddingVertical: 0,
+    marginTop: 0,
   },
-  processingText: {
+  loadingIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 4,
+  },
+  loadingTextEnhanced: {
+    color: '#B0B0B8',
+    textAlign: 'left',
+    fontFamily: 'SF Pro Display',
     fontSize: 18,
-    fontWeight: '600',
-    marginTop: 16,
-    color: '#333',
-  },
-  processingSubtext: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 8,
+    fontWeight: '500',
+    lineHeight: 27, // 150% of 18px
+    letterSpacing: -0.198,
   },
 });
