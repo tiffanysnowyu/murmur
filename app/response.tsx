@@ -1402,20 +1402,18 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
 
         {/* CTA Button at the bottom */}
         {showCTAs && !savedResponse && (
-          // <View style={styles.ctaContainer}>
-          //   <Pressable 
-          //     style={styles.analyzeCTA} 
-          //     onPress={() => router.push('/meditation')}
-          //     onPressIn={handleAnalyzeCTAPressIn}
-          //     onPressOut={handleAnalyzeCTAPressOut}
-          //   >
-          //     <Animated.View style={{ transform: [{ scale: analyzeCTAScale }] }}>
-          //       <Text style={styles.analyzeCtaText}>Continue</Text>
-          //     </Animated.View>
-          //   </Pressable>
-          // </View>
-
-          <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue" />
+          currentMode === 'analyze' ? (
+            <View style={styles.ctaContainer}>
+              <View style={styles.ctaButton}>
+                <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue to Deep Breathing" colorStyle="primary" />
+              </View>
+              <View style={styles.ctaButton}>
+                <CtaButton onPress={() => router.dismissAll()} buttonText="Skip for Now" colorStyle="secondary" />
+              </View>
+            </View>
+          ) : (
+            <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue" />
+          )
         )}
       </ScrollView>
 
@@ -1647,6 +1645,10 @@ const styles = StyleSheet.create({
   ctaContainer: {
     paddingVertical: 0,
     gap: 16,
+  },
+  ctaButton: {
+    width: '100%',
+    height: 64,
   },
   loadingCenterContainer: {
     flex: 1,

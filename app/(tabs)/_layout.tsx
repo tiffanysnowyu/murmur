@@ -70,7 +70,7 @@ export default function TabLayout() {
         tabBarStyle: {
           height: BAR_HEIGHT,
           borderTopWidth: 1,
-          borderTopColor: '#E0E0E0',
+          borderTopColor: '#D1D1D6',
         },
 
         // Each cell 76px high, no padding

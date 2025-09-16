@@ -50,7 +50,7 @@ export const BackButton = ({ onPress, buttonText = 'Back' }: {
 export const CtaButton = ({ onPress, buttonText = 'Continue', colorStyle = 'primary' }: {
   onPress: () => void;
   buttonText?: string;
-  colorStyle?: 'primary' | 'secondary';
+  colorStyle?: 'primary' | 'secondary' | 'tertiary';
 }) => {
 
   const ctaScale = useRef(new Animated.Value(1)).current;
@@ -72,13 +72,13 @@ export const CtaButton = ({ onPress, buttonText = 'Continue', colorStyle = 'prim
 
   return (
     <Pressable 
-      style={colorStyle === 'primary' ? styles.primaryCta : styles.secondaryCta} 
+      style={colorStyle === 'primary' ? styles.primaryCta : colorStyle === 'secondary' ? styles.secondaryCta : styles.tertiaryCta} 
       onPress={onPress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
     >
       <Animated.View style={{ transform: [{ scale: ctaScale }] }}>
-        <Text style={colorStyle === 'primary' ? styles.primaryCtaText : styles.secondaryCtaText}>{buttonText}</Text>
+        <Text style={colorStyle === 'primary' ? styles.primaryCtaText : colorStyle === 'secondary' ? styles.secondaryCtaText : styles.tertiaryCtaText}>{buttonText}</Text>
       </Animated.View>
     </Pressable>
   )
@@ -122,15 +122,30 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   secondaryCta: {
+    height: 64,
     backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E5E5E5",
+    borderWidth: 1.5,
+    borderColor: "#B0B0B8",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
+    justifyContent: "center",
   },
   secondaryCtaText: {
     color: "#1A1A1A",
+    fontSize: 17,
+    fontFamily: "SF Pro Display",
+    fontWeight: "600",
+  }, 
+  tertiaryCta: {
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tertiaryCtaText: {
+    color: "#B0B0B8",
     fontSize: 17,
     fontFamily: "SF Pro Display",
     fontWeight: "600",
