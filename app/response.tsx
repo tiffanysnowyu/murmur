@@ -1478,6 +1478,12 @@ const styles = StyleSheet.create({
   },
   summaryContent: {
     flex: 1,
+    
+    // This is needed to override the 24px padding applied by MainScreen 
+    // So that the explanationContent is able to expand all the way to the ends of the screen
+    // since it has a different background color
+    marginHorizontal: -24,
+    paddingHorizontal: 24,
   },
   summarySection: {
     marginBottom: 0,
@@ -1562,6 +1568,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "flex-start",
     gap: 8,
+    paddingTop: 24,
     paddingBottom: 32,
   },
   claimTitle: {
@@ -1622,9 +1629,7 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   explanationContentBox: {
-    width: 393,
     paddingTop: 48,
-    paddingHorizontal: 48,
     paddingBottom: 40,
     flexDirection: 'column',
     justifyContent: 'flex-start',
@@ -1637,9 +1642,8 @@ const styles = StyleSheet.create({
     elevation: 10,
     borderTopLeftRadius: 0, 
     borderTopRightRadius: 0,
-    marginLeft: -24,
-    marginRight: -24,
-    marginBottom: 72,
+    marginHorizontal: -24,
+    paddingHorizontal: 48,
     alignSelf: 'center',
   },
   ctaContainer: {
