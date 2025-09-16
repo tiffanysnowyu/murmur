@@ -1274,7 +1274,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           <View style={[styles.summarySection, { marginBottom: 78 }]}>
             <View style={styles.bottomLineDivider} />
             <Pressable onPress={fetchStillUneasyResponse}>
-              <Text style={[styles.summaryMoreButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
+              <Text style={[styles.moreAnalysisButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
             </Pressable>
             
             {stillUneasyLoading && (
@@ -1605,4 +1605,11 @@ const styles = StyleSheet.create({
   modalMessage: { fontSize: 16, color: '#333', textAlign: 'center', lineHeight: 24, marginBottom: 20 },
   modalButton: { backgroundColor: '#32535F', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
   modalButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+
+  moreAnalysisButton: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#7A42F4',
+    textAlign: 'left',
+  },
 });

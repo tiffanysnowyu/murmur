@@ -20,6 +20,8 @@ export default function TextPage() {
   
   // Animation state
   const continueButtonScale = useRef(new Animated.Value(1)).current;
+  const summarizeScale = useRef(new Animated.Value(1)).current;
+  const analyzeScale = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
     if (initialText && typeof initialText === 'string') {
@@ -81,6 +83,34 @@ export default function TextPage() {
     }).start();
   };
 
+  const handleSummarizePressIn = () => {
+    Animated.spring(summarizeScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleSummarizePressOut = () => {
+    Animated.spring(summarizeScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleAnalyzePressIn = () => {
+    Animated.spring(analyzeScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleAnalyzePressOut = () => {
+    Animated.spring(analyzeScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
   // Mode selection screen
   if (!mode) {
     return (
@@ -91,7 +121,7 @@ export default function TextPage() {
 
         {/* Heading */}
         <View style={styles.header}>
-          <Text style={styles.title}>Get started with text</Text>
+          <Text style={styles.title}>Get Started with Text</Text>
           <Text style={styles.subtitle}>Do you want to simplify or check directly?</Text>
         </View>
 
@@ -99,6 +129,8 @@ export default function TextPage() {
         <View style={styles.options}>
           <Pressable
             onPress={() => handleModeSelect('summarize')}
+            onPressIn={handleSummarizePressIn}
+            onPressOut={handleSummarizePressOut}
             style={({ pressed }) => [
               styles.pill,
               pressed && styles.pillPressed,
@@ -106,12 +138,16 @@ export default function TextPage() {
             accessibilityRole="button"
             accessibilityLabel="Choose Summarize"
           >
-            <Text style={styles.pillTitle}>Summarize</Text>
-            <Text style={styles.pillDesc}>Simplify the article into key claims,{'\n'}analyze if needed</Text>
+            <Animated.View style={{ transform: [{ scale: summarizeScale }], alignItems: 'center' }}>
+              <Text style={styles.pillTitle}>Summarize</Text>
+              <Text style={styles.pillDesc}>Simplify the article into key claims,{'\n'}analyze if needed</Text>
+            </Animated.View>
           </Pressable>
 
           <Pressable
             onPress={() => handleModeSelect('analyze')}
+            onPressIn={handleAnalyzePressIn}
+            onPressOut={handleAnalyzePressOut}
             style={({ pressed }) => [
               styles.pill,
               pressed && styles.pillPressed,
@@ -119,8 +155,10 @@ export default function TextPage() {
             accessibilityRole="button"
             accessibilityLabel="Choose Analyze"
           >
-            <Text style={styles.pillTitle}>Analyze</Text>
-            <Text style={styles.pillDesc}>Check claims directly</Text>
+            <Animated.View style={{ transform: [{ scale: analyzeScale }], alignItems: 'center' }}>
+              <Text style={styles.pillTitle}>Analyze</Text>
+              <Text style={styles.pillDesc}>Check claims directly</Text>
+            </Animated.View>
           </Pressable>
         </View>
       </MainScreen>
@@ -188,7 +226,7 @@ const styles = StyleSheet.create({
     fontFamily: "SF Pro Display", 
     fontWeight: "400",
     color: "#1A1A1A",
-    paddingBottom: 24,
+    paddingBottom: 64,
   },
   options: { 
     alignItems: "center",
@@ -199,7 +237,7 @@ const styles = StyleSheet.create({
     minHeight: 128,
     borderWidth: 2,
     borderColor: BORDER,
-    borderRadius: 100,
+    borderRadius: 32,
     paddingVertical: 24,
     paddingHorizontal: 40,
     alignItems: "center",
@@ -209,7 +247,7 @@ const styles = StyleSheet.create({
     backgroundColor: FILL,
   },
   pillTitle: { 
-    fontSize: 24, 
+    fontSize: 20, 
     fontFamily: "SF Pro Display",
     fontWeight: "500", 
     color: TEXT_PRIMARY, 

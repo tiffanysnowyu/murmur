@@ -16,10 +16,33 @@ export const BackButton = ({ onPress, buttonText = 'Back' }: {
   onPress: () => void;
   buttonText?: string;
 }) => {
+  const backScale = useRef(new Animated.Value(1)).current;
+
+  const handleBackPressIn = () => {
+    Animated.spring(backScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleBackPressOut = () => {
+    Animated.spring(backScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
   return (
-    <Pressable style={styles.backButton} onPress={onPress}>
-      <Text style={styles.chevron}>‹</Text>
-      <Text style={styles.backText}>{buttonText}</Text>
+    <Pressable 
+      style={styles.backButton} 
+      onPress={onPress}
+      onPressIn={handleBackPressIn}
+      onPressOut={handleBackPressOut}
+    >
+      <Animated.View style={{ transform: [{ scale: backScale }], flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+        <Text style={styles.chevron}>‹</Text>
+        <Text style={styles.backText}>{buttonText}</Text>
+      </Animated.View>
     </Pressable>
   )
 }
@@ -69,9 +92,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4, 
     paddingBottom: 40,
   },
   chevron: {
@@ -88,10 +108,12 @@ const styles = StyleSheet.create({
     fontWeight: "400",
   },
   primaryCta: {
+    height: 64,
     backgroundColor: "#1A1A1A",
     paddingVertical: 18,
     borderRadius: 16,
     alignItems: "center",
+    justifyContent: "center",
   },
   primaryCtaText: {
     color: "#FFFFFF",

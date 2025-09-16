@@ -51,6 +51,7 @@ const FADE_EASING    = Easing.inOut(Easing.ease);
 
 export default function AnimatedWave() {
   const fade = useRef(new Animated.Value(0)).current;
+  const checkScale = useRef(new Animated.Value(1)).current;
   const currentIndex = useRef(0);
   const [renderIndex, setRenderIndex] = useState(0);
   useEffect(() => {
@@ -90,6 +91,20 @@ export default function AnimatedWave() {
       fade.stopAnimation();
     };
   }, [fade]);
+
+  const handleCheckPressIn = () => {
+    Animated.spring(checkScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleCheckPressOut = () => {
+    Animated.spring(checkScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
 
   const baseIdx = renderIndex;
   const nextIdx = (baseIdx + 1) % frames.length;
@@ -138,6 +153,8 @@ export default function AnimatedWave() {
         <TouchableOpacity
           style={styles.checkWrapper}
           activeOpacity={0.8}
+          onPressIn={handleCheckPressIn}
+          onPressOut={handleCheckPressOut}
           onPress={() => {
             /* your check handler */
           }}
@@ -147,7 +164,9 @@ export default function AnimatedWave() {
             style={styles.checkImage}
             imageStyle={styles.checkImage}
           >
-            <Text style={styles.checkText}>Check</Text>
+            <Animated.Text style={[styles.checkText, { transform: [{ scale: checkScale }] }]}>
+              Check
+            </Animated.Text>
           </ImageBackground>
         </TouchableOpacity>
       </Link>

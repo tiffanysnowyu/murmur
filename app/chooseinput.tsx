@@ -1,12 +1,43 @@
 // app/chooseinput.tsx
-import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import React, { useRef } from "react";
+import { View, Text, StyleSheet, Pressable, Image, Animated } from "react-native";
 import { router } from "expo-router";
 import { BackButton, MainScreen } from "@/components/Common";
 
 export default function ChooseInput() {
+  const textScale = useRef(new Animated.Value(1)).current;
+  const imageScale = useRef(new Animated.Value(1)).current;
+
   const handleChoice = (choice: "text" | "image") => {
     router.push(choice === "text" ? "/text" : "/image");
+  };
+
+  const handleTextPressIn = () => {
+    Animated.spring(textScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleTextPressOut = () => {
+    Animated.spring(textScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleImagePressIn = () => {
+    Animated.spring(imageScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleImagePressOut = () => {
+    Animated.spring(imageScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -16,7 +47,7 @@ export default function ChooseInput() {
         
       {/* Heading */}
       <View style={styles.header}>
-        <Text style={styles.title}>Choose content type</Text>
+        <Text style={styles.title}>Choose Content Type</Text>
         <Text style={styles.subtitle}>What would you like to work with?</Text>
       </View>
 
@@ -24,6 +55,8 @@ export default function ChooseInput() {
       <View style={styles.options}>
         <Pressable
           onPress={() => handleChoice("text")}
+          onPressIn={handleTextPressIn}
+          onPressOut={handleTextPressOut}
           style={({ pressed }) => [
             styles.pill,
             pressed && styles.pillPressed,
@@ -31,12 +64,17 @@ export default function ChooseInput() {
           accessibilityRole="button"
           accessibilityLabel="Choose Text"
         >
-          <Text style={styles.pillTitle}>Text</Text>
-          <Text style={styles.pillDesc}>Paste or type a claim</Text>
+          <Animated.View style={{ transform: [{ scale: textScale }], alignItems: 'center' }}>
+            <Image source={require('../assets/images/icon_aa.png')} style={styles.pillIcon} />
+            <Text style={styles.pillTitle}>Text</Text>
+            {/* <Text style={styles.pillDesc}>Paste or type a claim</Text> */}
+          </Animated.View>
         </Pressable>
 
         <Pressable
           onPress={() => handleChoice("image")}
+          onPressIn={handleImagePressIn}
+          onPressOut={handleImagePressOut}
           style={({ pressed }) => [
             styles.pill,
             pressed && styles.pillPressed,
@@ -44,8 +82,11 @@ export default function ChooseInput() {
           accessibilityRole="button"
           accessibilityLabel="Choose Image"
         >
-          <Text style={styles.pillTitle}>Image</Text>
-          <Text style={styles.pillDesc}>Upload or snap a screenshot</Text>
+          <Animated.View style={{ transform: [{ scale: imageScale }], alignItems: 'center' }}>
+            <Image source={require('../assets/images/icon_picture.png')} style={styles.pillIcon} />
+            <Text style={styles.pillTitle}>Image</Text>
+            {/* <Text style={styles.pillDesc}>Upload or snap a screenshot</Text> */}
+          </Animated.View>
         </Pressable>
       </View>
     </MainScreen>
@@ -71,8 +112,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontFamily: "SF Pro Display", 
     fontWeight: "400",
-    color: "#000000",
-    paddingBottom: 24,
+    color: "#1A1A1A",
+    paddingBottom: 64,
   },
   options: { 
     alignItems: "center",
@@ -81,9 +122,9 @@ const styles = StyleSheet.create({
   pill: {
     width: 345, 
     height: 128, 
-    borderWidth: 2,
+    borderWidth: 1.5,
     borderColor: BORDER,
-    borderRadius: 100, 
+    borderRadius: 32, 
     paddingTop: 16, 
     paddingBottom: 16, 
     paddingHorizontal: 80,
@@ -93,11 +134,16 @@ const styles = StyleSheet.create({
   pillPressed: { 
     backgroundColor: FILL 
   },
+  pillIcon: {
+    width: 24,
+    height: 24,
+    marginBottom: 8,
+  },
   pillTitle: { 
-    fontSize: 24, 
+    fontSize: 20, 
     fontFamily: "SF Pro Display",
     fontWeight: "500", 
-    color: TEXT_PRIMARY, 
+    color: TEXT_SECONDARY, 
     marginBottom: 4,
     textAlign: "center",
     lineHeight: 36, // 150% of 24px

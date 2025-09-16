@@ -1,14 +1,16 @@
 // app/image.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
+  Pressable,
   Image,
   Alert,
   ActivityIndicator,
   Platform,
+  Animated,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
@@ -20,6 +22,9 @@ export default function ImagePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [imageExtractedText, setImageExtractedText] = useState<string | null>(null);
+  
+  const uploadScale = useRef(new Animated.Value(1)).current;
+  const captureScale = useRef(new Animated.Value(1)).current;
 
   // Debug helper
   const addDebugInfo = (info: string) => {
@@ -174,44 +179,105 @@ export default function ImagePage() {
     setIsProcessing(false);
   };
 
+  const handleUploadPressIn = () => {
+    Animated.spring(uploadScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleUploadPressOut = () => {
+    Animated.spring(uploadScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleCapturePressIn = () => {
+    Animated.spring(captureScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleCapturePressOut = () => {
+    Animated.spring(captureScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
+  };
+
   const handleBack = () => {
     router.back();
   };
 
   return (
     <MainScreen>
-      {/* Back button */}
-      <BackButton onPress={handleBack} buttonText="Back" />
+      <View style={styles.content}>
+        {/* Back button */}
+        <BackButton onPress={handleBack} buttonText="Back" />
 
-      <Text style={styles.title}>Scan Image for Text</Text>
-      <Text style={styles.subtitle}>
-        Upload an image containing text you'd like to fact-check
-      </Text>
+      {/* Heading */}
+      <View style={styles.header}>
+        <Text style={styles.title}>Upload Image</Text>
+        {!selectedImage && !isProcessing && (
+          <Text style={styles.subtitle}>
+            How would you like to add your image?
+          </Text>
+        )}
+      </View>
 
+      {/* Options */}
       {!selectedImage && !isProcessing && (
-        <View style={styles.uploadSection}>
-          <TouchableOpacity style={styles.uploadButton} onPress={pickImageFromLibrary}>
-            <Text style={styles.uploadIcon}>📁</Text>
-            <Text style={styles.uploadButtonText}>Choose from Library</Text>
-          </TouchableOpacity>
+        <View style={styles.options}>
+          <Pressable
+            onPress={pickImageFromLibrary}
+            onPressIn={handleUploadPressIn}
+            onPressOut={handleUploadPressOut}
+            style={({ pressed }) => [
+              styles.pill,
+              pressed && styles.pillPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Choose from Library"
+          >
+            <Animated.View style={{ transform: [{ scale: uploadScale }], alignItems: 'center' }}>
+              <Image source={require('../assets/images/icon_picture.png')} style={styles.pillIcon} />
+              <Text style={styles.pillTitle}>Upload Image</Text>
+            </Animated.View>
+          </Pressable>
 
-          <Text style={styles.orText}>or</Text>
-
-          <TouchableOpacity style={styles.cameraButton} onPress={takePhoto}>
-            <Text style={styles.uploadIcon}>📷</Text>
-            <Text style={styles.uploadButtonText}>Take Photo</Text>
-          </TouchableOpacity>
+          <Pressable
+            onPress={takePhoto}
+            onPressIn={handleCapturePressIn}
+            onPressOut={handleCapturePressOut}
+            style={({ pressed }) => [
+              styles.pill,
+              pressed && styles.pillPressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Take Photo"
+          >
+            <Animated.View style={{ transform: [{ scale: captureScale }], alignItems: 'center' }}>
+              <Image source={require('../assets/images/icon_camera.png')} style={styles.pillIcon} />
+              <Text style={styles.pillTitle}>Capture Image</Text>
+            </Animated.View>
+          </Pressable>
         </View>
       )}
 
       {selectedImage && !isProcessing && (
         <View style={styles.imageContainer}>
-          <Text style={styles.imageLabel}>Selected Image:</Text>
           <Image source={{ uri: selectedImage }} style={styles.previewImage} />
           
-          <TouchableOpacity style={styles.resetButton} onPress={resetImage}>
-            <Text style={styles.resetButtonText}>Choose Different Image</Text>
-          </TouchableOpacity>
+          <View style={styles.resetButtonContainer}>
+            <TouchableOpacity style={styles.resetButton} onPress={resetImage}>
+              <Text style={styles.resetButtonText}>Choose New Image</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <Image source={require('../assets/images/icon_info.png')} style={styles.infoIcon} />
+          <Text style={styles.infoText}>Best results: upload a clean screenshot. If taking a photo, fill the frame and avoid glare.</Text>
         </View>
       )}
 
@@ -222,105 +288,131 @@ export default function ImagePage() {
           <Text style={styles.processingSubtext}>This may take a few seconds</Text>
         </View>
       )}
-
-      <View style={styles.infoSection}>
-        <Text style={styles.infoTitle}>💡 Tips for better results:</Text>
-        <Text style={styles.infoText}>• Make sure text is clear and readable</Text>
-        <Text style={styles.infoText}>• Use good lighting</Text>
-        <Text style={styles.infoText}>• Avoid blurry or angled photos</Text>
       </View>
 
       {selectedImage && !isProcessing && imageExtractedText && (
-        <CtaButton onPress={() => router.push({
-          pathname: '/text',
-          params: {
-            initialText: imageExtractedText,
-            mode: 'analyze',
-            cameFromImageScreen: 'true',
-          }
-        })} buttonText="Continue" />
+        <CtaButton 
+          onPress={() => router.push({
+            pathname: '/text',
+            params: {
+              initialText: imageExtractedText,
+              mode: 'analyze',
+              cameFromImageScreen: 'true',
+            }
+          })}
+          buttonText="Continue" 
+          colorStyle="primary" 
+        />
       )}
     </MainScreen>
   );
 }
 
+const BORDER = "#CCE5E7";       
+const FILL = "#F3F8FA";         
+const TEXT_PRIMARY = "#4A4A4A"; 
+const TEXT_SECONDARY = "#595959";
+
 const styles = StyleSheet.create({
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 12,
-    color: '#333',
+  content: {
+    flex: 1,
   },
-  subtitle: {
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#666',
-    lineHeight: 24,
+  header: {
+    paddingBottom: 40,
   },
-  uploadSection: {
-    alignItems: 'center',
-    marginBottom: 40,
-  },
-  uploadButton: {
-    backgroundColor: '#32535F',
-    paddingVertical: 20,
-    paddingHorizontal: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginBottom: 20,
-    minWidth: 200,
-  },
-  cameraButton: {
-    backgroundColor: '#4CAF50',
-    paddingVertical: 20,
-    paddingHorizontal: 40,
-    borderRadius: 12,
-    alignItems: 'center',
-    minWidth: 200,
-  },
-  uploadIcon: {
+  title: { 
     fontSize: 32,
-    marginBottom: 8,
+    fontFamily: "SF Pro Display",
+    fontWeight: "600", 
+    color: "#1A1A1A",
   },
-  uploadButtonText: {
-    color: 'white',
+  subtitle: { 
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: "SF Pro Display", 
+    fontWeight: "400",
+    color: "#1A1A1A",
+    paddingBottom: 64,
   },
-  orText: {
-    fontSize: 16,
-    color: '#888',
-    marginVertical: 16,
+  options: { 
+    alignItems: "center",
+    gap: 24,
+  },
+  pill: {
+    width: 345, 
+    height: 128, 
+    borderWidth: 1.5,
+    borderColor: BORDER,
+    borderRadius: 32, 
+    paddingTop: 16, 
+    paddingBottom: 16, 
+    paddingHorizontal: 80,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  pillPressed: { 
+    backgroundColor: FILL 
+  },
+  pillIcon: {
+    width: 24,
+    height: 24,
+    paddingBottom: 8,
+  },
+  pillTitle: { 
+    fontSize: 20, 
+    fontFamily: "SF Pro Display",
+    fontWeight: "500", 
+    color: TEXT_SECONDARY, 
+    textAlign: "center",
+    lineHeight: 36,
+    letterSpacing: -0.264,
   },
   imageContainer: {
     alignItems: 'center',
-    marginBottom: 40,
-  },
-  imageLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#333',
+    paddingBottom: 40,
   },
   previewImage: {
-    width: 250,
+    width: '100%',
     height: 200,
-    borderRadius: 12,
-    marginBottom: 16,
+    marginLeft: -24,
+    marginRight: -24,
+    paddingBottom: 16,
     resizeMode: 'cover',
   },
+  resetButtonContainer: {
+    paddingBottom: 32,
+    alignSelf: 'flex-start',
+  },
   resetButton: {
-    backgroundColor: '#f0f0f0',
+    flexDirection: 'row',
     paddingVertical: 12,
-    paddingHorizontal: 24,
-    borderRadius: 8,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#CCE5E7',
   },
   resetButtonText: {
-    color: '#666',
+    color: '#4A4A4A',
+    fontFamily: 'SF Pro Display',
     fontSize: 16,
     fontWeight: '500',
+    lineHeight: 24,
+    letterSpacing: -0.176,
+  },
+  infoIcon: {
+    width: 24,
+    height: 24,
+    alignSelf: 'flex-start',
+  },
+  infoText: {
+    paddingTop: 16,
+    fontSize: 16,
+    fontFamily: 'SF Pro Display',
+    color: '#1A1A1A',
+    textAlign: 'left',
+    lineHeight: 24,
   },
   processingContainer: {
     alignItems: 'center',
@@ -336,23 +428,5 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     marginTop: 8,
-  },
-  infoSection: {
-    backgroundColor: '#f8f9fa',
-    padding: 20,
-    borderRadius: 12,
-    marginTop: 'auto',
-  },
-  infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 12,
-    color: '#333',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 6,
-    lineHeight: 20,
   },
 });
