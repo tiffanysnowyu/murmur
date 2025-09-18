@@ -15,20 +15,8 @@ import { BackButton, CtaButton, MainScreen } from '@/components/Common';
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function MurmurDetails() {
-  const handleContinue = () => {
-    router.push('/howitworks');
-  };
-
   const handleBack = () => {
     router.back();
-  };
-
-  const handleHome = () => {
-    router.push('/');
-  };
-
-  const handleSkip = () => {
-    router.push('/');
   };
 
   return (
@@ -48,7 +36,6 @@ export default function MurmurDetails() {
         </Text>
         
       </View>
-      <CtaButton onPress={handleContinue} buttonText="Continue" />
     </MainScreen>
   );
 }

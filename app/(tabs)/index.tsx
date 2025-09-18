@@ -149,7 +149,7 @@ export default function AnimatedWave() {
       </View>
 
       {/* Check button - leads to onboarding */}
-      <Link href="./murmurscreen" asChild>
+      <Link href="./onboarding" asChild>
         <TouchableOpacity
           style={styles.checkWrapper}
           activeOpacity={0.8}

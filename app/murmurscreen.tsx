@@ -15,13 +15,18 @@ import { BackButton, CtaButton, MainScreen } from '@/components/Common';
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 export default function MurmurScreen() {
-  const handleContinue = () => {
-    router.push('/murmurdetails');
-  };
-
   const handleHome = () => {
     router.back();
   };
+
+  // Automatically start onboarding animation
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push('/onboarding');
+    }, 100); // Small delay to ensure smooth transition
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   return (
     <MainScreen>
@@ -36,7 +41,6 @@ export default function MurmurScreen() {
           <Text style={styles.title}>Murmur</Text>
         </View>
       </View>
-      <CtaButton onPress={handleContinue} buttonText="Continue" />
     </MainScreen>
   );
 }

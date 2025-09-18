@@ -428,6 +428,7 @@ Dynamically structure your response based on what would be most helpful. Conside
 **Opening reassurance** - Start with 1-2 sentences of immediate reassurance if the claim might cause anxiety
 
 **Core fact-check** - Address what's true, what's misleading, or what the real situation is. Be specific with:
+- **ALWAYS start your first sentence with a period at the end** - ensure proper punctuation
 - Statistics and numbers when they help provide perspective
 - Clear explanations of what actually affects the user
 - Regional specifics if location matters (be clear about what areas are/aren't affected)
@@ -660,6 +661,9 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     let rotationAnimation: Animated.CompositeAnimation;
     
     if (loading || stillUneasyLoading) {
+      // Reset rotation value to 0 before starting
+      loadingRotation.setValue(0);
+      
       // Start opacity pulse animation
       opacityAnimation = Animated.loop(
         Animated.sequence([
@@ -680,7 +684,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
       rotationAnimation = Animated.loop(
         Animated.timing(loadingRotation, {
           toValue: 1,
-          duration: 1000,
+          duration: 1200,
           useNativeDriver: true,
           easing: Easing.linear,
         })
@@ -688,6 +692,10 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
       
       opacityAnimation.start();
       rotationAnimation.start();
+    } else {
+      // Reset animations when not loading
+      loadingRotation.setValue(0);
+      loadingOpacity.setValue(0.6);
     }
     
     return () => {
@@ -769,18 +777,35 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
 
 1. Acknowledge their continued concerns with empathy
 2. Provide additional context, perspective, or alternative viewpoints
-3. Suggest practical next steps they can take
-4. Offer balanced, nuanced thinking about the topic
-5. Help them feel more informed and less anxious
+3. Offer balanced, nuanced thinking about the topic
+4. Help them feel more informed and less anxious
 
-Be conversational, understanding, and constructive. Avoid dismissing their concerns. Instead, help them think through the issue more thoroughly.`;
+IMPORTANT CONSTRAINTS:
+- This is a one-time response with no follow-up conversation
+- Do NOT end your response with any questions
+- Do NOT include actionable steps or suggestions for things they should do
+- Focus purely on providing reassurance, context, and perspective
+- End with a definitive, calming statement
+
+FORMATTING AND CONTENT REQUIREMENTS:
+- Use **double star format** (**Title**) for subsection headers, NOT circular bullet points
+- Break down information into clear sections with bold headers using **Header Name**
+- Keep responses concise while being thorough and reassuring
+- Provide ONLY concrete and tangible reassurances - avoid abstract concepts
+- Use specific facts, statistics, or real-world examples rather than vague statements
+- Structure information with bold subsection headers rather than simple bullet lists
+- Avoid philosophical or overly theoretical discussions
+
+Be conversational, understanding, and constructive. Avoid dismissing their concerns. Instead, help them think through the issue more thoroughly and leave them feeling more at peace with concrete, specific reassurances.`;
 
       const userPrompt = `The user received this analysis about "${inputText}" but is still feeling uneasy about it:
 
 Original Analysis:
 ${response}
 
-The user clicked "Still uneasy?" indicating they need more reassurance or a different perspective. Please provide additional guidance, context, or suggestions that might help address their lingering concerns. Focus on being empathetic and constructive.`;
+The user clicked "Still uneasy?" indicating they need more reassurance or a different perspective. This is your only opportunity to help them feel better about this topic - there will be no follow-up conversation. 
+
+Provide additional context, perspective, and reassurance that might help address their lingering concerns. Focus on being empathetic and constructive, and end with a definitive, calming statement that helps them feel at peace with the situation.`;
 
       // Make direct API call for still uneasy response
       if (!CLAUDE_API_KEY) throw new Error('Claude API key not found');
@@ -1530,7 +1555,7 @@ const styles = StyleSheet.create({
   stillUneasyLoadingIcon: {
     width: 24,
     height: 24,
-    marginRight: 8,
+    marginRight: 4,
   },
   stillUneasyLoadingText: {
     color: '#B0B0B8',
