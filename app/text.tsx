@@ -121,7 +121,7 @@ export default function TextPage() {
 
         {/* Heading */}
         <View style={styles.header}>
-          <Text style={styles.title}>Get Started with Text</Text>
+          <Text style={styles.title}>Get started with text</Text>
           <Text style={styles.subtitle}>Do you want to simplify or check directly?</Text>
         </View>
 

@@ -47,7 +47,7 @@ export default function ChooseInput() {
         
       {/* Heading */}
       <View style={styles.header}>
-        <Text style={styles.title}>Choose Content Type</Text>
+        <Text style={styles.title}>Choose content type</Text>
         <Text style={styles.subtitle}>What would you like to work with?</Text>
       </View>
 
@@ -125,8 +125,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: BORDER,
     borderRadius: 32, 
-    paddingTop: 16, 
-    paddingBottom: 16, 
+    paddingTop: 20, // Compensate for icon's 8px marginBottom to visually center content
+    paddingBottom: 12, 
     paddingHorizontal: 80,
     alignItems: "center",
     justifyContent: "center",

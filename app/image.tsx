@@ -30,7 +30,7 @@ export default function ImagePage() {
   const resetScale = useRef(new Animated.Value(1)).current;
   
   // Loading animations
-  const loadingOpacity = useRef(new Animated.Value(0.6)).current;
+  const loadingOpacity = useRef(new Animated.Value(0.3)).current;
   const loadingRotation = useRef(new Animated.Value(0)).current;
 
   // Debug helper
@@ -55,12 +55,12 @@ export default function ImagePage() {
         Animated.sequence([
           Animated.timing(loadingOpacity, {
             toValue: 1.0,
-            duration: 600,
+            duration: 800,
             useNativeDriver: true,
           }),
           Animated.timing(loadingOpacity, {
-            toValue: 0.6,
-            duration: 600,
+            toValue: 0.3,
+            duration: 800,
             useNativeDriver: true,
           }),
         ])
@@ -306,7 +306,7 @@ export default function ImagePage() {
 
       {/* Heading */}
       <View style={styles.header}>
-        <Text style={styles.title}>Upload Image</Text>
+        <Text style={styles.title}>Upload image</Text>
         {!selectedImage && !isProcessing && (
           <Text style={styles.subtitle}>
             How would you like to add your image?
@@ -330,7 +330,7 @@ export default function ImagePage() {
           >
             <Animated.View style={{ transform: [{ scale: uploadScale }], alignItems: 'center' }}>
               <Image source={require('../assets/images/icon_picture.png')} style={styles.pillIcon} />
-              <Text style={styles.pillTitle}>Upload Image</Text>
+              <Text style={styles.pillTitle}>Upload image</Text>
             </Animated.View>
           </Pressable>
 
@@ -347,7 +347,7 @@ export default function ImagePage() {
           >
             <Animated.View style={{ transform: [{ scale: captureScale }], alignItems: 'center' }}>
               <Image source={require('../assets/images/icon_camera.png')} style={styles.pillIcon} />
-              <Text style={styles.pillTitle}>Capture Image</Text>
+              <Text style={styles.pillTitle}>Capture image</Text>
             </Animated.View>
           </Pressable>
         </View>
@@ -368,13 +368,13 @@ export default function ImagePage() {
               onPressOut={handleResetPressOut}
             >
               <Animated.View style={{ transform: [{ scale: resetScale }], flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={styles.resetButtonText}>Choose New Image</Text>
+                <Text style={styles.resetButtonText}>Replace image</Text>
               </Animated.View>
             </Pressable>
           </View>
           
           <Image source={require('../assets/images/icon_info.png')} style={styles.infoIcon} />
-          <Text style={styles.infoText}>Best results: upload a clean screenshot. If taking a photo, fill the frame and avoid glare.</Text>
+          <Text style={styles.infoText}>Best results: upload a clean screenshot (sharp, unedited).</Text>
         </View>
       )}
 
@@ -396,13 +396,13 @@ export default function ImagePage() {
               onPressOut={handleResetPressOut}
             >
               <Animated.View style={{ transform: [{ scale: resetScale }], flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Text style={styles.resetButtonText}>Choose New Image</Text>
+                <Text style={styles.resetButtonText}>Choose image</Text>
               </Animated.View>
             </Pressable>
           </View>
           
           <Image source={require('../assets/images/icon_info.png')} style={styles.infoIcon} />
-          <Text style={styles.infoText}>Best results: upload a clean screenshot. If taking a photo, fill the frame and avoid glare.</Text>
+          <Text style={styles.infoText}>Best results: ensure you fill the frame and avoid glare.</Text>
         </View>
       )}
 
@@ -481,8 +481,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: BORDER,
     borderRadius: 32, 
-    paddingTop: 16, 
-    paddingBottom: 16, 
+    paddingTop: 20, // Compensate for icon's paddingBottom to visually center content
+    paddingBottom: 12, 
     paddingHorizontal: 80,
     alignItems: "center",
     justifyContent: "center",

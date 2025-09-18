@@ -88,34 +88,6 @@ export default function ResponsePage() {
     return keywords.some(keyword => lowerText.includes(keyword));
   };
 
-  // Detect if content already contains fact-checking
-  const detectPreFactCheckedContent = (content: string): boolean => {
-    if (!content) return false;
-    const lowerContent = content.toLowerCase();
-    const patterns = [
-      'fact-check results:',
-      'fact check results:',
-      "what's true:",
-      'what\'s true:',
-      '**what\'s true:**',
-      'verdict:',
-      'verification:',
-      'fact check:',
-      'fact checked:',
-      'rating:',
-      'claim:',
-      'what\'s misleading:',
-      'what\'s false:',
-    ];
-    let matchCount = 0;
-    for (const pattern of patterns) {
-      if (lowerContent.includes(pattern)) {
-        matchCount++;
-        if (matchCount >= 2) return true;
-      }
-    }
-    return false;
-  };
 
   // Parse summary response
   const parseSummaryResponse = (responseText: string) => {
@@ -351,7 +323,7 @@ export default function ResponsePage() {
     }
   };
 
-  const getSystemPrompt = (mode: string, isPreFactChecked: boolean = false, isFollowUp: boolean = false) => {
+  const getSystemPrompt = (mode: string, isFollowUp: boolean = false) => {
     if (mode === 'summarize') {
       return `You are an expert content analyzer. You will be provided with article content that has been extracted from a web page.
 
@@ -376,32 +348,6 @@ TASK: Provide a comprehensive analysis in EXACTLY this format:
 Include 3-5 key claims. Each must have a clear statement followed by exactly two sentences of explanation.
 
 Note: The content may be incomplete due to technical limitations in extraction. Format with clear headings and be thorough with available information.`;
-    } else if (isPreFactChecked) {
-      return `You are reviewing an existing fact-check. Focus on what matters to users.
-
-TASK: Analyze whether this fact-check addresses real concerns effectively.
-
-**Assessment Format:**
-
-**Is this addressing a real concern?**
-- What anxiety or worry might have prompted this fact-check?
-- Does it focus on what actually matters to people?
-
-**Quality of the fact-check:**
-- Does it provide sources and evidence?
-- Is it focusing on relevant details or getting lost in trivia?
-
-**What's missing:**
-- What questions would anxious readers still have?
-- What practical guidance is lacking?
-
-**What you can do:**
-[Based on the topic, provide SPECIFIC actions readers can take, whether or not the original fact-check included them]
-
-**Bottom line:**
-[Is this fact-check helpful for someone who's worried? What should they actually do?]
-
-Focus on practical anxiety relief, not academic analysis.`;
     } else if (isFollowUp) {
       return `You are an expert fact-checker and health analyst responding to a FOLLOW-UP QUESTION.
 
@@ -509,10 +455,6 @@ Dynamically structure your response based on what would be most helpful. Conside
     setError('');
     setResponse('');
     try {
-      const isPreFactChecked = detectPreFactCheckedContent(contentText);
-      if (isPreFactChecked && analysisMode === 'analyze') {
-        setAnalysisStep('Detected existing fact-check. Preparing meta-analysis...');
-      }
 
       if (analysisMode === 'summarize' && isUrl(contentText)) {
         setAnalysisStep('Attempting to fetch article content...');
@@ -553,7 +495,7 @@ Dynamically structure your response based on what would be most helpful. Conside
       } else {
         const isFollowUpQuestion = !!previousClaim;
 
-        if (!isPreFactChecked && !isFollowUpQuestion) {
+        if (!isFollowUpQuestion) {
           setAnalysisStep('Quick search...');
           let sourceResult: any = null;
           try {
@@ -602,22 +544,11 @@ Preview: ${source.snippet}`
 
           await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
         } else {
-          setAnalysisStep(isPreFactChecked ? 'Analyzing existing fact-check...' : 'Analyzing follow-up...');
-          const systemPrompt = getSystemPrompt(analysisMode, isPreFactChecked, isFollowUpQuestion);
+          setAnalysisStep('Analyzing follow-up...');
+          const systemPrompt = getSystemPrompt(analysisMode, isFollowUpQuestion);
 
           let userPrompt: string;
-          if (isPreFactChecked) {
-            userPrompt = `SCENARIO: A user found this fact-check online and wants to know if they should trust it.
-
-YOUR ROLE: You're a skeptical expert who HATES bad fact-checks that don't cite sources.
-
-THE FACT-CHECK THEY FOUND:
-${contentText}
-
-YOUR TASK: Tear apart this fact-check for having ZERO sources. Do NOT verify if the claims are true - you CAN'T without sources. Instead, explain why this is a terrible fact-check that no one should trust.
-
-Start your response with: "This fact-check is fundamentally flawed because..."`;
-          } else if (previousClaim) {
+          if (previousClaim) {
             userPrompt = `CONTEXT: A user previously asked about: "${previousClaim}"
 
 They received a fact-check analysis and now have a follow-up concern: "${contentText}"
@@ -728,7 +659,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     let opacityAnimation: Animated.CompositeAnimation;
     let rotationAnimation: Animated.CompositeAnimation;
     
-    if (loading) {
+    if (loading || stillUneasyLoading) {
       // Start opacity pulse animation
       opacityAnimation = Animated.loop(
         Animated.sequence([
@@ -763,7 +694,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
       if (opacityAnimation) opacityAnimation.stop();
       if (rotationAnimation) rotationAnimation.stop();
     };
-  }, [loading]);
+  }, [loading, stillUneasyLoading]);
 
   useEffect(() => {
     // If we have already analyzed content, don't do it again
@@ -834,12 +765,61 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     try {
       setStillUneasyLoading(true);
 
-      // TODO: REPLACE THIS LINE OF CODE WITH SOMETHING THAT CALLS THE CLAUDE API TO GET THE STILL UNEASY RESPONSE
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // This is a placeholder response - replace with actual API call
-      const response = "Here's some additional guidance to help ease your concerns...";
-      setStillUneasyResponse(response);
+      const systemPrompt = `You are a helpful assistant providing additional reassurance and guidance to users who are still concerned after receiving an initial analysis. Your goal is to:
+
+1. Acknowledge their continued concerns with empathy
+2. Provide additional context, perspective, or alternative viewpoints
+3. Suggest practical next steps they can take
+4. Offer balanced, nuanced thinking about the topic
+5. Help them feel more informed and less anxious
+
+Be conversational, understanding, and constructive. Avoid dismissing their concerns. Instead, help them think through the issue more thoroughly.`;
+
+      const userPrompt = `The user received this analysis about "${inputText}" but is still feeling uneasy about it:
+
+Original Analysis:
+${response}
+
+The user clicked "Still uneasy?" indicating they need more reassurance or a different perspective. Please provide additional guidance, context, or suggestions that might help address their lingering concerns. Focus on being empathetic and constructive.`;
+
+      // Make direct API call for still uneasy response
+      if (!CLAUDE_API_KEY) throw new Error('Claude API key not found');
+      if (!CLAUDE_API_KEY.startsWith('sk-ant-')) throw new Error('Invalid Claude API key format');
+
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': CLAUDE_API_KEY,
+          'Content-Type': 'application/json',
+          'anthropic-version': '2023-06-01',
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 4000,
+          system: systemPrompt,
+          messages: [{ role: 'user', content: userPrompt }],
+        }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Claude API Error (${res.status}): ${errorText}`);
+      }
+
+      const data = await res.json();
+      let reply = '';
+      if (data.content && Array.isArray(data.content) && data.content.length > 0) {
+        const textContent = data.content.find((item: any) => item.type === 'text');
+        if (textContent && textContent.text) {
+          reply = textContent.text.trim();
+        }
+      }
+
+      if (reply) {
+        setStillUneasyResponse(reply);
+      } else {
+        throw new Error('No response received from Claude.');
+      }
       
     } catch (error) {
       console.error('Error fetching still uneasy response:', error);
@@ -850,9 +830,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   };
 
   const getTitle = () => {
-    const isPreFactChecked = inputText && detectPreFactCheckedContent(inputText);
     if (isSummaryMode) return 'Summary';
-    if (isPreFactChecked) return 'Fact-Check Analysis';
     return 'Analysis';
   };
 
@@ -886,7 +864,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         <ScrollView style={styles.summaryContent} showsVerticalScrollIndicator={false}>
           {/* Article Section */}
           <View style={styles.summarySection}>
-            <Text style={styles.summarySectionTitle}>Article</Text>
+            <Text style={styles.summarySectionTitle}>Original text</Text>
             <View style={styles.summaryArticleContainer}>
               <Text style={styles.summaryArticleText} numberOfLines={showFullArticle ? undefined : 3}>
                 {inputText}
@@ -1184,7 +1162,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         {/* Content to Analyze Section */}
         {inputText && (
           <View style={styles.summarySection}>
-            <Text style={styles.summarySectionTitle}>Content</Text>
+            <Text style={styles.summarySectionTitle}>Claim</Text>
             <View style={styles.summaryArticleContainer}>
               <Text 
                 style={styles.summaryArticleText}
@@ -1221,9 +1199,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         {/* Fact-Check Results Section */}
         <View style={[styles.summarySection]}>
           <Text style={styles.summarySectionTitle}>
-            {inputText && detectPreFactCheckedContent(inputText)
-              ? 'Meta-Analysis Results'
-              : 'Fact-Check Results'}
+            What's True
           </Text>
 
           {loading && (() => {
@@ -1384,12 +1360,25 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
             
             {stillUneasyLoading && (
               <View style={styles.stillUneasyLoadingContainer}>
-                <ActivityIndicator size="small" color="#7A42F4" />
+                <Animated.Image 
+                  source={require('../assets/images/icon_loading.png')}
+                  style={[
+                    styles.stillUneasyLoadingIcon,
+                    { transform: [{ rotate: loadingRotation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: ['0deg', '360deg'],
+                    }) }] }
+                  ]}
+                />
+                <Animated.Text style={[styles.stillUneasyLoadingText, { opacity: loadingOpacity }]}>
+                  Loading...
+                </Animated.Text>
               </View>
             )}
             
             {stillUneasyResponse && (
-              <View style={styles.stillUneasyResponseContainer}>
+              <View style={styles.stillUneasyContainer}>
+                <Text style={styles.stillUneasyTitle}>Please don't worry</Text>
                 <Text style={styles.stillUneasyResponseText}>{stillUneasyResponse}</Text>
               </View>
             )}
@@ -1533,23 +1522,42 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   stillUneasyLoadingContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'flex-start',
     marginTop: 12,
   },
-  stillUneasyResponseContainer: {
+  stillUneasyLoadingIcon: {
+    width: 24,
+    height: 24,
+    marginRight: 8,
+  },
+  stillUneasyLoadingText: {
+    color: '#B0B0B8',
+    textAlign: 'left',
+    fontFamily: 'SF Pro Display',
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 27,
+    letterSpacing: -0.198,
+  },
+  stillUneasyContainer: {
     marginTop: 16,
-    padding: 16,
-    backgroundColor: '#F8F9FA',
-    borderRadius: 12,
-    borderLeftWidth: 3,
-    borderLeftColor: '#7A42F4',
+  },
+  stillUneasyTitle: {
+    fontSize: 24,
+    fontFamily: "SF Pro Display",
+    fontWeight: "600",
+    color: '#1A1A1A',
+    marginBottom: 32,
   },
   stillUneasyResponseText: {
-    fontSize: 16,
-    fontFamily: 'SF Pro Display',
-    fontWeight: '400',
+    fontSize: 18,
+    fontFamily: "SF Pro Display",
+    fontWeight: "400",
     color: '#1A1A1A',
-    lineHeight: 24,
+    lineHeight: 27, // 150% of 18px
+    letterSpacing: -0.198,
   },
   summaryOverviewText: {
     fontSize: 18,
