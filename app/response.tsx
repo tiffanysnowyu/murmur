@@ -36,6 +36,7 @@ export default function ResponsePage() {
   const [foundSources, setFoundSources] = useState<any[]>([]);
   const [stillUneasyResponse, setStillUneasyResponse] = useState<string>('');
   const [stillUneasyLoading, setStillUneasyLoading] = useState<boolean>(false);
+  const [stillUneasyError, setStillUneasyError] = useState<string>('');
 
   // Animation states
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -590,8 +591,11 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
 
   const callClaudeAPI = async (systemPrompt: string, userPrompt: string, analysisMode: string) => {    
     try {
+      // Uncomment this line to force this function to always throw an error in order
+      // to develop the error state UI
+      // throw new Error('Fake error to develop error UI')
+
       console.log('CALLING CLAUDE API')
-      throw new Error('FAKE ERROR TO SHOW ERROR SCREEN')
 
       if (!CLAUDE_API_KEY) throw new Error('Claude API key not found. Please add EXPO_PUBLIC_CLAUDE_API_KEY to your .env file');
       if (!CLAUDE_API_KEY.startsWith('sk-ant-')) throw new Error('Invalid Claude API key format. Key should start with sk-ant-');
@@ -744,6 +748,11 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     }
   };
 
+  const handleStillUneasyRetry = () => {
+    setStillUneasyError('');
+    fetchStillUneasyResponse();
+  };
+
   const handleAnalyzeClaims = () => {
     // Analyze the original input text, not the summary
     if (inputText) {
@@ -775,6 +784,8 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
   const fetchStillUneasyResponse = async () => {
     try {
       setStillUneasyLoading(true);
+      setStillUneasyError('');
+      setStillUneasyResponse('');
 
       const systemPrompt = `You are a helpful assistant providing additional reassurance and guidance to users who are still concerned after receiving an initial analysis. Your goal is to:
 
@@ -851,7 +862,8 @@ Provide additional context, perspective, and reassurance that might help address
       
     } catch (error) {
       console.error('Error fetching still uneasy response:', error);
-      setStillUneasyResponse('Sorry, we encountered an error. Please try again.');
+      setStillUneasyError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
+      setStillUneasyResponse('');
     } finally {
       setStillUneasyLoading(false);
     }
@@ -1404,6 +1416,15 @@ Provide additional context, perspective, and reassurance that might help address
               </View>
             )}
             
+            {stillUneasyError && (
+              <View style={styles.stillUneasyErrorContainer}>
+                <Text style={styles.errorText}>{stillUneasyError}</Text>
+                <TouchableOpacity onPress={handleStillUneasyRetry} style={styles.retryButton}>
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
             {stillUneasyResponse && (
               <View style={styles.stillUneasyContainer}>
                 <Text style={styles.stillUneasyTitle}>Please don't worry</Text>
@@ -1422,10 +1443,10 @@ Provide additional context, perspective, and reassurance that might help address
           currentMode === 'analyze' ? (
             <View style={styles.ctaContainer}>
               <View style={styles.ctaButton}>
-                <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue to Deep Breathing" colorStyle="primary" />
+                <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue to deep breathing" colorStyle="primary" />
               </View>
               <View style={styles.ctaButton}>
-                <CtaButton onPress={() => router.dismissAll()} buttonText="Skip for Now" colorStyle="secondary" />
+                <CtaButton onPress={() => router.dismissAll()} buttonText="Skip for now" colorStyle="secondary" />
               </View>
             </View>
           ) : (
@@ -1570,7 +1591,10 @@ const styles = StyleSheet.create({
     letterSpacing: -0.198,
   },
   stillUneasyContainer: {
-    marginTop: 16,
+    marginTop: 32,
+  },
+  stillUneasyErrorContainer: {
+    marginTop: 32,
   },
   stillUneasyTitle: {
     fontSize: 24,
@@ -1757,10 +1781,37 @@ const styles = StyleSheet.create({
 
   loadingText: { marginTop: 12, fontSize: 16, color: '#666', textAlign: 'center', fontWeight: '600' },
 
-  errorContainer: { alignItems: 'center', paddingVertical: 20 },
-  errorText: { fontSize: 16, color: '#d32f2f', textAlign: 'center', marginBottom: 16 },
-  retryButton: { backgroundColor: '#32535F', paddingHorizontal: 20, paddingVertical: 10, borderRadius: 6 },
-  retryButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
+  errorContainer: { paddingVertical: 0 },
+  errorText: {
+    fontSize: 18,
+    fontFamily: 'SF Pro Display',
+    fontWeight: '400',
+    color: '#F44245',
+    lineHeight: 27,
+    letterSpacing: -0.198,
+    marginBottom: 16,
+  },
+  retryButton: {
+    flexDirection: 'row',
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: 1.5,
+    borderColor: '#CCE5E7',
+    alignSelf: 'flex-start',
+    marginBottom: 16, // space between retry button and still uneasy section's gray divider, not accounting for the 16px top padding that has
+  },
+  retryButtonText: {
+    color: '#4A4A4A',
+    fontFamily: 'SF Pro Display',
+    fontSize: 16,
+    fontWeight: '500',
+    lineHeight: 24,
+    letterSpacing: -0.176,
+  },
 
   noContentText: { fontSize: 16, color: '#666', textAlign: 'center', fontStyle: 'italic', paddingVertical: 40 },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.5)', justifyContent: 'center', alignItems: 'center' },
