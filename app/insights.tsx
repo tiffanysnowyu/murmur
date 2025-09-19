@@ -116,6 +116,7 @@ const styles = StyleSheet.create({
     flex: 1,
     // Undo the 40 padding set in the MainScreen component
     marginBottom: -40,
+    marginHorizontal: -24,
   },
   emptyState: {
     alignItems: 'center',
@@ -143,7 +144,6 @@ const styles = StyleSheet.create({
     padding: 24,
     flexDirection: 'column',
     alignItems: 'flex-start',
-    gap: 10,
     alignSelf: 'stretch',
     borderRadius: 20,
     backgroundColor: '#FFF',
@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 30,
     elevation: 5,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   cardContent: {
     flexDirection: 'row',

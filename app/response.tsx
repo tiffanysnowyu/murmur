@@ -474,7 +474,7 @@ Dynamically structure your response based on what would be most helpful. Conside
             return;
           }
           setAnalysisStep('Analyzing article with AI...');
-          const systemPrompt = getSystemPrompt(analysisMode, false, false);
+          const systemPrompt = getSystemPrompt(analysisMode, false);
           const userPrompt = `Please analyze this article content:
 
             Title: ${extractedData.title}
@@ -518,7 +518,7 @@ Dynamically structure your response based on what would be most helpful. Conside
           }
 
           setAnalysisStep('Analyzing...');
-          const systemPrompt = getSystemPrompt(analysisMode, false, false);
+          const systemPrompt = getSystemPrompt(analysisMode, false);
 
           let userPrompt = `Please analyze this content: "${contentText}"
 
@@ -588,8 +588,11 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     }
   };
 
-  const callClaudeAPI = async (systemPrompt: string, userPrompt: string, analysisMode: string) => {
+  const callClaudeAPI = async (systemPrompt: string, userPrompt: string, analysisMode: string) => {    
     try {
+      console.log('CALLING CLAUDE API')
+      throw new Error('FAKE ERROR TO SHOW ERROR SCREEN')
+
       if (!CLAUDE_API_KEY) throw new Error('Claude API key not found. Please add EXPO_PUBLIC_CLAUDE_API_KEY to your .env file');
       if (!CLAUDE_API_KEY.startsWith('sk-ant-')) throw new Error('Invalid Claude API key format. Key should start with sk-ant-');
 

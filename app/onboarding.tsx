@@ -5,50 +5,64 @@ import {
   Text,
   StyleSheet,
   Animated,
-  Dimensions,
+  Image,
 } from 'react-native';
 import { router } from 'expo-router';
 import { MainScreen, CtaButton } from '@/components/Common';
 
-const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
-
 // Screen Content Components
 const MurmurScreenContent = () => (
   <View style={styles.content}>
-    <View style={styles.titleContainer}>
-      <Text style={styles.murmurTitle}>Murmur</Text>
+    <View style={styles.imageContainer}>
+      <Image 
+        source={require('../assets/images/gradient_text1.png')}
+        style={styles.murmurImage}
+        resizeMode="contain"
+      />
+    </View>
+    <View style={styles.textContainer}>
     </View>
   </View>
 );
 
 const MurmurDetailsContent = () => (
   <View style={styles.content}>
-    <Text style={styles.mainTitle}>Quiet clarity in a noisy world</Text>
-    <Text style={styles.subtitle}>
-      Murmur helps you understand what matters{'\n'}and leave the rest behind
-    </Text>
+    <View style={styles.imageContainer}>
+      <Image 
+        source={require('../assets/images/gradient_text2.png')}
+        style={styles.murmurImage}
+        resizeMode="contain"
+      />
+    </View>
+    <View style={styles.textContainer}>
+      <Text style={styles.subtitle}>
+        Murmur helps you understand what matters{'\n'}and leave the rest behind
+      </Text>
+    </View>
   </View>
 );
 
 const HowItWorksContent = ({ onContinue }: { onContinue?: () => void }) => (
   <>
     <View style={styles.content}>
-      <Text style={styles.title}>How it works</Text>
-      <View style={styles.stepsContainer}>
-        <Text style={styles.step}>1. Paste what worries you</Text>
-        <Text style={styles.step}>2. We check the facts</Text>
-        <Text style={styles.step}>3. Reset with guided breathing</Text>
+      <View style={styles.imageContainer}>
+        <Image 
+          source={require('../assets/images/gradient_text3.png')}
+          style={styles.murmurImage}
+          resizeMode="contain"
+        />
       </View>
-      <View style={styles.characterContainer}>
-        <View style={styles.characterPlaceholder}>
-          <View style={styles.characterHead} />
-          <View style={styles.characterBody} />
-          <View style={styles.characterArm} />
-          <View style={styles.characterLeg} />
+      <View style={styles.stepsContainer}>
+        <View style={styles.stepsTextContainer}>
+          <Text style={styles.step}>1. Paste what worries you</Text>
+          <Text style={styles.step}>2. We check the facts</Text>
+          <Text style={styles.step}>3. Reset with guided breathing</Text>
+        </View>
+        <View style={styles.buttonContainer}>
+          {onContinue && <CtaButton onPress={onContinue} buttonText="Continue" />}
         </View>
       </View>
     </View>
-    {onContinue && <CtaButton onPress={onContinue} buttonText="Continue" />}
   </>
 );
 
@@ -121,6 +135,19 @@ export default function OnboardingScreen() {
 
   return (
     <MainScreen>
+      {/* <MurmurScreenContent /> */}
+      {/* <MurmurDetailsContent /> */}
+      {/* <HowItWorksContent onContinue={() => console.log('continue')}/> */}
+      {/* <LinearTextGradient
+        style={{ fontWeight: "bold", fontSize: 72 }}
+        locations={[0, 1]}
+        colors={["red", "blue"]}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+      >
+        THIS IS TEXT GRADIENT
+      </LinearTextGradient> */}
+      {/* <MurmurScreenContent /> */}
       <Animated.View style={[styles.screenContainer, { opacity: fadeAnim }]}>
         <CurrentScreenComponent 
           onContinue={isHowItWorksScreen && showFinalButton ? handleContinue : undefined}
@@ -135,64 +162,72 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flex: 2,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
   },
   // Murmur Screen Styles
-  titleContainer: {
-    marginBottom: screenHeight * 0.3,
+  imageContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingBottom: 72,
   },
-  murmurTitle: {
-    fontSize: 48,
-    fontFamily: 'SF Pro Display',
-    fontWeight: '400',
-    color: '#4A90A4',
-    textAlign: 'center',
+  textContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
+  murmurImage: {
+    width: 345,
+    height: 46,
   },
   // Murmur Details Styles
   mainTitle: {
-    fontSize: 32,
+    fontSize: 24,
     fontFamily: 'SF Pro Display',
     fontWeight: '600',
-    color: '#4A90A4',
     textAlign: 'center',
     marginBottom: 60,
-    lineHeight: 42,
+    lineHeight: 36,
+    letterSpacing: -0.264,
     maxWidth: 320,
   },
   subtitle: {
-    fontSize: 18,
-    fontFamily: 'SF Pro Display',
-    fontWeight: '400',
-    color: '#1A1A1A',
+    color: '#595959',
     textAlign: 'center',
-    marginBottom: 120,
-    lineHeight: 26,
-    maxWidth: 300,
+    fontFamily: 'SF Pro Display',
+    fontSize: 18,
+    fontWeight: '400',
+    lineHeight: 27,
+    letterSpacing: -0.198,
   },
   // How It Works Styles
   title: {
-    fontSize: 48,
-    fontFamily: 'SF Pro Display',
-    fontWeight: '400',
-    color: '#4A90A4',
-    textAlign: 'center',
-    marginBottom: 60,
-  },
-  stepsContainer: {
-    marginBottom: 80,
-    alignItems: 'center',
-  },
-  step: {
     fontSize: 24,
     fontFamily: 'SF Pro Display',
-    fontWeight: '400',
-    color: '#1A1A1A',
+    fontWeight: '600',
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 32,
+    marginBottom: 60,
+    lineHeight: 36,
+    letterSpacing: -0.264,
+  },
+  stepsContainer: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  stepsTextContainer: {
+    alignItems: 'center',
+  },
+  buttonContainer: {
+  },
+  step: {  
+    color: '#595959',
+    textAlign: 'center',
+    fontFamily: 'SF Pro Display',
+    fontSize: 18,
+    fontWeight: '400',
+    lineHeight: 27,
+    letterSpacing: -0.198,
   },
   characterContainer: {
     marginBottom: 80,
