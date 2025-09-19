@@ -25,34 +25,34 @@ const MurmurScreenContent = () => (
   </View>
 );
 
-const MurmurDetailsContent = () => (
+const MurmurDetailsContent = ({ imageOpacity, textOpacity }: { imageOpacity?: any; textOpacity?: any }) => (
   <View style={styles.content}>
-    <View style={styles.imageContainer}>
+    <Animated.View style={[styles.imageContainer, { opacity: imageOpacity || 1 }]}>
       <Image 
         source={require('../assets/images/gradient_text2.png')}
         style={styles.murmurImage}
         resizeMode="contain"
       />
-    </View>
-    <View style={styles.textContainer}>
+    </Animated.View>
+    <Animated.View style={[styles.textContainer, { opacity: textOpacity || 1 }]}>
       <Text style={styles.subtitle}>
         Murmur helps you understand what matters{'\n'}and leave the rest behind
       </Text>
-    </View>
+    </Animated.View>
   </View>
 );
 
-const HowItWorksContent = ({ onContinue }: { onContinue?: () => void }) => (
+const HowItWorksContent = ({ onContinue, imageOpacity, stepsOpacity }: { onContinue?: () => void; imageOpacity?: any; stepsOpacity?: any }) => (
   <>
     <View style={styles.content}>
-      <View style={styles.imageContainer}>
+      <Animated.View style={[styles.imageContainer, { opacity: imageOpacity || 1 }]}>
         <Image 
           source={require('../assets/images/gradient_text3.png')}
           style={styles.murmurImage}
           resizeMode="contain"
         />
-      </View>
-      <View style={styles.stepsContainer}>
+      </Animated.View>
+      <Animated.View style={[styles.stepsContainer, { opacity: stepsOpacity || 1 }]}>
         <View style={styles.stepsTextContainer}>
           <Text style={styles.step}>1. Paste what worries you</Text>
           <Text style={styles.step}>2. We check the facts</Text>
@@ -61,7 +61,7 @@ const HowItWorksContent = ({ onContinue }: { onContinue?: () => void }) => (
         <View style={styles.buttonContainer}>
           {onContinue && <CtaButton onPress={onContinue} buttonText="Continue" />}
         </View>
-      </View>
+      </Animated.View>
     </View>
   </>
 );
@@ -70,7 +70,11 @@ const HowItWorksContent = ({ onContinue }: { onContinue?: () => void }) => (
 const useOnboardingAnimation = () => {
   const [currentScreenIndex, setCurrentScreenIndex] = useState(0);
   const [showFinalButton, setShowFinalButton] = useState(false);
-  const fadeAnim = useRef(new Animated.Value(1)).current;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const detailsImageOpacity = useRef(new Animated.Value(0)).current;
+  const detailsTextOpacity = useRef(new Animated.Value(0)).current;
+  const howItWorksImageOpacity = useRef(new Animated.Value(0)).current;
+  const howItWorksStepsOpacity = useRef(new Animated.Value(0)).current;
 
   const screens = [
     { id: 'murmur', component: MurmurScreenContent },
@@ -79,6 +83,15 @@ const useOnboardingAnimation = () => {
   ];
 
   useEffect(() => {
+    // Initial fade-in for the first screen
+    if (currentScreenIndex === 0) {
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 2000,
+        useNativeDriver: true,
+      }).start();
+    }
+
     if (currentScreenIndex >= screens.length) {
       return;
     }
@@ -93,20 +106,83 @@ const useOnboardingAnimation = () => {
         }).start(() => {
           // Switch to next screen
           setCurrentScreenIndex(currentScreenIndex + 1);
-          // Fade in next screen
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }).start(() => {
-            // If this is the final screen, show the button
-            if (currentScreenIndex + 1 === screens.length - 1) {
-              setShowFinalButton(true);
-            }
-          });
+          
+          // Special animation for details screen
+          if (currentScreenIndex + 1 === 1) { // Details screen is index 1
+            // Reset details animations
+            detailsImageOpacity.setValue(0);
+            detailsTextOpacity.setValue(0);
+            
+            // Fade in screen container first
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start(() => {
+              // Then fade in image
+              Animated.timing(detailsImageOpacity, {
+                toValue: 1,
+                duration: 2000,
+                useNativeDriver: true,
+              }).start(() => {
+                // Wait 1 additional second before fading in text
+                setTimeout(() => {
+                  Animated.timing(detailsTextOpacity, {
+                    toValue: 1,
+                    duration: 2000,
+                    useNativeDriver: true,
+                  }).start();
+                }, 1000);
+              });
+            });
+          } else if (currentScreenIndex + 1 === 2) { // HowItWorks screen is index 2
+            // Reset HowItWorks animations
+            howItWorksImageOpacity.setValue(0);
+            howItWorksStepsOpacity.setValue(0);
+            
+            // Fade in screen container first
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start(() => {
+              // Then fade in image over 2 seconds
+              Animated.timing(howItWorksImageOpacity, {
+                toValue: 1,
+                duration: 2000,
+                useNativeDriver: true,
+              }).start(() => {
+                // Wait 1 additional second before fading in steps container
+                setTimeout(() => {
+                  Animated.timing(howItWorksStepsOpacity, {
+                    toValue: 1,
+                    duration: 2000,
+                    useNativeDriver: true,
+                  }).start(() => {
+                    // Wait 7 seconds before showing the continue button
+                    setTimeout(() => {
+                      setShowFinalButton(true);
+                    }, 7000);
+                  });
+                }, 1000);
+              });
+            });
+          } else {
+            // Regular fade in for other screens
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start(() => {
+              // If this is the final screen, show the button
+              if (currentScreenIndex + 1 === screens.length - 1) {
+                setShowFinalButton(true);
+              }
+            });
+          }
         });
       }
-    }, 3000); // 3 seconds between transitions
+    }, currentScreenIndex === 1 ? 11000 : 3000); // 11 seconds for details screen (6s + 5s extra), 3 seconds for others
 
     return () => clearTimeout(timer);
   }, [currentScreenIndex, fadeAnim]);
@@ -120,11 +196,15 @@ const useOnboardingAnimation = () => {
     fadeAnim,
     showFinalButton,
     handleContinue,
+    detailsImageOpacity,
+    detailsTextOpacity,
+    howItWorksImageOpacity,
+    howItWorksStepsOpacity,
   };
 };
 
 export default function OnboardingScreen() {
-  const { currentScreen, fadeAnim, showFinalButton, handleContinue } = useOnboardingAnimation();
+  const { currentScreen, fadeAnim, showFinalButton, handleContinue, detailsImageOpacity, detailsTextOpacity, howItWorksImageOpacity, howItWorksStepsOpacity } = useOnboardingAnimation();
 
   if (!currentScreen) {
     return null;
@@ -132,6 +212,7 @@ export default function OnboardingScreen() {
 
   const CurrentScreenComponent = currentScreen.component;
   const isHowItWorksScreen = currentScreen.id === 'howitworks';
+  const isMurmurDetailsScreen = currentScreen.id === 'details';
 
   return (
     <MainScreen>
@@ -151,6 +232,9 @@ export default function OnboardingScreen() {
       <Animated.View style={[styles.screenContainer, { opacity: fadeAnim }]}>
         <CurrentScreenComponent 
           onContinue={isHowItWorksScreen && showFinalButton ? handleContinue : undefined}
+          imageOpacity={isMurmurDetailsScreen ? detailsImageOpacity : (isHowItWorksScreen ? howItWorksImageOpacity : undefined)}
+          textOpacity={isMurmurDetailsScreen ? detailsTextOpacity : undefined}
+          stepsOpacity={isHowItWorksScreen ? howItWorksStepsOpacity : undefined}
         />
       </Animated.View>
     </MainScreen>
