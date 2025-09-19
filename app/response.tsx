@@ -484,13 +484,24 @@ Dynamically structure your response based on what would be most helpful. Conside
             Word Count: ${extractedData.wordCount}
             Note: Content extracted directly from web page, may have some formatting issues.`;
 
-          await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
+          const reply = await callClaudeAPI(systemPrompt, userPrompt);
+          if (reply) {
+            if (foundSources.length > 0) {
+              const responseWithSources = reply + formatSourceReferences(foundSources);
+              setResponse(responseWithSources);
+            } else {
+              setResponse(reply);
+            }
+            
+            parseSummaryResponse(reply);
+            setAnalysisStep('');
+          } 
         } catch (fetchError) {
-          setError(
-            `Could not fetch article content (likely CORS blocked): ${
-              fetchError instanceof Error ? fetchError.message : 'Unknown error'
-            }. Please copy and paste the article text instead.`
-          );
+          // Log the real error for debugging but only show the user internal server error
+          console.log( `Could not fetch article content (likely CORS blocked): ${
+            fetchError instanceof Error ? fetchError.message : 'Unknown error'
+          }. Please copy and paste the article text instead.`);
+          setError('Internal server error');
           setLoading(false);
           return;
         }
@@ -544,7 +555,25 @@ Preview: ${source.snippet}`
             userPrompt += `\n\nWhen citing these sources, use natural inline citations based on the organization/publication name from the URL. Make citations conversational (no [1], [2], etc.).`;
           }
 
-          await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
+          const reply = await callClaudeAPI(systemPrompt, userPrompt);
+          if (reply) {
+            if (foundSources.length > 0) {
+              const responseWithSources = reply + formatSourceReferences(foundSources);
+              setResponse(responseWithSources);
+            } else {
+              setResponse(reply);
+            }
+            
+            // Parse summary if in summary mode
+            if (analysisMode === 'summarize') {
+              parseSummaryResponse(reply);
+            } else {
+              // Parse analyze response for structured display
+              const parsed = parseAnalyzeResponse(reply);
+              setParsedAnalysis(parsed);
+            } 
+            setAnalysisStep('');
+          }
         } else {
           setAnalysisStep('Analyzing follow-up...');
           const systemPrompt = getSystemPrompt(analysisMode, isFollowUpQuestion);
@@ -577,25 +606,44 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
             userPrompt = `Please analyze this content: "${contentText}"`;
           }
 
-          await callClaudeAPI(systemPrompt, userPrompt, analysisMode);
+          const reply = await callClaudeAPI(systemPrompt, userPrompt);
+          if (reply) {
+            if (foundSources.length > 0) {
+              const responseWithSources = reply + formatSourceReferences(foundSources);
+              setResponse(responseWithSources);
+            } else {
+              setResponse(reply);
+            }
+            
+            // Parse summary if in summary mode
+            if (analysisMode === 'summarize') {
+              parseSummaryResponse(reply);
+            } else {
+              // Parse analyze response for structured display
+              const parsed = parseAnalyzeResponse(reply);
+              setParsedAnalysis(parsed);
+            }
+            setAnalysisStep('');
+          }
         }
       }
     } catch (err) {
       console.error('❌ Analysis error:', err);
-      setError(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
+      // The error shown to the user should just say internal server error
+      // Uncomment the line after this one to instead see the actual error message for debugging
+      setError('Internal server error')
+      // setError(`Error: ${err instanceof Error ? err.message : 'Unknown error'}`);
       setAnalysisStep('');
       setLoading(false);
       setFoundSources([]);
     }
   };
 
-  const callClaudeAPI = async (systemPrompt: string, userPrompt: string, analysisMode: string) => {    
+  const callClaudeAPI = async (systemPrompt: string, userPrompt: string): Promise<string> => {    
     try {
       // Uncomment this line to force this function to always throw an error in order
       // to develop the error state UI
       // throw new Error('Fake error to develop error UI')
-
-      console.log('CALLING CLAUDE API')
 
       if (!CLAUDE_API_KEY) throw new Error('Claude API key not found. Please add EXPO_PUBLIC_CLAUDE_API_KEY to your .env file');
       if (!CLAUDE_API_KEY.startsWith('sk-ant-')) throw new Error('Invalid Claude API key format. Key should start with sk-ant-');
@@ -636,27 +684,8 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
         }
       }
 
-      if (reply) {
-        if (foundSources.length > 0) {
-          const responseWithSources = reply + formatSourceReferences(foundSources);
-          setResponse(responseWithSources);
-        } else {
-          setResponse(reply);
-        }
-        
-        // Parse summary if in summary mode
-        if (analysisMode === 'summarize') {
-          parseSummaryResponse(reply);
-        } else {
-          // Parse analyze response for structured display
-          const parsed = parseAnalyzeResponse(reply);
-          setParsedAnalysis(parsed);
-        }
-        
-        setAnalysisStep('');
-      } else {
-        throw new Error('No response received from Claude.');
-      }
+      if (reply.length === 0) throw new Error('No response received from Claude.');
+      return reply;
     } finally {
       setLoading(false);
     }
@@ -822,47 +851,16 @@ The user clicked "Still uneasy?" indicating they need more reassurance or a diff
 Provide additional context, perspective, and reassurance that might help address their lingering concerns. Focus on being empathetic and constructive, and end with a definitive, calming statement that helps them feel at peace with the situation.`;
 
       // Make direct API call for still uneasy response
-      if (!CLAUDE_API_KEY) throw new Error('Claude API key not found');
-      if (!CLAUDE_API_KEY.startsWith('sk-ant-')) throw new Error('Invalid Claude API key format');
-
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': CLAUDE_API_KEY,
-          'Content-Type': 'application/json',
-          'anthropic-version': '2023-06-01',
-        },
-        body: JSON.stringify({
-          model: 'claude-3-5-sonnet-20241022',
-          max_tokens: 4000,
-          system: systemPrompt,
-          messages: [{ role: 'user', content: userPrompt }],
-        }),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Claude API Error (${res.status}): ${errorText}`);
-      }
-
-      const data = await res.json();
-      let reply = '';
-      if (data.content && Array.isArray(data.content) && data.content.length > 0) {
-        const textContent = data.content.find((item: any) => item.type === 'text');
-        if (textContent && textContent.text) {
-          reply = textContent.text.trim();
-        }
-      }
-
+      const reply = await callClaudeAPI(systemPrompt, userPrompt);
       if (reply) {
         setStillUneasyResponse(reply);
       } else {
         throw new Error('No response received from Claude.');
-      }
-      
+      } 
     } catch (error) {
+      // Log the real error for debugging but only show the user internal server error
       console.error('Error fetching still uneasy response:', error);
-      setStillUneasyError(error instanceof Error ? error.message : 'An unexpected error occurred. Please try again.');
+      setStillUneasyError('Internal server error');
       setStillUneasyResponse('');
     } finally {
       setStillUneasyLoading(false);
@@ -1135,6 +1133,61 @@ Provide additional context, perspective, and reassurance that might help address
             <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
           </View>
         )}
+      </MainScreen>
+    );
+  }
+
+
+  // Show error state for summary mode
+  // Note this error appears even if the request to Claude API succeeded 
+  // but for some reason parsedSummary.article doesn't exist (if the parsing went wrong)
+  if (isSummaryMode && !loading && (error || !parsedSummary.article)) {
+    return (
+      <MainScreen>
+        {/* Header */}
+        <View>
+          <BackButton onPress={goBack} buttonText={savedResponse ? 'Saved Insights' : 'Back'} />
+          
+          <View style={styles.summaryArea}>
+            <Text style={styles.summaryTitle}>Summary</Text>
+          </View>
+        </View>
+        
+        <ScrollView style={styles.summaryContent} showsVerticalScrollIndicator={false}>
+          {/* Article Section */}
+          <View style={styles.summarySection}>
+            <Text style={styles.summarySectionTitle}>Original text</Text>
+            <View style={styles.summaryArticleContainer}>
+              <Text style={styles.summaryArticleText} numberOfLines={showFullArticle ? undefined : 3}>
+                {inputText}
+              </Text>
+            </View>
+            {!showFullArticle && (
+              <Pressable onPress={() => setShowFullArticle(true)}>
+                <Text style={styles.summaryMoreButton}>More</Text>
+              </Pressable>
+            )}
+            {showFullArticle && (
+              <Pressable onPress={() => setShowFullArticle(false)}>
+                <Text style={styles.summaryMoreButton}>Less</Text>
+              </Pressable>
+            )}
+          </View>
+
+          {/* Divider */}
+          <View style={styles.summaryDivider} />
+
+          {/* Overview Section with Error */}
+          <View style={styles.summarySection}>
+            <Text style={styles.summarySectionTitle}>Overview</Text>
+            <View style={styles.errorContainer}>
+              <Text style={styles.errorText}>{error}</Text>
+              <TouchableOpacity onPress={handleRetry} style={styles.retryButton}>
+                <Text style={styles.retryButtonText}>Retry</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </ScrollView>
       </MainScreen>
     );
   }
