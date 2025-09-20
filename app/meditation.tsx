@@ -119,15 +119,6 @@ export default function MeditationScreen() {
   const [showFlower, setShowFlower] = useState(false);
   const [showPinkFlower, setShowPinkFlower] = useState(false);
   const [showCTAs, setShowCTAs] = useState(false);
-  // const [subtitleText, setSubtitleText] = useState("Inhale slowly for 4s");
-  // const [introSkipped, setIntroSkipped] = useState(false);
-  // const [showClearHeart, setShowClearHeart] = useState(false);
-  
-  // Animation values
-  // const titleOpacity = useRef(new Animated.Value(0)).current;
-  // const subtitleOpacity = useRef(new Animated.Value(0)).current;
-  // const clearHeartTitleOpacity = useRef(new Animated.Value(0)).current;
-  // const clearHeartSubtitleOpacity = useRef(new Animated.Value(0)).current;
   const blueFlowerOpacity = useRef(new Animated.Value(0)).current;
   const pinkFlowerOpacity = useRef(new Animated.Value(0)).current;
   const flowerScale = useRef(new Animated.Value(1)).current;
@@ -136,96 +127,6 @@ export default function MeditationScreen() {
   const pulseAnimationRef = useRef<{ stop: () => void } | null>(null);
   const animationStopped = useRef(false);
   const flowerTimerRef = useRef<NodeJS.Timeout | number | null>(null);
-  // const textTimerRef = useRef<NodeJS.Timeout | number | null>(null);
-
-  // useEffect(() => {
-  //   setIntroSkipped(false);
-  //   // startTextSequence();
-  //   // startFlowerSequence();
-
-  //   return () => {
-  //     if (flowerTimerRef.current) {
-  //       clearTimeout(flowerTimerRef.current);
-  //     }
-  //     if (textTimerRef.current) {
-  //       clearTimeout(textTimerRef.current);
-  //     }
-  //   };
-  // }, []);
-
-  // Helper function for text animation sequence
-  // const startTextSequence = () => {
-  //   // Start title fade-in immediately
-  //   Animated.timing(titleOpacity, {
-  //     toValue: 1,
-  //     duration: 1000,
-  //     useNativeDriver: true,
-  //   }).start(() => {
-  //     // Then fade in subtitle
-  //     Animated.timing(subtitleOpacity, {
-  //       toValue: 1,
-  //       duration: 1000,
-  //       useNativeDriver: true,
-  //     }).start(() => {
-  //       // After 4 seconds (inhale duration), change subtitle to exhale
-  //       textTimerRef.current = setTimeout(() => {
-  //         // Fade out current subtitle
-  //         Animated.timing(subtitleOpacity, {
-  //           toValue: 0,
-  //           duration: 1000,
-  //           useNativeDriver: true,
-  //         }).start(() => {
-  //           // Change subtitle text and fade back in
-  //           setSubtitleText("Exhale slowly for 6s");
-  //           Animated.timing(subtitleOpacity, {
-  //             toValue: 1,
-  //             duration: 1000,
-  //             useNativeDriver: true,
-  //           }).start(() => {
-  //             // After exhale phase, start clear heart screen
-  //             setTimeout(() => {
-  //               startClearHeartSequence();
-  //             }, 6000); // 6 seconds for exhale phase
-  //           });
-  //         });
-  //       }, 4000); // 4 seconds for inhale phase
-  //     });
-  //   });
-  // };
-
-  // const startClearHeartSequence = () => {
-  //   // Fade out current screen
-  //   Animated.parallel([
-  //     Animated.timing(titleOpacity, {
-  //       toValue: 0,
-  //       duration: 500,
-  //       useNativeDriver: true,
-  //     }),
-  //     Animated.timing(subtitleOpacity, {
-  //       toValue: 0,
-  //       duration: 500,
-  //       useNativeDriver: true,
-  //     }),
-  //   ]).start(() => {
-  //     // Show clear heart screen
-  //     setShowClearHeart(true);
-      
-  //     // Fade in clear heart title
-  //     Animated.timing(clearHeartTitleOpacity, {
-  //       toValue: 1,
-  //       duration: 1000,
-  //       useNativeDriver: true,
-  //     }).start(() => {
-  //       // Then fade in clear heart subtitle
-  //       Animated.timing(clearHeartSubtitleOpacity, {
-  //         toValue: 1,
-  //         duration: 1000,
-  //         useNativeDriver: true,
-  //       }).start();
-  //     });
-  //   });
-  // };
-
 
   // Helper function for starting flower display and animation
   const startFlowerAnimation = () => {
@@ -307,72 +208,15 @@ export default function MeditationScreen() {
     pulseWithColorChange();
   };
 
-  // // Helper function for flower animation sequence
-  // const startFlowerSequence = () => {
-  //   // Show flower after clear heart screen (4s + 6s + 2s transition + 2s clear heart display = 14s)
-  //   flowerTimerRef.current = setTimeout(() => {
-  //     // First fade out the clear heart screen
-  //     Animated.parallel([
-  //       Animated.timing(clearHeartTitleOpacity, {
-  //         toValue: 0,
-  //         duration: 500,
-  //         useNativeDriver: true,
-  //       }),
-  //       Animated.timing(clearHeartSubtitleOpacity, {
-  //         toValue: 0,
-  //         duration: 500,
-  //         useNativeDriver: true,
-  //       }),
-  //     ]).start(() => {
-  //       setShowClearHeart(false);
-  //       startFlowerAnimation();
-  //     });
-  //   }, 16000); // Extended to account for clear heart screen
-  // };
-
   const handleDone = () => {
     router.dismissAll();
   };
 
   const handleSkipIntro = () => {
-    // setIntroSkipped(true);
-
-    // Clear any existing timers to stop text animations
-    // if (flowerTimerRef.current) {
-    //   clearTimeout(flowerTimerRef.current);
-    //   flowerTimerRef.current = null;
-    // }
-    // if (textTimerRef.current) {
-    //   clearTimeout(textTimerRef.current);
-    //   textTimerRef.current = null;
-    // }
-    
-    // // Stop any running text animations
-    // titleOpacity.stopAnimation();
-    // subtitleOpacity.stopAnimation();
-    
-    // // Reset animation stopped flag
-    // animationStopped.current = false;
-    
-    // // Skip text phase and go directly to flower animation
-    // titleOpacity.setValue(0);
-    // subtitleOpacity.setValue(0);
-    // clearHeartTitleOpacity.setValue(0);
-    // clearHeartSubtitleOpacity.setValue(0);
-    // setShowClearHeart(false);
-
     setPhase('flower')
-    // startFlowerAnimation();
   }
 
-  const handleDoItAgain = () => {
-    // Stop any running pulse animation
-    // if (pulseAnimationRef.current) {
-    //   pulseAnimationRef.current.stop();
-    //   pulseAnimationRef.current = null;
-    // }
-    // animationStopped.current = false; // Reset animation stopped flag
-    
+  const handleDoItAgain = () => {    
     blueFlowerOpacity.setValue(0);
     pinkFlowerOpacity.setValue(0);
     flowerScale.setValue(1);
@@ -383,17 +227,6 @@ export default function MeditationScreen() {
     setShowCTAs(false);
     setPhase('intro')
     setIntroPhaseNum(0)
-    // setIntroSkipped(false);
-    // setShowClearHeart(false);
-    // setSubtitleText("Inhale slowly for 4s"); // Reset subtitle text
-    // titleOpacity.setValue(0);
-    // subtitleOpacity.setValue(0);
-    // clearHeartTitleOpacity.setValue(0);
-    // clearHeartSubtitleOpacity.setValue(0);
-    
-    // Restart the sequence using helper functions
-    // startTextSequence();
-    // startFlowerSequence();
   };
 
   const [introPhaseNum, setIntroPhaseNum] = useState<number>(0)
@@ -483,42 +316,7 @@ export default function MeditationScreen() {
             setPhase('flower')
           }}
         /> 
-      )} 
-
-
-
-        {/* Text content */}
-        {/* {!introSkipped && !showClearHeart && (
-          <IntroScreen
-            title="Clear your mind"
-            subtitle={subtitleText}
-            
-            skipIntroCallback={handleSkipIntro}
-          />
-        )}
-
-        {/* Clear Heart Screen */}
-        {/* {showClearHeart && !introSkipped && (
-          <View style={styles.textContainer}>
-            <Animated.Text style={[styles.mainTitle, { opacity: clearHeartTitleOpacity }]}>
-              Clear your heart
-            </Animated.Text>
-            <Animated.Text style={[styles.subtitle, { opacity: clearHeartSubtitleOpacity }]}>
-              Inhale for 4s
-            </Animated.Text>
-          </View>
-        )} */} 
-
-        {/* Skip Intro button - only show during text phase
-        {!showFlower && !showCTAs && (
-          <View style={styles.skipContainer}>
-            <CtaButton 
-              onPress={handleSkipIntro} 
-              buttonText="Skip Intro" 
-              colorStyle="tertiary" 
-            />
-          </View>
-        )} */}
+      )}
 
         {/* Blue Flower */}
         {phase == 'flower' && showFlower && (
