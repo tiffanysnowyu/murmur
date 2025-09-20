@@ -1199,7 +1199,7 @@ Provide additional context, perspective, and reassurance that might help address
     <MainScreen>
       {/* Header */}
       <View style={[!showSummaryTitle && styles.summaryHeaderPinned]}>
-        <BackButton onPress={goBack} buttonText="Back" />
+      <BackButton onPress={goBack} buttonText={savedResponse ? 'Saved Insights' : 'Back'} />
 
         {showSummaryTitle ? (
           <View style={styles.summaryArea}>
