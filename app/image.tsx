@@ -24,6 +24,7 @@ export default function ImagePage() {
   const [debugInfo, setDebugInfo] = useState<string[]>([]);
   const [imageExtractedText, setImageExtractedText] = useState<string | null>(null);
   const [noTextFound, setNoTextFound] = useState(false);
+  const [imageSelectionMode, setImageSelectionMode] = useState<'library' | 'camera'>('library');
   
   const uploadScale = useRef(new Animated.Value(1)).current;
   const captureScale = useRef(new Animated.Value(1)).current;
@@ -165,8 +166,7 @@ export default function ImagePage() {
 
       addDebugInfo('Launching camera...');
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
+        allowsEditing: false,
         quality: 0.8,
       });
 
@@ -228,21 +228,6 @@ export default function ImagePage() {
       setIsProcessing(false);
     }
   };
-  const resetImage = () => {
-    addDebugInfo('Resetting image');
-    setSelectedImage(null);
-    setIsProcessing(false);
-    setImageExtractedText(null);
-    setNoTextFound(false);
-  };
-
-  const tryNewImage = () => {
-    addDebugInfo('Trying new image');
-    setSelectedImage(null);
-    setIsProcessing(false);
-    setImageExtractedText(null);
-    setNoTextFound(false);
-  };
 
   const handleUploadPressIn = () => {
     Animated.spring(uploadScale, {
@@ -256,6 +241,8 @@ export default function ImagePage() {
       toValue: 1,
       useNativeDriver: true,
     }).start();
+
+    setImageSelectionMode('library');
   };
 
   const handleCapturePressIn = () => {
@@ -270,6 +257,8 @@ export default function ImagePage() {
       toValue: 1,
       useNativeDriver: true,
     }).start();
+
+    setImageSelectionMode('camera');
   };
 
   const handleResetPressIn = () => {
@@ -306,7 +295,7 @@ export default function ImagePage() {
 
       {/* Heading */}
       <View style={styles.header}>
-        <Text style={styles.title}>Upload image</Text>
+        <Text style={styles.title}>{!selectedImage ? 'Add image' : imageSelectionMode == 'camera' ? 'Captured image' : 'Uploaded image'}</Text>
         {!selectedImage && !isProcessing && (
           <Text style={styles.subtitle}>
             How would you like to add your image?
@@ -363,7 +352,7 @@ export default function ImagePage() {
                 styles.resetButton,
                 pressed && styles.resetButtonPressed,
               ]}
-              onPress={pickImageFromLibrary}
+              onPress={imageSelectionMode == 'camera' ? takePhoto : pickImageFromLibrary}
               onPressIn={handleResetPressIn}
               onPressOut={handleResetPressOut}
             >
