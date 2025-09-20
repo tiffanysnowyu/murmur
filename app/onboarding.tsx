@@ -7,7 +7,6 @@ import {
   Animated,
   Image,
 } from 'react-native';
-import { router } from 'expo-router';
 import { MainScreen, CtaButton } from '@/components/Common';
 
 // Screen Content Components
@@ -67,7 +66,7 @@ const HowItWorksContent = ({ onContinue, imageOpacity, stepsOpacity }: { onConti
 );
 
 // Animation Hook
-const useOnboardingAnimation = () => {
+const useOnboardingAnimation = (onComplete: () => void) => {
   const [currentScreenIndex, setCurrentScreenIndex] = useState(0);
   const [showFinalButton, setShowFinalButton] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -188,7 +187,7 @@ const useOnboardingAnimation = () => {
   }, [currentScreenIndex, fadeAnim]);
 
   const handleContinue = () => {
-    router.push('/chooseinput');
+    onComplete()
   };
 
   return {
@@ -203,8 +202,12 @@ const useOnboardingAnimation = () => {
   };
 };
 
-export default function OnboardingScreen() {
-  const { currentScreen, fadeAnim, showFinalButton, handleContinue, detailsImageOpacity, detailsTextOpacity, howItWorksImageOpacity, howItWorksStepsOpacity } = useOnboardingAnimation();
+interface OnboardingScreenProps {
+  onComplete: () => void;
+}
+
+export default function OnboardingScreen({ onComplete }: OnboardingScreenProps) {
+  const { currentScreen, fadeAnim, showFinalButton, handleContinue, detailsImageOpacity, detailsTextOpacity, howItWorksImageOpacity, howItWorksStepsOpacity } = useOnboardingAnimation(onComplete);
 
   if (!currentScreen) {
     return null;
@@ -216,19 +219,12 @@ export default function OnboardingScreen() {
 
   return (
     <MainScreen>
+      {/* Used for development */}
       {/* <MurmurScreenContent /> */}
       {/* <MurmurDetailsContent /> */}
       {/* <HowItWorksContent onContinue={() => console.log('continue')}/> */}
-      {/* <LinearTextGradient
-        style={{ fontWeight: "bold", fontSize: 72 }}
-        locations={[0, 1]}
-        colors={["red", "blue"]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 0 }}
-      >
-        THIS IS TEXT GRADIENT
-      </LinearTextGradient> */}
-      {/* <MurmurScreenContent /> */}
+
+      {/* Animated version */}
       <Animated.View style={[styles.screenContainer, { opacity: fadeAnim }]}>
         <CurrentScreenComponent 
           onContinue={isHowItWorksScreen && showFinalButton ? handleContinue : undefined}

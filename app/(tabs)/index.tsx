@@ -13,6 +13,8 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import { Link } from 'expo-router';
+import { onboardingStorage } from '@/utils/onboardingStorage';
+import OnboardingScreen from '../onboarding';
 
 const { width: screenWidth } = Dimensions.get('window');
 const IMAGE_RATIO = 812 / 375;
@@ -54,6 +56,9 @@ export default function AnimatedWave() {
   const checkScale = useRef(new Animated.Value(1)).current;
   const currentIndex = useRef(0);
   const [renderIndex, setRenderIndex] = useState(0);
+
+
+  // Animation effect for the wave (only runs when not showing onboarding)
   useEffect(() => {
     let mounted = true;
     let animationTimeout: NodeJS.Timeout | number;
@@ -91,6 +96,8 @@ export default function AnimatedWave() {
       fade.stopAnimation();
     };
   }, [fade]);
+
+
 
   const handleCheckPressIn = () => {
     Animated.spring(checkScale, {
@@ -149,7 +156,7 @@ export default function AnimatedWave() {
       </View>
 
       {/* Check button - leads to onboarding */}
-      <Link href="./onboarding" asChild>
+      <Link href="./chooseinput" asChild>
         <TouchableOpacity
           style={styles.checkWrapper}
           activeOpacity={0.8}
