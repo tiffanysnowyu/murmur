@@ -259,7 +259,6 @@ export default function MeditationScreen() {
     {title: 'Get ready', subtitle: '3', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 0, shouldFadeTitle: false},
     {title: 'Get ready', subtitle: '2', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 0, shouldFadeTitle: false},
     {title: 'Get ready', subtitle: '1', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 0, shouldFadeTitle: false}
-
   ]
 
 
@@ -267,61 +266,25 @@ export default function MeditationScreen() {
     <MainScreen>
       <View style={styles.container}>
 
-        {phase == 'intro' && introPhaseNum === 0 && (
+        {phase == 'intro' && (
           <IntroScreen
-            title={introPhases[0].title}
-            subtitle={introPhases[0].subtitle}
-            titleFadeInDuration={introPhases[0].titleFadeInDuration}
-            subtitleFadeInDuration={introPhases[0].subtitleFadeInDuration}
-            waitDuration={introPhases[0].waitDuration}
-            shouldFadeTitle={introPhases[0].shouldFadeTitle}
+            key={introPhaseNum}
+            title={introPhases[introPhaseNum].title}
+            subtitle={introPhases[introPhaseNum].subtitle}
+            titleFadeInDuration={introPhases[introPhaseNum].titleFadeInDuration}
+            subtitleFadeInDuration={introPhases[introPhaseNum].subtitleFadeInDuration}
+            waitDuration={introPhases[introPhaseNum].waitDuration}
+            shouldFadeTitle={introPhases[introPhaseNum].shouldFadeTitle}
             skipIntroCallback={handleSkipIntro}
-            screenFinished={() => {setIntroPhaseNum(1)}}
+            screenFinished={() => {
+              if (introPhaseNum === introPhases.length - 1) {
+                setPhase('flower');
+              } else {
+                setIntroPhaseNum(introPhaseNum + 1);
+              }
+            }}
           />
         )}
-
-      {phase == 'intro' && introPhaseNum === 1 && (
-        <IntroScreen
-          title={introPhases[1].title}
-          subtitle={introPhases[1].subtitle}
-          titleFadeInDuration={introPhases[1].titleFadeInDuration}
-          subtitleFadeInDuration={introPhases[1].subtitleFadeInDuration}
-          waitDuration={introPhases[1].waitDuration}
-          shouldFadeTitle={introPhases[1].shouldFadeTitle}
-          skipIntroCallback={handleSkipIntro}
-          screenFinished={() => {setIntroPhaseNum(2)}}
-        /> 
-      )} 
-
-      {phase == 'intro' && introPhaseNum === 2 && (
-        <IntroScreen
-          title={introPhases[2].title}
-          subtitle={introPhases[2].subtitle}
-          titleFadeInDuration={introPhases[2].titleFadeInDuration}
-          subtitleFadeInDuration={introPhases[2].subtitleFadeInDuration}
-          waitDuration={introPhases[2].waitDuration}
-          shouldFadeTitle={introPhases[2].shouldFadeTitle}
-          skipIntroCallback={handleSkipIntro}
-          screenFinished={() => {
-            setIntroPhaseNum(3)
-          }}
-        /> 
-      )} 
-
-      {phase == 'intro' && introPhaseNum === 3 && (
-        <IntroScreen
-          title={introPhases[3].title}
-          subtitle={introPhases[3].subtitle}
-          titleFadeInDuration={introPhases[3].titleFadeInDuration}
-          subtitleFadeInDuration={introPhases[3].subtitleFadeInDuration}
-          waitDuration={introPhases[3].waitDuration}
-          shouldFadeTitle={introPhases[3].shouldFadeTitle}
-          skipIntroCallback={handleSkipIntro}
-          screenFinished={() => {
-            setPhase('flower')
-          }}
-        /> 
-      )}
 
         {/* Blue Flower */}
         {phase == 'flower' && showFlower && (
