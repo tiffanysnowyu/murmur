@@ -12,7 +12,7 @@ export default {
     newArchEnabled: true,
     ios: {
       supportsTablet: true,
-      bundleIdentifier: 'com.anonymous.murmur',
+      bundleIdentifier: 'com.anonymous.murmurapp',
     },
     android: {
       adaptiveIcon: {
