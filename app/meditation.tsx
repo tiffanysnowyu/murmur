@@ -251,11 +251,11 @@ export default function MeditationScreen() {
   }, [phase])
 
   const introPhases = [
-    {title: 'Clear your mind', subtitle: 'Inhale for 4s', titleFadeInDuration: 1000, subtitleFadeInDuration: 2000, waitDuration: 4000, shouldFadeTitle: true},
-    {title: 'Clear your mind', subtitle: 'Exhale for 6s', titleFadeInDuration: 0, subtitleFadeInDuration: 2000, waitDuration: 6000, shouldFadeTitle: false},
-    {title: 'Clear your heart', subtitle: 'Inhale for 4s', titleFadeInDuration: 1000, subtitleFadeInDuration: 2000, waitDuration: 4000, shouldFadeTitle: true},
-    {title: 'Clear your heart', subtitle: 'Exhale for 6s', titleFadeInDuration: 0, subtitleFadeInDuration: 2000, waitDuration: 6000, shouldFadeTitle: false},
-    {title: 'Get ready', subtitle: "You'll be taking three breaths in...", titleFadeInDuration: 1000, subtitleFadeInDuration: 2000, waitDuration: 1000, shouldFadeTitle: true},
+    {title: 'Clear your mind', subtitle: 'Inhale for 4s', titleFadeInDuration: 3000, subtitleFadeInDuration: 2000, waitDuration: 4000, shouldFadeTitle: true},
+    {title: 'Clear your mind', subtitle: 'Exhale for 6s', titleFadeInDuration: 1000, subtitleFadeInDuration: 2000, waitDuration: 6000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Inhale for 4s', titleFadeInDuration: 3000, subtitleFadeInDuration: 2000, waitDuration: 4000, shouldFadeTitle: true},
+    {title: 'Clear your heart', subtitle: 'Exhale for 6s', titleFadeInDuration: 1000, subtitleFadeInDuration: 2000, waitDuration: 6000, shouldFadeTitle: false},
+    {title: 'Get ready', subtitle: "You'll be taking three breaths in...", titleFadeInDuration: 3000, subtitleFadeInDuration: 2000, waitDuration: 1000, shouldFadeTitle: true},
     {title: 'Get ready', subtitle: '3', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 0, shouldFadeTitle: false},
     {title: 'Get ready', subtitle: '2', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 0, shouldFadeTitle: false},
     {title: 'Get ready', subtitle: '1', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 0, shouldFadeTitle: false}
