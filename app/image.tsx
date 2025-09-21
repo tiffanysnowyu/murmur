@@ -31,7 +31,7 @@ export default function ImagePage() {
   const resetScale = useRef(new Animated.Value(1)).current;
   
   // Loading animations
-  const loadingOpacity = useRef(new Animated.Value(0.3)).current;
+  const loadingOpacity = useRef(new Animated.Value(0.6)).current;
   const loadingRotation = useRef(new Animated.Value(0)).current;
 
   // Debug helper
@@ -51,17 +51,20 @@ export default function ImagePage() {
     let rotationAnimation: Animated.CompositeAnimation;
     
     if (isProcessing) {
+      // Reset rotation value to 0 before starting
+      loadingRotation.setValue(0);
+      
       // Start opacity pulse animation
       opacityAnimation = Animated.loop(
         Animated.sequence([
           Animated.timing(loadingOpacity, {
             toValue: 1.0,
-            duration: 800,
+            duration: 600,
             useNativeDriver: true,
           }),
           Animated.timing(loadingOpacity, {
-            toValue: 0.3,
-            duration: 800,
+            toValue: 0.6,
+            duration: 600,
             useNativeDriver: true,
           }),
         ])
@@ -71,7 +74,7 @@ export default function ImagePage() {
       rotationAnimation = Animated.loop(
         Animated.timing(loadingRotation, {
           toValue: 1,
-          duration: 1000,
+          duration: 1200,
           useNativeDriver: true,
           easing: Easing.linear,
         })
@@ -79,6 +82,10 @@ export default function ImagePage() {
       
       opacityAnimation.start();
       rotationAnimation.start();
+    } else {
+      // Reset animations when not loading
+      loadingRotation.setValue(0);
+      loadingOpacity.setValue(0.6);
     }
     
     return () => {
