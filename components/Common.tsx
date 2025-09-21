@@ -93,6 +93,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     paddingBottom: 24,
+    width: 80,
   },
   chevron: {
     fontSize: 24,

@@ -9,6 +9,9 @@ import {
   Alert,
   Animated,
   SafeAreaView,
+  KeyboardAvoidingView,
+  ScrollView,
+  Platform,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BackButton, CtaButton, MainScreen } from '@/components/Common';
@@ -172,36 +175,47 @@ export default function TextPage() {
           If the original screen was the image screen then go back to that. */}
         <BackButton onPress={() => cameFromImageScreen ? router.back() : setMode(null)} />
 
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
+        >
+          <ScrollView 
+            style={{ flex: 1 }}
+            contentContainerStyle={{ flexGrow: 0 }}
+            keyboardShouldPersistTaps="never"
+          >
+            {/* Title and description - NO BACK BUTTON HERE */}
+            <View style={styles.inputHeader}>
+              <Text style={styles.inputTitle}>
+                {mode === 'summarize' ? 'Summarize' : 'Analyze'}
+              </Text>
+              <Text style={styles.inputDescription}>
+                {mode === 'summarize' 
+                  ? "Too long to read? Paste the article and we'll pull out the key points and claims (you can analyze them afterwards)."
+                  : "Type or paste any claim, headline, or statement you want to fact-check."}
+              </Text>
+            </View>
 
-        {/* Title and description - NO BACK BUTTON HERE */}
-        <View style={styles.inputHeader}>
-          <Text style={styles.inputTitle}>
-            {mode === 'summarize' ? 'Summarize' : 'Analyze'}
-          </Text>
-          <Text style={styles.inputDescription}>
-            {mode === 'summarize' 
-              ? "Too long to read? Paste the article and we'll pull out the key points and claims (you can analyze them afterwards)."
-              : "Type or paste any claim, headline, or statement you want to fact-check."}
-          </Text>
-        </View>
+            {/* Divider line */}
+            <View style={styles.divider} />
 
-        {/* Divider line */}
-        <View style={styles.divider} />
+            {/* Text input */}
+            <TextInput
+              style={styles.input}
+              multiline
+              placeholder="Paste text here..."
+              placeholderTextColor="#D1D1D6"
+              value={text}
+              onChangeText={setText}
+            />
 
-        {/* Text input */}
-        <TextInput
-          style={styles.input}
-          multiline
-          placeholder="Paste text here..."
-          placeholderTextColor="#D1D1D6"
-          value={text}
-          onChangeText={setText}
-        />
-
-        {/* Submit button - show on both modes when text is entered */}
-        {text.trim() && (
-          <CtaButton onPress={handleContinueButton} buttonText="Continue" />
-        )}
+            {/* Submit button - show on both modes when text is entered */}
+            {text.trim() && (
+              <CtaButton onPress={handleContinueButton} buttonText="Continue" />
+            )}
+          </ScrollView>
+        </KeyboardAvoidingView>
       </MainScreen>
   );
 }
@@ -296,5 +310,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: "SF Pro Display",
     color: "#1A1A1A",
+    paddingBottom: 64,
   },
 });
