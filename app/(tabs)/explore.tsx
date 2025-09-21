@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -8,12 +8,14 @@ import {
   SafeAreaView,
   Image,
   ScrollView,
+  Animated,
 } from 'react-native';
 import { router } from 'expo-router';
 import { MainScreen } from '@/components/Common';
 
 export default function TabTwoScreen() {
   const [menuVisible, setMenuVisible] = useState(false);
+  const menuItemScale = useRef(new Animated.Value(1)).current;
 
   const handleMenuOption = (option: string) => {
     setMenuVisible(false);
@@ -21,6 +23,20 @@ export default function TabTwoScreen() {
       router.push('/insights');
     }
     // Add other menu options here
+  };
+
+  const handleMenuItemPressIn = () => {
+    Animated.spring(menuItemScale, {
+      toValue: 0.95,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const handleMenuItemPressOut = () => {
+    Animated.spring(menuItemScale, {
+      toValue: 1,
+      useNativeDriver: true,
+    }).start();
   };
 
   return (
@@ -75,8 +91,12 @@ export default function TabTwoScreen() {
             <TouchableOpacity 
               style={styles.menuItem}
               onPress={() => handleMenuOption('insights')}
+              onPressIn={handleMenuItemPressIn}
+              onPressOut={handleMenuItemPressOut}
             >
-              <Text style={styles.menuText}>Saved Insights</Text>
+              <Animated.View style={{ transform: [{ scale: menuItemScale }] }}>
+                <Text style={styles.menuText}>Saved Insights</Text>
+              </Animated.View>
             </TouchableOpacity>
           </SafeAreaView>
         </TouchableOpacity>
@@ -85,7 +105,6 @@ export default function TabTwoScreen() {
   );
 }
 
-const MENU_BUTTON_TOP = 72;
 const MENU_DROPDOWN_SPACING = 12; // Distance between icon and modal
 
 const styles = StyleSheet.create({

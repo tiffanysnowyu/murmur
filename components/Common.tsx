@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    paddingBottom: 40,
+    paddingBottom: 24,
   },
   chevron: {
     fontSize: 24,

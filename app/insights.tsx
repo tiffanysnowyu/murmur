@@ -66,17 +66,17 @@ export default function InsightsPage() {
   return (
     <MainScreen backgroundColor='#F4F4F9'>
       <BackButton onPress={() => router.back()} buttonText="Back" />
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {insights.length === 0 ? (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyIcon}>📝</Text>
-            <Text style={styles.emptyText}>No saved insights yet</Text>
-            <Text style={styles.emptySubtext}>
-              Save fact-checks and analyses to review them later
-            </Text>
-          </View>
-        ) : (
-          insights.map((insight) => (
+      
+      {insights.length == 0 ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyText}>No saved insights yet</Text>
+          <Text style={styles.emptySubtext}>
+            Save summaries or analyses to review them later
+          </Text>
+        </View>
+      ) : (
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+          {insights.map((insight) => (
             <TouchableOpacity
               key={insight.id}
               style={styles.insightCard}
@@ -104,9 +104,9 @@ export default function InsightsPage() {
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
+          ))}
+        </ScrollView>
+      )}
     </MainScreen>
   );
 }
@@ -119,25 +119,29 @@ const styles = StyleSheet.create({
     marginHorizontal: -24,
   },
   emptyState: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 80,
-  },
-  emptyIcon: {
-    fontSize: 48,
-    marginBottom: 16,
   },
   emptyText: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
+    color: '#1A1A1A',
+    textAlign: 'center',
+    fontFamily: 'SF Pro Display',
+    fontSize: 24,
+    fontStyle: 'normal',
+    fontWeight: 500,
+    letterSpacing: -0.264,
+    paddingBottom: 16,
   },
   emptySubtext: {
-    fontSize: 14,
-    color: '#666',
+    color: '#1A1A1A',
     textAlign: 'center',
-    paddingHorizontal: 40,
+    fontFamily: 'SF Pro Display',
+    fontSize: 18,
+    fontStyle: 'normal',
+    fontWeight: 400,
+    letterSpacing: -0.198, 
+    paddingTop: 16,  
   },
   insightCard: {
     height: 76,
