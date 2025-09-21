@@ -648,6 +648,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
       if (!CLAUDE_API_KEY) throw new Error('Claude API key not found. Please add EXPO_PUBLIC_CLAUDE_API_KEY to your .env file');
       if (!CLAUDE_API_KEY.startsWith('sk-ant-')) throw new Error('Invalid Claude API key format. Key should start with sk-ant-');
 
+      // IF COST GETS TOO HIGH CAN CHANGE THIS TO USE A CHEAPER MODEL LIKE HAIKU 3
       const res = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {

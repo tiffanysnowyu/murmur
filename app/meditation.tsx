@@ -17,11 +17,11 @@ interface IntroScreenProps {
   title: string;
   subtitle: string;
   skipIntroCallback: () => void;
-  titleFadeInDuration: number;
-  subtitleFadeInDuration: number;
-  waitDuration: number;
-  screenFinished: () => void;
-  shouldFadeTitle: boolean;
+  titleFadeInDuration: number; // how long to fade the title in for
+  subtitleFadeInDuration: number; // how long to fade the subtitle in for
+  waitDuration: number; // how long to keep the screen visible after the subtitle finishes fading in
+  screenFinished: () => void; // function to call after the screen is finished (after waitDuration)
+  shouldFadeTitle: boolean; // true to fade in the title, false to make the title static with no fade
 }
 
 const IntroScreen = ({

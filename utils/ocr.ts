@@ -1,13 +1,13 @@
 // utils/ocr.ts - With debugging
-const GOOGLE_VISION_API_KEY = process.env.EXPO_PUBLIC_GOOGLE_VISION_API_KEY || '';
 
-export async function extractTextFromImage(imageUri: string): Promise<string> {
-  console.log('Starting OCR with URI:', imageUri);
-  console.log('Google Vision API key exists:', !!GOOGLE_VISION_API_KEY);
+const CLAUDE_API_KEY = process.env.EXPO_PUBLIC_CLAUDE_API_KEY || '';
+export async function claudeExtractTextFromImage(imageUri: string): Promise<string> {
+  console.log('Starting Claude OCR with URI:', imageUri);
+  console.log('Claude API key exists:', !!CLAUDE_API_KEY);
   
-  if (!GOOGLE_VISION_API_KEY) {
-    console.error('No Google Vision API key found');
-    throw new Error('OCR service not configured - please add EXPO_PUBLIC_GOOGLE_VISION_API_KEY to .env');
+  if (!CLAUDE_API_KEY) {
+    console.error('No Claude API key found');
+    throw new Error('Claude OCR service not configured - please add EXPO_PUBLIC_CLAUDE_API_KEY to .env');
   }
 
   try {
@@ -30,57 +30,66 @@ export async function extractTextFromImage(imageUri: string): Promise<string> {
     const base64 = await base64Promise;
     console.log('Base64 length:', base64.length);
 
-    // Call Google Vision API
-    console.log('Calling Google Vision API...');
-    const visionResponse = await fetch(
-      `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_VISION_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requests: [
-            {
-              image: {
-                content: base64,
-              },
-              features: [
-                {
-                  type: 'TEXT_DETECTION',
-                  maxResults: 1,
+    // Determine media type from the image URI or blob
+    const mediaType = blob.type || 'image/jpeg';
+
+    // Call Claude API
+    console.log('Calling Claude API...');
+    
+    // IF COST GETS TOO HIGH CAN CHANGE THIS TO USE A CHEAPER MODEL LIKE HAIKU 3
+    const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CLAUDE_API_KEY,
+        'anthropic-version': '2023-06-01',
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 1024,
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image',
+                source: {
+                  type: 'base64',
+                  media_type: mediaType,
+                  data: base64,
                 },
-              ],
-            },
-          ],
-        }),
-      }
-    );
+              },
+              {
+                type: 'text',
+                text: 'Extract all the text from this image. Return only the extracted text, without any additional commentary or formatting. If there is no readable text in the image, respond with "No text found in image".',
+              },
+            ],
+          },
+        ],
+      }),
+    });
 
-    console.log('Vision API response status:', visionResponse.status);
+    console.log('Claude API response status:', claudeResponse.status);
     
-    if (!visionResponse.ok) {
-      const errorText = await visionResponse.text();
-      console.error('Vision API error response:', errorText);
-      throw new Error(`Google Vision API error: ${visionResponse.status} - ${errorText}`);
+    if (!claudeResponse.ok) {
+      const errorText = await claudeResponse.text();
+      console.error('Claude API error response:', errorText);
+      throw new Error(`Claude API error: ${claudeResponse.status} - ${errorText}`);
     }
 
-    const data = await visionResponse.json();
-    console.log('Vision API response:', JSON.stringify(data, null, 2));
+    const data = await claudeResponse.json();
+    console.log('Claude API response:', JSON.stringify(data, null, 2));
     
-    if (data.responses && data.responses[0]) {
-      const textAnnotations = data.responses[0].textAnnotations;
-      if (textAnnotations && textAnnotations[0]) {
-        const extractedText = textAnnotations[0].description;
-        console.log('Extracted text:', extractedText);
-        return extractedText;
-      }
+    if (data.content && data.content[0] && data.content[0].text) {
+      const extractedText = data.content[0].text.trim();
+      console.log('Extracted text:', extractedText);
+      return extractedText;
     }
 
-    console.log('No text annotations found in response');
+    console.log('No text content found in Claude response');
     return 'No text found in image';
   } catch (error) {
-    console.error('OCR error details:', error);
+    console.error('Claude OCR error details:', error);
     throw error;
   }
 }

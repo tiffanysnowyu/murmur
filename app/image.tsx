@@ -4,18 +4,15 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   Pressable,
   Image,
   Alert,
-  ActivityIndicator,
-  Platform,
   Animated,
   Easing,
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { router } from 'expo-router';
-import { extractTextFromImage } from '../utils/ocr';
+import { claudeExtractTextFromImage } from '../utils/ocr';
 import { BackButton, CtaButton, MainScreen } from '@/components/Common';
 
 export default function ImagePage() {
@@ -204,7 +201,7 @@ export default function ImagePage() {
       
       // Extract actual text from image using OCR
       try {
-        const extractedText = await extractTextFromImage(imageUri);
+        const extractedText = await claudeExtractTextFromImage(imageUri);
         
         addDebugInfo('Text extraction complete');
         setIsProcessing(false);
