@@ -5,10 +5,8 @@ import {
   Text,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
   TouchableOpacity,
   Alert,
-  Platform,
   Modal,
   Pressable,
   Image,
@@ -104,6 +102,8 @@ export default function ResponsePage() {
       const content = lines.slice(1).join('\n').trim();
 
       if (sectionTitle === 'article') {
+        // Note that article isn't actually displayed anywhere in the UI
+        // but since it's part of the llm prompt for the output leaving it in the parsing logic
         article = content;
       } else if (sectionTitle === 'overview') {
         overview = content;
@@ -119,11 +119,17 @@ export default function ResponsePage() {
       }
     });
 
+    // If we were unable to parse then just set the overview to the response text
+    if (overview.length === 0) {
+      overview = responseText;
+    }
+    console.log('PARSED SUMMARY:', { article, overview, keyClaims })
     setParsedSummary({ article, overview, keyClaims });
   };
 
   const parseAnalyzeResponse = (responseText: string) => {
-    const sections = responseText.split(/^##\s+/m).filter(s => s.trim());
+    // Remove non-alphanumeric characters from the beginning and trim whitespace
+    responseText = responseText.replace(/^[^a-zA-Z0-9]+/, '').trim();
 
     let splitByBottomLine = responseText.split('Bottom line')
     if (splitByBottomLine.length < 2) {
@@ -171,35 +177,6 @@ export default function ResponsePage() {
       newExpanded.add(index);
     }
     setExpandedClaims(newExpanded);
-  };
-
-  // CTA Press animations
-  const handleAnalyzeCTAPressIn = () => {
-    Animated.spring(analyzeCTAScale, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleAnalyzeCTAPressOut = () => {
-    Animated.spring(analyzeCTAScale, {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleDoneCTAPressIn = () => {
-    Animated.spring(doneCTAScale, {
-      toValue: 0.95,
-      useNativeDriver: true,
-    }).start();
-  };
-
-  const handleDoneCTAPressOut = () => {
-    Animated.spring(doneCTAScale, {
-      toValue: 1,
-      useNativeDriver: true,
-    }).start();
   };
 
   // Save insight to file
@@ -457,12 +434,15 @@ Dynamically structure your response based on what would be most helpful. Conside
     setError('');
     setResponse('');
     try {
-
+      // console.log('is url', isUrl(contentText))
       if (analysisMode === 'summarize' && isUrl(contentText)) {
         setAnalysisStep('Attempting to fetch article content...');
         try {
+          // console.log('before read url')
           const rawHtml = await readUrlContent(contentText);
+          // console.log('about to extract from html')
           const extractedData = extractTextFromHtml(rawHtml);
+          // console.log('extracted with is paywalled', extractedData.isPaywalled)
           setArticleData(extractedData);
           if (extractedData.isPaywalled) {
             setError('This article appears to be behind a paywall. Analysis may be incomplete.');
@@ -485,6 +465,7 @@ Dynamically structure your response based on what would be most helpful. Conside
             Note: Content extracted directly from web page, may have some formatting issues.`;
 
           const reply = await callClaudeAPI(systemPrompt, userPrompt);
+          // console.log('got reply from claude', reply)
           if (reply) {
             if (foundSources.length > 0) {
               const responseWithSources = reply + formatSourceReferences(foundSources);
@@ -492,7 +473,6 @@ Dynamically structure your response based on what would be most helpful. Conside
             } else {
               setResponse(reply);
             }
-            
             parseSummaryResponse(reply);
             setAnalysisStep('');
           } 
@@ -507,7 +487,7 @@ Dynamically structure your response based on what would be most helpful. Conside
         }
       } else {
         const isFollowUpQuestion = !!previousClaim;
-
+        // console.log(`IsFollowUpQuestion ${isFollowUpQuestion} with previous claim ${previousClaim}`)
         if (!isFollowUpQuestion) {
           setAnalysisStep('Quick search...');
           let sourceResult: any = null;
@@ -523,6 +503,7 @@ Dynamically structure your response based on what would be most helpful. Conside
           if (needsRecentInfo(contentText)) {
             setAnalysisStep('Checking recent sources...');
             try {
+              // console.log('DOING A SEARCH WITH CONTENT TEXT', contentText)
               searchResults = await searchRecent(contentText);
             } catch (e) {
               console.log('Recent search failed:', e);
@@ -554,7 +535,7 @@ Preview: ${source.snippet}`
             userPrompt += `\nAvailable sources:\n${sourceText}`;
             userPrompt += `\n\nWhen citing these sources, use natural inline citations based on the organization/publication name from the URL. Make citations conversational (no [1], [2], etc.).`;
           }
-
+          // console.log('CALLING CLAUDE API WITH SYSTEM PROMPT', systemPrompt, 'AND USER PROMPT', userPrompt)
           const reply = await callClaudeAPI(systemPrompt, userPrompt);
           if (reply) {
             if (foundSources.length > 0) {
@@ -903,7 +884,7 @@ Provide additional context, perspective, and reassurance that might help address
         <ScrollView style={styles.summaryContent} showsVerticalScrollIndicator={false}>
           {/* Article Section */}
           <View style={styles.summarySection}>
-            <Text style={styles.summarySectionTitle}>Original text</Text>
+            <Text style={styles.summarySectionTitle}>Original Text</Text>
             <View style={styles.summaryArticleContainer}>
               <Text style={styles.summaryArticleText} numberOfLines={showFullArticle ? undefined : 3}>
                 {inputText}
@@ -945,7 +926,7 @@ Provide additional context, perspective, and reassurance that might help address
     );
   }
 
-  if (isSummaryMode && !loading && !error && parsedSummary.article) {
+  if (isSummaryMode && !loading && !error && parsedSummary.overview) {
     return (
       <MainScreen>
         {/* Header */}
@@ -988,20 +969,18 @@ Provide additional context, perspective, and reassurance that might help address
           onScroll={(event) => {
             const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
             const scrollY = contentOffset.y;
-            const scrollHeight = contentSize.height;
-            const screenHeight = layoutMeasurement.height;
             
             // Hide title after scrolling 20px
             setShowSummaryTitle(scrollY < 20);
             
             // Show CTAs when scrolled past a certain point (e.g., 300px)
-            setShowCTAs(scrollY > 300);
+            setShowCTAs(scrollY > 10);
           }}
           scrollEventThrottle={16}
         >
           {/* Article Section */}
           <View style={styles.summarySection}>
-            <Text style={styles.summarySectionTitle}>Article</Text>
+            <Text style={styles.summarySectionTitle}>Original Text</Text>
             <View style={styles.summaryArticleContainer}>
               <Text 
                 style={styles.summaryArticleText}
@@ -1034,95 +1013,103 @@ Provide additional context, perspective, and reassurance that might help address
           </View>
 
           {/* Key Claims Section */}
-          {parsedSummary.keyClaims.length > 0 && (
-            <View style={[styles.summarySection, styles.keyClaimsSection]}>
-              <Text style={styles.summarySectionTitle}>Key Claims</Text>
+          <View style={[styles.summarySection, styles.keyClaimsSection]}>
+            {parsedSummary.keyClaims.length > 0 && (
+              <>
+                <Text style={styles.summarySectionTitle}>Key Claims</Text>
               
-              {parsedSummary.keyClaims.map((claim, index) => (
-                <Pressable 
-                  key={index}
-                  style={styles.claimContainer}
-                  onPress={() => toggleClaim(index)}
-                >
-                  <View style={styles.claimHeader}>
-                    <Text style={styles.claimTitle}>
-                      {claim.title}
-                    </Text>
-                    <Image 
-                      source={expandedClaims.has(index) 
-                        ? require('../assets/images/chevron_summ.png') 
-                        : require('../assets/images/chevron_list.png')
-                      }
-                      style={styles.claimChevronImage}
-                    />
-                  </View>
-                  
-                  {expandedClaims.has(index) && (
-                    <View style={styles.explanationContentBox}>
-                      <Text style={styles.explanationHeader}>Explanation</Text>
-                      {(() => {
-                        // Split content into sentences accounting for abbreviations and edge cases
-                        const splitIntoSentences = (text: string) => {
-                          // Common abbreviations that shouldn't trigger sentence breaks
-                          const abbreviations = [
-                            'u.s.', 'u.k.', 'e.g.', 'i.e.', 'etc.', 'vs.', 'mr.', 'mrs.', 'ms.', 'dr.', 'prof.',
-                            'inc.', 'ltd.', 'corp.', 'co.', 'govt.', 'dept.', 'min.', 'max.', 'approx.',
-                            'a.m.', 'p.m.', 'b.c.', 'a.d.', 'ph.d.', 'm.d.', 'b.a.', 'm.a.', 'j.d.',
-                            'no.', 'vol.', 'ch.', 'sec.', 'fig.', 'ref.', 'ed.', 'rev.', 'st.', 'ave.',
-                            'jan.', 'feb.', 'mar.', 'apr.', 'jun.', 'jul.', 'aug.', 'sep.', 'oct.', 'nov.', 'dec.'
-                          ];
-                          
-                          // Replace abbreviations temporarily with placeholders
-                          let tempText = text;
-                          const placeholders: { [key: string]: string } = {};
-                          abbreviations.forEach((abbr, index) => {
-                            const placeholder = `__ABBR_${index}__`;
-                            const regex = new RegExp(abbr.replace(/\./g, '\\.'), 'gi');
-                            tempText = tempText.replace(regex, (match) => {
-                              placeholders[placeholder] = match;
-                              return placeholder;
-                            });
-                          });
-                          
-                          // Split on sentence-ending punctuation followed by space and capital letter
-                          // or at the end of text
-                          const sentences = tempText
-                            .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=[.!?])$/)
-                            .map(s => s.trim())
-                            .filter(s => s.length > 0);
-                          
-                          // Restore abbreviations
-                          return sentences.map(sentence => {
-                            let restored = sentence;
-                            Object.entries(placeholders).forEach(([placeholder, original]) => {
-                              restored = restored.replace(new RegExp(placeholder, 'g'), original);
-                            });
-                            return restored;
-                          });
-                        };
-                        
-                        const sentences = splitIntoSentences(claim.content).slice(0, 2);
-                        
-                        return sentences.map((sentence, sentenceIndex) => (
-                          <React.Fragment key={sentenceIndex}>
-                            <View style={styles.bulletPointContainer}>
-                              <Text style={styles.bulletPoint}>•</Text>
-                              <Text style={styles.claimText}>
-                                {sentence}{sentence.match(/[.!?]$/) ? '' : '.'}
-                              </Text>
-                            </View>
-                            {sentenceIndex < sentences.length - 1 && (
-                              <View style={styles.claimDivider} />
-                            )}
-                          </React.Fragment>
-                        ));
-                      })()}
+                {parsedSummary.keyClaims.map((claim, index) => (
+                  <Pressable 
+                    key={index}
+                    style={styles.claimContainer}
+                    onPress={() => toggleClaim(index)}
+                  >
+                    <View style={styles.claimHeader}>
+                      <Text style={styles.claimTitle}>
+                        {claim.title}
+                      </Text>
+                      <Image 
+                        source={expandedClaims.has(index) 
+                          ? require('../assets/images/chevron_summ.png') 
+                          : require('../assets/images/chevron_list.png')
+                        }
+                        style={styles.claimChevronImage}
+                      />
                     </View>
-                  )}
-                </Pressable>
-              ))}
+                    
+                    {expandedClaims.has(index) && (
+                      <View style={styles.explanationContentBox}>
+                        <Text style={styles.explanationHeader}>Explanation</Text>
+                        {(() => {
+                          // Split content into sentences accounting for abbreviations and edge cases
+                          const splitIntoSentences = (text: string) => {
+                            // Common abbreviations that shouldn't trigger sentence breaks
+                            const abbreviations = [
+                              'u.s.', 'u.k.', 'e.g.', 'i.e.', 'etc.', 'vs.', 'mr.', 'mrs.', 'ms.', 'dr.', 'prof.',
+                              'inc.', 'ltd.', 'corp.', 'co.', 'govt.', 'dept.', 'min.', 'max.', 'approx.',
+                              'a.m.', 'p.m.', 'b.c.', 'a.d.', 'ph.d.', 'm.d.', 'b.a.', 'm.a.', 'j.d.',
+                              'no.', 'vol.', 'ch.', 'sec.', 'fig.', 'ref.', 'ed.', 'rev.', 'st.', 'ave.',
+                              'jan.', 'feb.', 'mar.', 'apr.', 'jun.', 'jul.', 'aug.', 'sep.', 'oct.', 'nov.', 'dec.'
+                            ];
+                            
+                            // Replace abbreviations temporarily with placeholders
+                            let tempText = text;
+                            const placeholders: { [key: string]: string } = {};
+                            abbreviations.forEach((abbr, index) => {
+                              const placeholder = `__ABBR_${index}__`;
+                              const regex = new RegExp(abbr.replace(/\./g, '\\.'), 'gi');
+                              tempText = tempText.replace(regex, (match) => {
+                                placeholders[placeholder] = match;
+                                return placeholder;
+                              });
+                            });
+                            
+                            // Split on sentence-ending punctuation followed by space and capital letter
+                            // or at the end of text
+                            const sentences = tempText
+                              .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=[.!?])$/)
+                              .map(s => s.trim())
+                              .filter(s => s.length > 0);
+                            
+                            // Restore abbreviations
+                            return sentences.map(sentence => {
+                              let restored = sentence;
+                              Object.entries(placeholders).forEach(([placeholder, original]) => {
+                                restored = restored.replace(new RegExp(placeholder, 'g'), original);
+                              });
+                              return restored;
+                            });
+                          };
+                          
+                          const sentences = splitIntoSentences(claim.content).slice(0, 2);
+                          
+                          return sentences.map((sentence, sentenceIndex) => (
+                            <React.Fragment key={sentenceIndex}>
+                              <View style={styles.bulletPointContainer}>
+                                <Text style={styles.bulletPoint}>•</Text>
+                                <Text style={styles.claimText}>
+                                  {sentence}{sentence.match(/[.!?]$/) ? '' : '.'}
+                                </Text>
+                              </View>
+                              {sentenceIndex < sentences.length - 1 && (
+                                <View style={styles.claimDivider} />
+                              )}
+                            </React.Fragment>
+                          ));
+                        })()}
+                      </View>
+                    )}
+                  </Pressable>
+                ))}
+              </>
+            )}
+          </View>
+
+          {/* {parsedSummary.keyClaims.length > 0 && (
+            <View style={[styles.summarySection, styles.keyClaimsSection]}>
+              
             </View>
-          )}
+          )} */}
 
    
         </ScrollView>
@@ -1141,8 +1128,8 @@ Provide additional context, perspective, and reassurance that might help address
 
   // Show error state for summary mode
   // Note this error appears even if the request to Claude API succeeded 
-  // but for some reason parsedSummary.article doesn't exist (if the parsing went wrong)
-  if (isSummaryMode && !loading && (error || !parsedSummary.article)) {
+  // but for some reason parsedSummary.overview doesn't exist (if the parsing went wrong)
+  if (isSummaryMode && !loading && (error || !parsedSummary.overview)) {
     return (
       <MainScreen>
         {/* Header */}
