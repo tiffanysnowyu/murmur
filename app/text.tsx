@@ -184,6 +184,7 @@ export default function TextPage() {
             style={{ flex: 1 }}
             contentContainerStyle={{ flexGrow: 0 }}
             keyboardShouldPersistTaps="never"
+            showsVerticalScrollIndicator={false}
           >
             {/* Title and description - NO BACK BUTTON HERE */}
             <View style={styles.inputHeader}>
@@ -209,13 +210,13 @@ export default function TextPage() {
               value={text}
               onChangeText={setText}
             />
-
-            {/* Submit button - show on both modes when text is entered */}
-            {text.trim() && (
-              <CtaButton onPress={handleContinueButton} buttonText="Continue" />
-            )}
           </ScrollView>
         </KeyboardAvoidingView>
+
+        {/* Submit button - show on both modes when text is entered */}
+        {text.trim() && (
+          <CtaButton onPress={handleContinueButton} buttonText="Continue" />
+        )}
       </MainScreen>
   );
 }
@@ -310,6 +311,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: "SF Pro Display",
     color: "#1A1A1A",
-    paddingBottom: 64,
+    paddingBottom: 72,
   },
 });
