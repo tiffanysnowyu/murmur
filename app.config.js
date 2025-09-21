@@ -2,7 +2,7 @@ import 'dotenv/config';
 
 module.exports = {
   expo: {
-    name: 'murmur',
+    name: 'Murmur',
     slug: 'murmur',
     version: '1.0.0', // Increase this for new app releases. It can be increased in any way.
     orientation: 'portrait',
