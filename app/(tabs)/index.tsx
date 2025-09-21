@@ -9,12 +9,10 @@ import {
   Easing,
   TouchableOpacity,
   ImageBackground,
-  Text,
   ImageSourcePropType,
 } from 'react-native';
 import { Link } from 'expo-router';
-import { onboardingStorage } from '@/utils/onboardingStorage';
-import OnboardingScreen from '../onboarding';
+
 
 const { width: screenWidth } = Dimensions.get('window');
 const IMAGE_RATIO = 812 / 375;
