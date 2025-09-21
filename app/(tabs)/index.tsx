@@ -3,6 +3,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Image,
+  Text,
   Animated,
   StyleSheet,
   Dimensions,
@@ -50,51 +51,70 @@ const BUTTON_HEIGHT  = 56;       // adjust to your PNG's height
 const FADE_EASING    = Easing.inOut(Easing.ease);
 
 export default function AnimatedWave() {
-  const fade = useRef(new Animated.Value(0)).current;
+  const animatedValue = useRef(new Animated.Value(0)).current;
   const checkScale = useRef(new Animated.Value(1)).current;
-  const currentIndex = useRef(0);
-  const [renderIndex, setRenderIndex] = useState(0);
+  const [currentFrameIndex, setCurrentFrameIndex] = useState(0);
+  const [nextFrameIndex, setNextFrameIndex] = useState(1);
+  const [fadeOpacity, setFadeOpacity] = useState(0);
 
-
-  // Animation effect for the wave (only runs when not showing onboarding)
+  // Smooth continuous animation through all frames with crossfade
   useEffect(() => {
     let mounted = true;
-    let animationTimeout: NodeJS.Timeout | number;
-    
-    const loop = () => {
+
+    // Create interpolated opacity values for smooth transitions
+    const opacity1 = animatedValue.interpolate({
+      inputRange: [0, frames.length],
+      outputRange: [1, 1],
+      extrapolate: 'clamp',
+    });
+
+    const opacity2 = animatedValue.interpolate({
+      inputRange: [0, frames.length],
+      outputRange: [0, 0],
+      extrapolate: 'clamp',
+    });
+
+    // Update frame indices less frequently to reduce re-renders
+    const listener = animatedValue.addListener(({ value }) => {
+      const normalizedValue = value % frames.length;
+      const currentIndex = Math.floor(normalizedValue);
+      const nextIndex = (currentIndex + 1) % frames.length;
+
+      // Only update state when frame actually changes
+      setCurrentFrameIndex(prevIndex => prevIndex !== currentIndex ? currentIndex : prevIndex);
+      setNextFrameIndex(prevIndex => prevIndex !== nextIndex ? nextIndex : prevIndex);
+
+      // Use the raw normalized value for smoother opacity
+      const fadeAmount = normalizedValue - Math.floor(normalizedValue);
+      setFadeOpacity(fadeAmount);
+    });
+
+    const startContinuousAnimation = () => {
       if (!mounted) return;
-      
-      // Get the current frame's duration
-      const currentDuration = frameDurations[currentIndex.current] * 1.2;
-      
-      fade.setValue(0);
-      Animated.timing(fade, {
-        toValue: 1,
-        duration: currentDuration,
-        easing: FADE_EASING,
-        useNativeDriver: true,
-      }).start(() => {
-        if (!mounted) return;
-        
-        // Update the index after animation completes
-        currentIndex.current = (currentIndex.current + 1) % frames.length;
-        setRenderIndex(currentIndex.current);
-        
-        // Small delay before next loop to prevent flicker
-        animationTimeout = setTimeout(loop, PAUSE);
-      });
+
+      // Create smooth animation through all frames
+      Animated.loop(
+        Animated.timing(animatedValue, {
+          toValue: frames.length,
+          duration: frames.length * 5000, // 3s per frame for smoother transitions
+          easing: Easing.linear, // Linear for consistent frame timing
+          useNativeDriver: false, // Need to read value for frame calculation
+        }),
+        { iterations: -1 } // Infinite loop
+      ).start();
     };
-    
-    // Initial delay to show first frame
-    animationTimeout = setTimeout(loop, 100);
-    
+
+    // Start the animation
+    startContinuousAnimation();
+
     return () => {
       mounted = false;
-      if (animationTimeout) clearTimeout(animationTimeout);
-      fade.stopAnimation();
+      animatedValue.removeListener(listener);
+      animatedValue.stopAnimation();
     };
-  }, [fade]);
+  }, []);
 
+  // console.log(`Current index ${currentFrameIndex} next frame index ${nextFrameIndex}`)
 
 
   const handleCheckPressIn = () => {
@@ -111,21 +131,31 @@ export default function AnimatedWave() {
     }).start();
   };
 
-  const baseIdx = renderIndex;
-  const nextIdx = (baseIdx + 1) % frames.length;
-
   return (
     <View style={styles.fullScreen}>
-      {/* Wave animation */}
-      <Image
-        source={frames[baseIdx]}
-        style={styles.wave}
+
+      {/* Smooth wave animation with crossfade between frames */}
+      <Animated.Image
+        source={frames[currentFrameIndex]}
+        style={[
+          styles.wave,
+          {
+            opacity: 1 - fadeOpacity,
+          }
+        ]}
         resizeMode="contain"
+        fadeDuration={0} // Disable default fade animation
       />
       <Animated.Image
-        source={frames[nextIdx]}
-        style={[styles.wave, { opacity: fade }]}
+        source={frames[nextFrameIndex]}
+        style={[
+          styles.wave,
+          {
+            opacity: fadeOpacity,
+          }
+        ]}
         resizeMode="contain"
+        fadeDuration={0} // Disable default fade animation
       />
 
       {/* Blur effects positioned behind button */}
