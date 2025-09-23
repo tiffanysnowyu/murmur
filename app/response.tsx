@@ -638,7 +638,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
           'anthropic-version': '2023-06-01',
         },
         body: JSON.stringify({
-          model: 'claude-3-7-sonnet-20250106',
+          model: 'claude-3-7-sonnet-20250219',
           max_tokens: 4000,
           system: systemPrompt,
           messages: [{ role: 'user', content: userPrompt }],
