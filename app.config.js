@@ -15,6 +15,7 @@ module.exports = {
       supportsTablet: true,
       bundleIdentifier: 'com.anonymous.murmurapp',
       icon: './assets/images/icon.png',
+      usesNonExemptEncryption: false, // Delete this if it causes problems with future releases
     },
     android: {
       adaptiveIcon: {
@@ -55,6 +56,9 @@ module.exports = {
     },
     extra: {
         CLAUDE_API_KEY: process.env.EXPO_PUBLIC_CLAUDE_API_KEY,
+        eas: {
+          projectId: "c97f7bcd-1bd6-4d1d-859a-0c4c1c55e1bc"
+        }
     },
   }
 
