@@ -12,7 +12,7 @@ module.exports = {
     newArchEnabled: true,
     ios: {
       buildNumber: '1', // Increase this by 1 for each new app release to the app store
-      supportsTablet: true,
+      supportsTablet: false,
       bundleIdentifier: 'com.anonymous.murmurapp',
       icon: './assets/images/icon.png',
       usesNonExemptEncryption: false, // Delete this if it causes problems with future releases
