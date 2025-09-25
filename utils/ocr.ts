@@ -34,7 +34,7 @@ export async function claudeExtractTextFromImage(imageUri: string): Promise<stri
     const mediaType = blob.type || 'image/jpeg';
 
     // Call Claude API
-    console.log('Calling Claude API...');
+    // console.log('Calling Claude API...');
     
     // IF COST GETS TOO HIGH CAN CHANGE THIS TO USE A CHEAPER MODEL LIKE HAIKU 3
     const claudeResponse = await fetch('https://api.anthropic.com/v1/messages', {
