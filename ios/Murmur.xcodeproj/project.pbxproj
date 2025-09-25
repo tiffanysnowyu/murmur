@@ -8,25 +8,25 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		1EF087AA0039CB6B14E09FA3 /* libPods-Murmur.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 9089C32C32585F10A87EC49A /* libPods-Murmur.a */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		83CF6B74ACF710366192255D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = C40333EB10572826ADE6157B /* ExpoModulesProvider.swift */; };
+		5EA0DBEE5C354D681FD4A3C5 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3223AC821C38028B7D450F14 /* PrivacyInfo.xcprivacy */; };
+		88541D88100F65EED936BBEE /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1BC34EB9589D7392173B6F82 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		E3CA62CFF8FC01011073A149 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9FD52BC1E4C03D89FE503A4D /* PrivacyInfo.xcprivacy */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
+		FD63E96298385F3B4535C9F7 /* libPods-Murmur.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4116A5D6A42C4086739D6DE1 /* libPods-Murmur.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
 		13B07F961A680F5B00A75B9A /* Murmur.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Murmur.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = Murmur/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = Murmur/Info.plist; sourceTree = "<group>"; };
-		89BA522E2AE9598A3DC0475A /* Pods-Murmur.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Murmur.debug.xcconfig"; path = "Target Support Files/Pods-Murmur/Pods-Murmur.debug.xcconfig"; sourceTree = "<group>"; };
-		9089C32C32585F10A87EC49A /* libPods-Murmur.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Murmur.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		9FD52BC1E4C03D89FE503A4D /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Murmur/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		1BC34EB9589D7392173B6F82 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Murmur/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		3223AC821C38028B7D450F14 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = Murmur/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		4116A5D6A42C4086739D6DE1 /* libPods-Murmur.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-Murmur.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		7C11845478D114CD434E899C /* Pods-Murmur.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Murmur.debug.xcconfig"; path = "Target Support Files/Pods-Murmur/Pods-Murmur.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = Murmur/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		C40333EB10572826ADE6157B /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-Murmur/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		D9B6A3161FDD4464DAA02473 /* Pods-Murmur.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Murmur.release.xcconfig"; path = "Target Support Files/Pods-Murmur/Pods-Murmur.release.xcconfig"; sourceTree = "<group>"; };
+		CA2CD42E124E757D1EA4495E /* Pods-Murmur.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Murmur.release.xcconfig"; path = "Target Support Files/Pods-Murmur/Pods-Murmur.release.xcconfig"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = Murmur/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* Murmur-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "Murmur-Bridging-Header.h"; path = "Murmur/Murmur-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -37,13 +37,21 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1EF087AA0039CB6B14E09FA3 /* libPods-Murmur.a in Frameworks */,
+				FD63E96298385F3B4535C9F7 /* libPods-Murmur.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		124382057B467F64AEEF93DA /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				63A734F24366393B9F7D3598 /* Murmur */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* Murmur */ = {
 			isa = PBXGroup;
 			children = (
@@ -53,7 +61,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				9FD52BC1E4C03D89FE503A4D /* PrivacyInfo.xcprivacy */,
+				3223AC821C38028B7D450F14 /* PrivacyInfo.xcprivacy */,
 			);
 			name = Murmur;
 			sourceTree = "<group>";
@@ -62,25 +70,27 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				9089C32C32585F10A87EC49A /* libPods-Murmur.a */,
+				4116A5D6A42C4086739D6DE1 /* libPods-Murmur.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		3A985E3903F1D57ECF24E564 /* Murmur */ = {
+		63A734F24366393B9F7D3598 /* Murmur */ = {
 			isa = PBXGroup;
 			children = (
-				C40333EB10572826ADE6157B /* ExpoModulesProvider.swift */,
+				1BC34EB9589D7392173B6F82 /* ExpoModulesProvider.swift */,
 			);
 			name = Murmur;
 			sourceTree = "<group>";
 		};
-		54A54D1D3F80F6B2C0615C01 /* ExpoModulesProviders */ = {
+		6A9E02EAD5D44944FC3A11FD /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				3A985E3903F1D57ECF24E564 /* Murmur */,
+				7C11845478D114CD434E899C /* Pods-Murmur.debug.xcconfig */,
+				CA2CD42E124E757D1EA4495E /* Pods-Murmur.release.xcconfig */,
 			);
-			name = ExpoModulesProviders;
+			name = Pods;
+			path = Pods;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -97,8 +107,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				92B258A3A9865716327F1490 /* Pods */,
-				54A54D1D3F80F6B2C0615C01 /* ExpoModulesProviders */,
+				6A9E02EAD5D44944FC3A11FD /* Pods */,
+				124382057B467F64AEEF93DA /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -111,16 +121,6 @@
 				13B07F961A680F5B00A75B9A /* Murmur.app */,
 			);
 			name = Products;
-			sourceTree = "<group>";
-		};
-		92B258A3A9865716327F1490 /* Pods */ = {
-			isa = PBXGroup;
-			children = (
-				89BA522E2AE9598A3DC0475A /* Pods-Murmur.debug.xcconfig */,
-				D9B6A3161FDD4464DAA02473 /* Pods-Murmur.release.xcconfig */,
-			);
-			name = Pods;
-			path = Pods;
 			sourceTree = "<group>";
 		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
@@ -140,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "Murmur" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				F775D027B173F6E735EFEB2A /* [Expo] Configure project */,
+				95893E111DD21CDEDBF0593C /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				3C42B2EEDEC457AEF04BFC55 /* [CP] Embed Pods Frameworks */,
+				5CE39C70327B78369DD82B3C /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -196,7 +196,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				E3CA62CFF8FC01011073A149 /* PrivacyInfo.xcprivacy in Resources */,
+				5EA0DBEE5C354D681FD4A3C5 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -240,7 +240,7 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		3C42B2EEDEC457AEF04BFC55 /* [CP] Embed Pods Frameworks */ = {
+		5CE39C70327B78369DD82B3C /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -300,7 +300,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-Murmur/Pods-Murmur-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		F775D027B173F6E735EFEB2A /* [Expo] Configure project */ = {
+		95893E111DD21CDEDBF0593C /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
 			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
@@ -327,7 +327,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				83CF6B74ACF710366192255D /* ExpoModulesProvider.swift in Sources */,
+				88541D88100F65EED936BBEE /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -336,7 +336,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 89BA522E2AE9598A3DC0475A /* Pods-Murmur.debug.xcconfig */;
+			baseConfigurationReference = 7C11845478D114CD434E899C /* Pods-Murmur.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -372,7 +372,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = D9B6A3161FDD4464DAA02473 /* Pods-Murmur.release.xcconfig */;
+			baseConfigurationReference = CA2CD42E124E757D1EA4495E /* Pods-Murmur.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
