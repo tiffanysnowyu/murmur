@@ -11,7 +11,7 @@ module.exports = {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
-      buildNumber: '1', // Increase this by 1 for each new app release to the app store
+      buildNumber: '9', // Increase this by 1 for each new app release to the app store it must be bigger than the last release number
       supportsTablet: false,
       bundleIdentifier: 'com.anonymous.murmurapp',
       icon: './assets/images/icon.png',
@@ -23,6 +23,7 @@ module.exports = {
         backgroundColor: '#ffffff',
       },
       edgeToEdgeEnabled: true,
+      package: "com.anonymous.murmurapp"
     },
     web: {
       bundler: 'metro',
