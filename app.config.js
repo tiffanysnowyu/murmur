@@ -12,7 +12,7 @@ module.exports = {
     newArchEnabled: true,
     ios: {
       buildNumber: '9', // Increase this by 1 for each new app release to the app store it must be bigger than the last release number
-      supportsTablet: false,
+      supportsTablet: false, // Set to false to exclude iPad from supported devices
       bundleIdentifier: 'com.anonymous.murmurapp',
       icon: './assets/images/icon.png',
       usesNonExemptEncryption: false, // Delete this if it causes problems with future releases
@@ -44,12 +44,11 @@ module.exports = {
       [
         "expo-image-picker",
         {
-          photosPermission: "The app accesses your photos to let you share them.",
-          cameraPermission: "The app accesses your camera to let you take photos."
+          // Alter these descriptions if the iOS store wants more or less detail about why we need photo library and camera permissions
+          photosPermission: "The app uses your photo library to let you upload pictures of content you want to fact check for emotional reassurance rather than having to manually copy the text.",
+          cameraPermission: "The app uses your camera to let you take pictures of content you want to fact check for emotional reassurance rather than having to manually copy the text.",
+          microphonePermission: false,
         }
-      ],
-      [
-        "expo-secure-store",
       ],
     ],
     experiments: {
