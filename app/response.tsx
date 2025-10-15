@@ -1608,8 +1608,8 @@ const styles = StyleSheet.create({
     width: 264,
     height: 1,
     backgroundColor: '#D1D1D6',
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: 32,
+    marginBottom: 32,
   },
   stillUneasyLoadingContainer: {
     flexDirection: 'row',

@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
     fontFamily: "SF Pro Display", 
     fontWeight: "400",
     color: "#1A1A1A",
-    paddingBottom: 64,
+    paddingBottom: 48,
   },
   options: { 
     alignItems: "center",
@@ -286,21 +286,20 @@ const styles = StyleSheet.create({
   inputTitle: {
     fontSize: 32,
     fontFamily: "SF Pro Display",
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#1A1A1A",
     marginBottom: 16,
   },
   inputDescription: {
-    fontSize: 17,
+    fontSize: 18,
     fontFamily: "SF Pro Display",
     fontWeight: "400",
     color: "#1A1A1A",
-    lineHeight: 24,
   },
   divider: {
     height: 1,
     backgroundColor: "#D0D0D0",
-    marginBottom: 48, // 48px after divider
+    marginBottom: 48, 
   },
   input: {
     flex: 1,

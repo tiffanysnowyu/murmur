@@ -113,7 +113,7 @@ const styles = StyleSheet.create({
     fontFamily: "SF Pro Display", 
     fontWeight: "400",
     color: "#1A1A1A",
-    paddingBottom: 64,
+    paddingBottom: 48,
   },
   options: { 
     alignItems: "center",

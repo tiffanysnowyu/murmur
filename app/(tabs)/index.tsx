@@ -206,8 +206,10 @@ const styles = StyleSheet.create({
   },
   wave: {
     position: 'absolute',
-    width: '100%',
-    height: '100%',
+    width: '350%',
+    height: '350%',
+    top: '-125%',
+    left: '-125%',
   },
   testVideo: {
     position: 'absolute',
