@@ -13,6 +13,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import { Link } from 'expo-router';
+import { Video } from 'expo-av';
 
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -134,28 +135,15 @@ export default function AnimatedWave() {
   return (
     <View style={styles.fullScreen}>
 
-      {/* Smooth wave animation with crossfade between frames */}
-      <Animated.Image
-        source={frames[currentFrameIndex]}
-        style={[
-          styles.wave,
-          {
-            opacity: 1 - fadeOpacity,
-          }
-        ]}
+      {/* Full-screen video background */}
+      <Video
+        source={require('@/assets/images/murmur_vid.mp4')}
+        style={styles.wave}
+        shouldPlay={true}
+        isLooping={true}
+        isMuted={true}
         resizeMode="contain"
-        fadeDuration={0} // Disable default fade animation
-      />
-      <Animated.Image
-        source={frames[nextFrameIndex]}
-        style={[
-          styles.wave,
-          {
-            opacity: fadeOpacity,
-          }
-        ]}
-        resizeMode="contain"
-        fadeDuration={0} // Disable default fade animation
+        useNativeControls={false}
       />
 
       {/* Blur effects positioned behind button */}
@@ -220,6 +208,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: '100%',
     height: '100%',
+  },
+  testVideo: {
+    position: 'absolute',
+    top: 100,
+    right: 20,
+    width: 150,
+    height: 100,
+    backgroundColor: 'black',
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: 'white',
+    zIndex: 10,
   },
   menuButton: {
     position: 'absolute',

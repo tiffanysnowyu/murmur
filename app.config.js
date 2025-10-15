@@ -32,6 +32,7 @@ module.exports = {
     },
     plugins: [
       'expo-router',
+      'expo-av',
       [
         'expo-splash-screen',
         {
