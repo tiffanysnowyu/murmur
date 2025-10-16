@@ -448,7 +448,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingBottom: 64,
+    paddingBottom: 48,
     gap: 16,
   },
   title: { 

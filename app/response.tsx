@@ -36,6 +36,10 @@ export default function ResponsePage() {
   const [stillUneasyLoading, setStillUneasyLoading] = useState<boolean>(false);
   const [stillUneasyError, setStillUneasyError] = useState<string>('');
 
+  // JSON parsed responses
+  const [parsedMainResponse, setParsedMainResponse] = useState<{sections: Array<{type: string, content: string}>} | null>(null);
+  const [parsedStillUneasyResponse, setParsedStillUneasyResponse] = useState<{sections: Array<{type: string, content: string}>} | null>(null);
+
   // Animation states
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const analyzeCTAScale = useRef(new Animated.Value(1)).current;
@@ -91,7 +95,7 @@ export default function ResponsePage() {
   // Parse summary response
   const parseSummaryResponse = (responseText: string) => {
     const sections = responseText.split(/^##\s+/m).filter(s => s.trim());
-    
+
     let article = '';
     let overview = '';
     const keyClaims: Array<{ title: string; content: string }> = [];
@@ -102,8 +106,6 @@ export default function ResponsePage() {
       const content = lines.slice(1).join('\n').trim();
 
       if (sectionTitle === 'article') {
-        // Note that article isn't actually displayed anywhere in the UI
-        // but since it's part of the llm prompt for the output leaving it in the parsing logic
         article = content;
       } else if (sectionTitle === 'overview') {
         overview = content;
@@ -119,54 +121,79 @@ export default function ResponsePage() {
       }
     });
 
-    // If we were unable to parse then just set the overview to the response text
-    if (overview.length === 0) {
-      overview = responseText;
-    }
-    console.log('PARSED SUMMARY:', { article, overview, keyClaims })
     setParsedSummary({ article, overview, keyClaims });
   };
 
   const parseAnalyzeResponse = (responseText: string) => {
-    // Remove non-alphanumeric characters from the beginning and trim whitespace
-    responseText = responseText.replace(/^[^a-zA-Z0-9]+/, '').trim();
+    try {
+      const jsonResponse = JSON.parse(responseText);
 
-    let splitByBottomLine = responseText.split('Bottom line')
-    if (splitByBottomLine.length < 2) {
-      splitByBottomLine = responseText.split('Bottom Line')
+      if (jsonResponse.sections && Array.isArray(jsonResponse.sections)) {
+        // Store the parsed JSON structure
+        setParsedMainResponse(jsonResponse);
+
+        // Also create overview for backward compatibility
+        const overview = jsonResponse.sections
+          .map((section: any) => section.content)
+          .join('\n\n');
+
+        return { overview, keyClaims: [], bottomLine: '' };
+      } else {
+        // Fallback to plain text
+        setParsedMainResponse(null);
+        return { overview: responseText, keyClaims: [], bottomLine: '' };
+      }
+    } catch (error) {
+      console.error('Failed to parse JSON response:', error);
+      setParsedMainResponse(null);
+
+      // Fallback to original parsing if JSON parsing fails
+      responseText = responseText.replace(/^[^a-zA-Z0-9]+/, '').trim();
+
+      let splitByBottomLine = responseText.split('Bottom line')
+      if (splitByBottomLine.length < 2) {
+        splitByBottomLine = responseText.split('Bottom Line')
+      }
+      let overview = splitByBottomLine[0].replace(':', '').trim()
+      let bottomLine = splitByBottomLine.length > 1 ? splitByBottomLine[1].replace(':', '').trim() : ''
+
+      return { overview, keyClaims: [], bottomLine };
     }
-    let overview = splitByBottomLine[0].replace(':', '').trim()
-    let bottomLine = splitByBottomLine.length > 1 ? splitByBottomLine[1].replace(':', '').trim() : ''
-    // console.log('BEFORE BOTTOM LINE:', beforeottomLine, '\n\n')
-    
-   
-    // THE CODE IN THIS FUNCTION BELOW HERE IS NOT DOING ANYTHING
-    const keyClaims: Array<{ title: string; content: string }> = [];
+  };
 
-    // sections.forEach(section => {
-    //   const lines = section.trim().split('\n');
-    //   const sectionTitle = lines[0].trim().toLowerCase();
-    //   const content = lines.slice(1).join('\n').trim();
+  const parseStillUneasyResponse = (responseText: string) => {
+    try {
+      const jsonResponse = JSON.parse(responseText);
 
-    //   if (sectionTitle.includes('overview') || sectionTitle.includes('summary')) {
-    //     overview = content;
-    //   } else if (sectionTitle.includes('bottom line') || sectionTitle.includes('conclusion')) {
-    //     bottomLine = content;
-    //   } else if (sectionTitle.includes('key') && (sectionTitle.includes('claims') || sectionTitle.includes('findings'))) {
-    //     // Parse key claims
-    //     const claimMatches = content.matchAll(/\*\*([^*]+)\*\*\n([^*]+)(?=\*\*|$)/g);
-    //     for (const match of claimMatches) {
-    //       keyClaims.push({
-    //         title: match[1].trim(),
-    //         content: match[2].trim()
-    //       });
-    //     }
-    //   }
-    // });
-    // console.log('OVERVIEW:', overview, '\n\n')
-    // console.log('BOTTOM LINE:', bottomLine, '\n\n')
-    // console.log('KEY CLAIMS:', keyClaims, '\n\n')
-    return { overview, keyClaims, bottomLine };
+      if (jsonResponse.sections && Array.isArray(jsonResponse.sections)) {
+        setParsedStillUneasyResponse(jsonResponse);
+      } else {
+        setParsedStillUneasyResponse(null);
+      }
+    } catch (error) {
+      console.error('Failed to parse still uneasy JSON response:', error);
+      setParsedStillUneasyResponse(null);
+    }
+  };
+
+  // Component to render JSON sections with proper styling
+  const renderJsonSections = (sections: Array<{type: string, content: string}>) => {
+    return sections.map((section, index) => {
+      if (section.type === 'subtitle') {
+        return (
+          <Text key={index} style={styles.summarySubtitle}>
+            {section.content}
+          </Text>
+        );
+      } else if (section.type === 'text') {
+        return (
+          <Text key={index} style={styles.summaryOverviewText}>
+            {section.content}
+          </Text>
+        );
+      }
+      return null;
+    });
   };
 
   const toggleClaim = (index: number) => {
@@ -425,7 +452,24 @@ Dynamically structure your response based on what would be most helpful. Conside
 
 **Sources** - Include 2-4 credible sources for key health/safety claims
 
-**Bottom line** - End with reassurance and empowerment.`;
+**Bottom line** - End with reassurance and empowerment.
+
+CRITICAL FORMATTING REQUIREMENT:
+You MUST format your entire response as a JSON object with this exact structure:
+{
+  "sections": [
+    {
+      "type": "subtitle",
+      "content": "Your Subtitle Here"
+    },
+    {
+      "type": "text",
+      "content": "Your paragraph text here..."
+    }
+  ]
+}
+
+Use "subtitle" type for section headers and "text" type for paragraph content. Do not include any text outside this JSON structure. Do not use markdown formatting or asterisks - the app will handle styling based on the type field.`;
     }
   };
 
@@ -813,13 +857,27 @@ IMPORTANT CONSTRAINTS:
 - End with a definitive, calming statement
 
 FORMATTING AND CONTENT REQUIREMENTS:
-- Use **double star format** (**Title**) for subsection headers, NOT circular bullet points
-- Break down information into clear sections with bold headers using **Header Name**
 - Keep responses concise while being thorough and reassuring
 - Provide ONLY concrete and tangible reassurances - avoid abstract concepts
 - Use specific facts, statistics, or real-world examples rather than vague statements
-- Structure information with bold subsection headers rather than simple bullet lists
 - Avoid philosophical or overly theoretical discussions
+
+CRITICAL FORMATTING REQUIREMENT:
+You MUST format your entire response as a JSON object with this exact structure:
+{
+  "sections": [
+    {
+      "type": "subtitle",
+      "content": "Your Subtitle Here"
+    },
+    {
+      "type": "text",
+      "content": "Your paragraph text here..."
+    }
+  ]
+}
+
+Use "subtitle" type for section headers and "text" type for paragraph content. Do not include any text outside this JSON structure. Do not use markdown formatting or asterisks - the app will handle styling based on the type field.
 
 Be conversational, understanding, and constructive. Avoid dismissing their concerns. Instead, help them think through the issue more thoroughly and leave them feeling more at peace with concrete, specific reassurances.`;
 
@@ -836,6 +894,7 @@ Provide additional context, perspective, and reassurance that might help address
       const reply = await callClaudeAPI(systemPrompt, userPrompt);
       if (reply) {
         setStillUneasyResponse(reply);
+        parseStillUneasyResponse(reply);
       } else {
         throw new Error('No response received from Claude.');
       } 
@@ -884,7 +943,7 @@ Provide additional context, perspective, and reassurance that might help address
         <ScrollView style={styles.summaryContent} showsVerticalScrollIndicator={false}>
           {/* Article Section */}
           <View style={styles.summarySection}>
-            <Text style={styles.summarySectionTitle}>Original Text</Text>
+            <Text style={styles.summarySectionTitle}>Article</Text>
             <View style={styles.summaryArticleContainer}>
               <Text style={styles.summaryArticleText} numberOfLines={showFullArticle ? undefined : 3}>
                 {inputText}
@@ -926,7 +985,7 @@ Provide additional context, perspective, and reassurance that might help address
     );
   }
 
-  if (isSummaryMode && !loading && !error && parsedSummary.overview) {
+  if (isSummaryMode && !loading && !error && parsedSummary.article) {
     return (
       <MainScreen>
         {/* Header */}
@@ -980,7 +1039,7 @@ Provide additional context, perspective, and reassurance that might help address
         >
           {/* Article Section */}
           <View style={styles.summarySection}>
-            <Text style={styles.summarySectionTitle}>Original Text</Text>
+            <Text style={styles.summarySectionTitle}>Article</Text>
             <View style={styles.summaryArticleContainer}>
               <Text 
                 style={styles.summaryArticleText}
@@ -1127,9 +1186,9 @@ Provide additional context, perspective, and reassurance that might help address
 
 
   // Show error state for summary mode
-  // Note this error appears even if the request to Claude API succeeded 
-  // but for some reason parsedSummary.overview doesn't exist (if the parsing went wrong)
-  if (isSummaryMode && !loading && (error || !parsedSummary.overview)) {
+  // Note this error appears even if the request to Claude API succeeded
+  // but for some reason parsedSummary.article doesn't exist (if the parsing went wrong)
+  if (isSummaryMode && !loading && (error || !parsedSummary.article)) {
     return (
       <MainScreen>
         {/* Header */}
@@ -1144,7 +1203,7 @@ Provide additional context, perspective, and reassurance that might help address
         <ScrollView style={styles.summaryContent} showsVerticalScrollIndicator={false}>
           {/* Article Section */}
           <View style={styles.summarySection}>
-            <Text style={styles.summarySectionTitle}>Original text</Text>
+            <Text style={styles.summarySectionTitle}>Article</Text>
             <View style={styles.summaryArticleContainer}>
               <Text style={styles.summaryArticleText} numberOfLines={showFullArticle ? undefined : 3}>
                 {inputText}
@@ -1314,19 +1373,19 @@ Provide additional context, perspective, and reassurance that might help address
             </View>
           )}
 
-          {response && !loading && parsedAnalysis.overview && (
+          {response && !loading && (
             <View>
-              <Text style={styles.summaryOverviewText}>
-                {parsedAnalysis.overview}
-              </Text>
-            </View>
-          )}
-
-          {response && !loading && !parsedAnalysis.overview && (
-            <View>
-              <Text style={styles.summaryOverviewText}>
-                {response}
-              </Text>
+              {parsedMainResponse && parsedMainResponse.sections ? (
+                renderJsonSections(parsedMainResponse.sections)
+              ) : parsedAnalysis.overview ? (
+                <Text style={styles.summaryOverviewText}>
+                  {parsedAnalysis.overview}
+                </Text>
+              ) : (
+                <Text style={styles.summaryOverviewText}>
+                  {response}
+                </Text>
+              )}
             </View>
           )}
         </View>
@@ -1469,7 +1528,11 @@ Provide additional context, perspective, and reassurance that might help address
             {stillUneasyResponse && (
               <View style={styles.stillUneasyContainer}>
                 <Text style={styles.stillUneasyTitle}>Please don't worry</Text>
-                <Text style={styles.stillUneasyResponseText}>{stillUneasyResponse}</Text>
+                {parsedStillUneasyResponse && parsedStillUneasyResponse.sections ? (
+                  renderJsonSections(parsedStillUneasyResponse.sections)
+                ) : (
+                  <Text style={styles.stillUneasyResponseText}>{stillUneasyResponse}</Text>
+                )}
               </View>
             )}
           </View>
@@ -1575,7 +1638,7 @@ const styles = StyleSheet.create({
     fontFamily: "SF Pro Display",
     fontWeight: "600",
     color: TEXT_PRIMARY,
-    marginBottom: 32,
+    marginBottom: 16,
     marginTop: 48,
   },
   summaryArticleContainer: {
@@ -1615,7 +1678,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    marginTop: 12,
+    marginTop: 32,
   },
   stillUneasyLoadingIcon: {
     width: 24,
@@ -1642,7 +1705,7 @@ const styles = StyleSheet.create({
     fontFamily: "SF Pro Display",
     fontWeight: "600",
     color: '#1A1A1A',
-    marginBottom: 32,
+    marginBottom: 16,
   },
   stillUneasyResponseText: {
     fontSize: 18,
@@ -1651,6 +1714,8 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     lineHeight: 27, // 150% of 18px
     letterSpacing: -0.198,
+    flexWrap: 'wrap',
+    textAlign: 'left',
   },
   summaryOverviewText: {
     fontSize: 18,
@@ -1878,5 +1943,13 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#7A42F4',
     textAlign: 'left',
+  },
+  summarySubtitle: {
+    fontSize: 18,
+    fontFamily: 'SF Pro Display',
+    fontWeight: '600',
+    color: '#1A1A1A',
+    marginTop: 24,
+    marginBottom: 12,
   },
 });
