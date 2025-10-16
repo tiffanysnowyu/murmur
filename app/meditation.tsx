@@ -40,6 +40,9 @@ const IntroScreen = ({
   const timeoutRef = useRef<NodeJS.Timeout | number | null>(null);
 
   useEffect(() => {
+    // Reset subtitle opacity when subtitle changes
+    subtitleOpacity.setValue(0);
+
     const startSubtitleAnimation = () => {
       // Start subtitle fade-in
       Animated.timing(subtitleOpacity, {
@@ -78,7 +81,7 @@ const IntroScreen = ({
       titleOpacity.stopAnimation();
       subtitleOpacity.stopAnimation();
     };
-  }, [titleOpacity, subtitleOpacity, titleFadeInDuration, subtitleFadeInDuration, waitDuration, screenFinished, shouldFadeTitle]);
+  }, [subtitle, titleOpacity, subtitleOpacity, titleFadeInDuration, subtitleFadeInDuration, waitDuration, screenFinished, shouldFadeTitle]);
 
   const handleSkipIntro = () => {
     // Cancel all animations and timeouts
@@ -96,9 +99,21 @@ const IntroScreen = ({
   return (
     <>
       <View style={styles.textContainer}>
-        <Animated.Text style={[styles.mainTitle, { opacity: titleOpacity }]}>
-          {title}
-        </Animated.Text>
+        {(title === 'Clear your mind' || title === 'Clear your heart' || title === 'Get ready') ? (
+          <Animated.Image
+            source={
+              title === 'Clear your mind' ? require('../assets/images/Clear your mind.png') :
+              title === 'Clear your heart' ? require('../assets/images/Clear your heart.png') :
+              require('../assets/images/Get ready.png')
+            }
+            style={[styles.titleImage, { opacity: titleOpacity }]}
+            resizeMode="contain"
+          />
+        ) : (
+          <Animated.Text style={[styles.mainTitle, { opacity: titleOpacity }]}>
+            {title}
+          </Animated.Text>
+        )}
         <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
           {subtitle}
         </Animated.Text>
@@ -123,6 +138,7 @@ export default function MeditationScreen() {
   const blueFlowerOpacity = useRef(new Animated.Value(0)).current;
   const pinkFlowerOpacity = useRef(new Animated.Value(0)).current;
   const flowerScale = useRef(new Animated.Value(1)).current;
+  const breathingTextOpacity = useRef(new Animated.Value(0)).current;
   
   // Keep reference to pulse animation to stop it
   const pulseAnimationRef = useRef<{ stop: () => void } | null>(null);
@@ -154,6 +170,12 @@ export default function MeditationScreen() {
       
       // Set "Inhale" text and expand (flower expands as you inhale)
       setBreathingText('Inhale');
+      Animated.timing(breathingTextOpacity, {
+        toValue: 1,
+        duration: 1000,
+        useNativeDriver: true,
+      }).start();
+
       Animated.parallel([
         Animated.timing(flowerScale, {
           toValue: 1.25, // Scale to 357px (286 * 1.25)
@@ -174,7 +196,19 @@ export default function MeditationScreen() {
         if (animationStopped.current) return;
 
         // Set "Exhale" text and contract (flower contracts as you exhale)
-        setBreathingText('Exhale');
+        Animated.timing(breathingTextOpacity, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }).start(() => {
+          setBreathingText('Exhale');
+          Animated.timing(breathingTextOpacity, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }).start();
+        });
+
         Animated.parallel([
           Animated.timing(flowerScale, {
             toValue: 1,
@@ -273,7 +307,7 @@ export default function MeditationScreen() {
 
         {phase == 'intro' && (
           <IntroScreen
-            key={introPhaseNum}
+            key={introPhases[introPhaseNum].title}
             title={introPhases[introPhaseNum].title}
             subtitle={introPhases[introPhaseNum].subtitle}
             titleFadeInDuration={introPhases[introPhaseNum].titleFadeInDuration}
@@ -328,9 +362,9 @@ export default function MeditationScreen() {
 
         {/* Breathing Text */}
         {phase == 'flower' && breathingText && (
-          <Text style={styles.breathingText}>
+          <Animated.Text style={[styles.breathingText, { opacity: breathingTextOpacity }]}>
             {breathingText}
-          </Text>
+          </Animated.Text>
         )}
       </View>
 
@@ -371,6 +405,12 @@ const styles = StyleSheet.create({
     color: '#4A90A4',
     textAlign: 'center',
     marginBottom: 72,
+  },
+  titleImage: {
+    width: 200,
+    height: 20,
+    marginBottom: 72,
+    alignSelf: 'center',
   },
   subtitle: {
     fontSize: 18,

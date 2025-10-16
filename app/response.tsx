@@ -1036,8 +1036,8 @@ Provide additional context, perspective, and reassurance that might help address
           <View style={styles.summarySection}>
             <Text style={styles.summarySectionTitle}>Overview</Text>
             <View style={styles.loadingContainerLeft}>
-              <Animated.Image 
-                source={require('../assets/images/icon_loading.png')}
+              <Animated.Image
+                source={require('../assets/images/icon_loading_blue.png')}
                 style={[
                   styles.loadingIcon,
                   { transform: [{ rotate: spin }] }
@@ -1764,7 +1764,7 @@ const styles = StyleSheet.create({
     letterSpacing: -0.198,
   },
   stillUneasyContainer: {
-    marginTop: 32,
+    marginTop: 24,
   },
   stillUneasyErrorContainer: {
     marginTop: 32,

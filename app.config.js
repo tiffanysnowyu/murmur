@@ -4,14 +4,14 @@ module.exports = {
   expo: {
     name: 'Murmur',
     slug: 'murmur',
-    version: '1.0.1', // Increase this for new app releases. It can be increased in any way.
+    version: '1.0.2', // Increase this for new app releases. It can be increased in any way.
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'murmur',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
-      buildNumber: '9', // Increase this by 1 for each new app release to the app store it must be bigger than the last release number
+      buildNumber: '10', // Increase this by 1 for each new app release to the app store it must be bigger than the last release number
       supportsTablet: false, // Set to false to exclude iPad from supported devices
       bundleIdentifier: 'com.anonymous.murmurapp',
       icon: './assets/images/icon.png',
