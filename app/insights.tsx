@@ -6,8 +6,10 @@ import {
   ScrollView,
   StyleSheet,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   Alert,
   Image,
+  TextInput,
 } from 'react-native';
 import { router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
@@ -24,6 +26,8 @@ interface Insight {
 
 export default function InsightsPage() {
   const [insights, setInsights] = useState<Insight[]>([]);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingTitle, setEditingTitle] = useState<string>('');
 
   useEffect(() => {
     loadInsights();
@@ -63,50 +67,96 @@ export default function InsightsPage() {
     });
   };
 
+  const handleLongPress = (insight: Insight) => {
+    setEditingId(insight.id);
+    setEditingTitle(insight.title);
+  };
+
+  const handleTitleSave = async () => {
+    if (editingId && editingTitle.trim()) {
+      await insightsStorage.updateInsightTitle(editingId, editingTitle.trim());
+      await loadInsights();
+    }
+    setEditingId(null);
+    setEditingTitle('');
+  };
+
+  const handleTitleCancel = () => {
+    setEditingId(null);
+    setEditingTitle('');
+  };
+
   return (
     <MainScreen backgroundColor='#F4F4F9'>
-      <BackButton onPress={() => router.back()} buttonText="Back" />
-      
-      {insights.length == 0 ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>No saved insights yet</Text>
-          <Text style={styles.emptySubtext}>
-            Save summaries or analyses to review them later
-          </Text>
-        </View>
-      ) : (
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {insights.map((insight) => (
-            <TouchableOpacity
-              key={insight.id}
-              style={styles.insightCard}
-              onPress={() => openInsight(insight)}
-            >
-              <View style={styles.cardContent}>
-                <Image 
-                  source={insight.mode === 'summarize' ? require('../assets/images/icon_summ.png') : require('../assets/images/icon_analysis.png')}
-                  style={styles.cardIcon}
-                />
-                <Text style={styles.cardText} numberOfLines={1}>
-                  {insight.title}
-                </Text>
-                <TouchableOpacity 
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    handleDeleteInsight(insight.id);
-                  }}
-                  style={styles.trashButton}
+      <TouchableWithoutFeedback onPress={() => editingId && handleTitleSave()}>
+        <View style={{ flex: 1 }}>
+          <BackButton onPress={() => router.back()} buttonText="Back" />
+
+          {insights.length == 0 ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyText}>No saved insights yet</Text>
+              <Text style={styles.emptySubtext}>
+                Save summaries or analyses to review them later
+              </Text>
+            </View>
+          ) : (
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+              {insights.map((insight) => (
+                <TouchableOpacity
+                  key={insight.id}
+                  style={styles.insightCard}
+                  onPress={() => editingId !== insight.id && openInsight(insight)}
+                  onLongPress={() => handleLongPress(insight)}
                 >
-                  <Image 
-                    source={require('../assets/images/trash.png')}
-                    style={styles.trashIcon}
-                  />
+                  <View style={styles.cardContent}>
+                    <Image
+                      source={insight.mode === 'summarize' ? require('../assets/images/icon_summ.png') : require('../assets/images/icon_analysis.png')}
+                      style={styles.cardIcon}
+                    />
+                    {editingId === insight.id ? (
+                      <TextInput
+                        style={styles.editInput}
+                        value={editingTitle}
+                        onChangeText={setEditingTitle}
+                        onBlur={handleTitleSave}
+                        onSubmitEditing={handleTitleSave}
+                        autoFocus
+                        selectTextOnFocus
+                        returnKeyType="done"
+                      />
+                    ) : (
+                      <Text style={styles.cardText} numberOfLines={1}>
+                        {insight.title}
+                      </Text>
+                    )}
+                    {editingId === insight.id ? (
+                      <TouchableOpacity
+                        onPress={handleTitleCancel}
+                        style={styles.cancelButton}
+                      >
+                        <Text style={styles.cancelText}>Cancel</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={(e) => {
+                          e.stopPropagation();
+                          handleDeleteInsight(insight.id);
+                        }}
+                        style={styles.trashButton}
+                      >
+                        <Image
+                          source={require('../assets/images/trash.png')}
+                          style={styles.trashIcon}
+                        />
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </TouchableOpacity>
-              </View>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-      )}
+              ))}
+            </ScrollView>
+          )}
+        </View>
+      </TouchableWithoutFeedback>
     </MainScreen>
   );
 }
@@ -183,5 +233,23 @@ const styles = StyleSheet.create({
   trashIcon: {
     width: 20,
     height: 20,
+  },
+  editInput: {
+    flex: 1,
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginRight: 16,
+    borderBottomWidth: 0,
+    paddingVertical: 4,
+  },
+  cancelButton: {
+    padding: 4,
+    marginLeft: 'auto',
+  },
+  cancelText: {
+    color: '#B0B0B8',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

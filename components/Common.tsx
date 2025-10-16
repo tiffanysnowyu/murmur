@@ -93,7 +93,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     paddingBottom: 48,
-    width: 80,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   chevron: {
     fontSize: 24,

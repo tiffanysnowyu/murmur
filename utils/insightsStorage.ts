@@ -45,5 +45,14 @@ export const insightsStorage = {
     const insights = await this.getInsights();
     const filtered = insights.filter(item => item.id !== id);
     await this.saveInsights(filtered);
+  },
+
+  async updateInsightTitle(id: string, newTitle: string): Promise<void> {
+    const insights = await this.getInsights();
+    const insight = insights.find(item => item.id === id);
+    if (insight) {
+      insight.title = newTitle;
+      await this.saveInsights(insights);
+    }
   }
 };

@@ -1567,35 +1567,36 @@ Provide additional context, perspective, and reassurance that might help address
             </Pressable>
             
             {stillUneasyLoading && (
-              <View style={styles.stillUneasyLoadingContainer}>
-                <Animated.Image 
-                  source={require('../assets/images/icon_loading.png')}
-                  style={[
-                    styles.stillUneasyLoadingIcon,
-                    { transform: [{ rotate: loadingRotation.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: ['0deg', '360deg'],
-                    }) }] }
-                  ]}
-                />
-                <Animated.Text style={[styles.stillUneasyLoadingText, { opacity: loadingOpacity }]}>
-                  Loading...
-                </Animated.Text>
+              <View style={styles.stillUneasyContainer}>
+                <View style={styles.stillUneasyLoadingContainer}>
+                  <Animated.Image
+                    source={require('../assets/images/icon_loading.png')}
+                    style={[
+                      styles.stillUneasyLoadingIcon,
+                      { transform: [{ rotate: loadingRotation.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: ['0deg', '360deg'],
+                      }) }] }
+                    ]}
+                  />
+                  <Animated.Text style={[styles.stillUneasyLoadingText, { opacity: loadingOpacity }]}>
+                    Loading...
+                  </Animated.Text>
+                </View>
               </View>
             )}
-            
+
             {stillUneasyError && (
-              <View style={styles.stillUneasyErrorContainer}>
+              <View style={styles.stillUneasyContainer}>
                 <Text style={styles.errorText}>{stillUneasyError}</Text>
                 <TouchableOpacity onPress={handleStillUneasyRetry} style={styles.retryButton}>
                   <Text style={styles.retryButtonText}>Retry</Text>
                 </TouchableOpacity>
               </View>
             )}
-            
+
             {stillUneasyResponse && (
               <View style={styles.stillUneasyContainer}>
-                <Text style={styles.stillUneasyTitle}>Please don't worry</Text>
                 {parsedStillUneasyResponse && parsedStillUneasyResponse.sections ? (
                   renderJsonSections(parsedStillUneasyResponse.sections)
                 ) : (
@@ -1746,7 +1747,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-start',
-    marginTop: 32,
+    marginTop: 0,
   },
   stillUneasyLoadingIcon: {
     width: 24,
