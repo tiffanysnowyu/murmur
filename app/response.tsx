@@ -178,7 +178,54 @@ export default function ResponsePage() {
 
   // Component to render JSON sections with proper styling
   const renderJsonSections = (sections: Array<{type: string, content: string}>) => {
-    return sections.map((section, index) => {
+    const groupedSections: Array<{type: string, content: string, isList?: boolean}> = [];
+    let i = 0;
+
+    while (i < sections.length) {
+      const section = sections[i];
+
+      if (section.type === 'text') {
+        // Check if this text starts with a bullet point or number
+        const isBulletPoint = /^[•\-\*]\s/.test(section.content.trim());
+        const isNumberedPoint = /^\d+\.\s/.test(section.content.trim());
+
+        if (isBulletPoint || isNumberedPoint) {
+          // Group consecutive bullet/numbered points
+          const listItems = [section.content];
+          let j = i + 1;
+
+          while (j < sections.length && sections[j].type === 'text') {
+            const nextContent = sections[j].content.trim();
+            const nextIsBullet = /^[•\-\*]\s/.test(nextContent);
+            const nextIsNumbered = /^\d+\.\s/.test(nextContent);
+
+            if ((isBulletPoint && nextIsBullet) || (isNumberedPoint && nextIsNumbered)) {
+              listItems.push(sections[j].content);
+              j++;
+            } else {
+              break;
+            }
+          }
+
+          // Add grouped list as single entity
+          groupedSections.push({
+            type: 'text',
+            content: listItems.join('\n'),
+            isList: true
+          });
+
+          i = j;
+        } else {
+          groupedSections.push(section);
+          i++;
+        }
+      } else {
+        groupedSections.push(section);
+        i++;
+      }
+    }
+
+    return groupedSections.map((section, index) => {
       if (section.type === 'subtitle') {
         return (
           <Text key={index} style={styles.summarySubtitle}>
@@ -331,6 +378,27 @@ export default function ResponsePage() {
   const getSystemPrompt = (mode: string, isFollowUp: boolean = false) => {
     if (mode === 'summarize') {
       return `You are an expert content analyzer. You will be provided with article content that has been extracted from a web page.
+
+CORE PRINCIPLES:
+- Provide accurate, evidence-based information
+- Start with immediate reassurance for concerning claims
+- Focus on what actually matters to the user
+- Be warm and empathetic, not clinical or dismissive
+- Frame advice positively (what TO do, not what to avoid)
+- **CRITICAL: Acknowledge uncertainty and partial truths**
+  - If a claim might be partially true, say so
+  - If you're uncertain about very recent events, acknowledge this
+  - Don't make absolute statements unless you're certain
+  - Consider that broad claims might refer to specific recent events
+  - For current events claims, note your knowledge cutoff and suggest checking recent news
+
+REASSURANCE FRAMEWORK:
+- ALWAYS lead with reassurance when discussing potentially scary events
+- Put risks in statistical context (e.g., "You're more likely to...")
+- Emphasize long timelines when applicable ("could be centuries away")
+- Focus on what WON'T happen to the user personally
+- Include historical examples of similar fears that didn't materialize
+- Use calming language: "extremely unlikely", "distant possibility", "scientists monitor this closely"
 
 TASK: Provide a comprehensive analysis in EXACTLY this format:
 
@@ -1671,7 +1739,7 @@ const styles = StyleSheet.create({
     width: 264,
     height: 1,
     backgroundColor: '#D1D1D6',
-    marginTop: 32,
+    marginTop: 16, // In addition to the 16px underneath summaryOverviewText
     marginBottom: 32,
   },
   stillUneasyLoadingContainer: {
@@ -1724,6 +1792,10 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     lineHeight: 27, // 150% of 18px
     letterSpacing: -0.198,
+    marginBottom: 24,
+    flexWrap: 'wrap',
+    textAlign: 'left',
+    // borderWidth: 5,
   },
   claimContainer: {
     marginBottom: 0,
@@ -1949,7 +2021,7 @@ const styles = StyleSheet.create({
     fontFamily: 'SF Pro Display',
     fontWeight: '600',
     color: '#1A1A1A',
-    marginTop: 24,
-    marginBottom: 12,
+    marginBottom: 16,
+    marginTop: 8, // In addition to 16px marginBottom from the title. Makes the spacing under "What's True" feel less crowded.
   },
 });
