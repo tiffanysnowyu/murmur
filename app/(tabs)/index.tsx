@@ -47,8 +47,8 @@ const frameDurations = [
 const PAUSE          = 0;
 const NAV_BAR_HEIGHT = 76;
 const BUTTON_OFFSET  = 126;      // px above nav bar
-const BUTTON_WIDTH   = 200;      // adjust to your PNG's width
-const BUTTON_HEIGHT  = 56;       // adjust to your PNG's height
+const BUTTON_WIDTH   = 228;      // adjusted to match iPhone 16 - 8.png
+const BUTTON_HEIGHT  = 64;       // adjusted to match iPhone 16 - 8.png
 const FADE_EASING    = Easing.inOut(Easing.ease);
 
 export default function AnimatedWave() {
@@ -185,7 +185,8 @@ export default function AnimatedWave() {
           <ImageBackground
             source={require('@/assets/images/check_button.png')}
             style={styles.checkImage}
-            imageStyle={styles.checkImage}
+            imageStyle={[styles.checkImage, { borderRadius: 100 }]}
+            resizeMode="contain"
           >
             <Animated.Text style={[styles.checkText, { transform: [{ scale: checkScale }] }]}>
               Check
@@ -206,10 +207,10 @@ const styles = StyleSheet.create({
   },
   wave: {
     position: 'absolute',
-    width: '350%',
-    height: '350%',
-    top: '-125%',
-    left: '-125%',
+    width: '355%',
+    height: '355%',
+    top: '-130%',
+    left: '-130%',
   },
   testVideo: {
     position: 'absolute',
@@ -317,6 +318,8 @@ const styles = StyleSheet.create({
     height: BUTTON_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   checkText: {
     fontSize: 24,

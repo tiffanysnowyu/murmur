@@ -1090,18 +1090,13 @@ Provide additional context, perspective, and reassurance that might help address
           )}
         </View>
 
-        <ScrollView 
-          style={styles.summaryContent} 
+        <ScrollView
+          style={styles.summaryContent}
           showsVerticalScrollIndicator={false}
           onScroll={(event) => {
-            const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
-            const scrollY = contentOffset.y;
-            
-            // Hide title after scrolling 20px
+            const scrollY = event.nativeEvent.contentOffset.y;
             setShowSummaryTitle(scrollY < 20);
-            
-            // Show CTAs when scrolled past a certain point (e.g., 300px)
-            setShowCTAs(scrollY > 10);
+            setShowCTAs(scrollY > 300);
           }}
           scrollEventThrottle={16}
         >
@@ -1239,15 +1234,15 @@ Provide additional context, perspective, and reassurance that might help address
           )} */}
 
    
-        </ScrollView>
+          {/* CTA Buttons at the bottom */}
+          {showCTAs && !savedResponse && (
+            <View style={[styles.ctaContainer, { marginBottom: 40 }]}>
+              <CtaButton onPress={handleAnalyzeClaims} buttonText="Analyze these claims" />
+              <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
+            </View>
+          )}
 
-       {/* CTA Buttons at the bottom */}
-        {showCTAs && !savedResponse && (
-          <View style={styles.ctaContainer}>
-            <CtaButton onPress={handleAnalyzeClaims} buttonText="Analyze these claims" />
-            <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
-          </View>
-        )}
+        </ScrollView>
       </MainScreen>
     );
   }
@@ -1350,8 +1345,8 @@ Provide additional context, perspective, and reassurance that might help address
         )}
       </View>
 
-      <ScrollView 
-        style={styles.summaryContent} 
+      <ScrollView
+        style={styles.summaryContent}
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
           const scrollY = event.nativeEvent.contentOffset.y;
@@ -1700,14 +1695,14 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   keyClaimsSection: {
-    marginBottom: 72,
+    marginBottom: 78,
   },
   summarySectionTitle: {
     fontSize: 24,
     fontFamily: "SF Pro Display",
     fontWeight: "600",
     color: TEXT_PRIMARY,
-    marginBottom: 16,
+    marginBottom: 24,
     marginTop: 48,
   },
   summaryArticleContainer: {

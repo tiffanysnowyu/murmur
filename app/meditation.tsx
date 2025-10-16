@@ -228,11 +228,26 @@ export default function MeditationScreen() {
         ]).start(() => {
           // Continue the loop if not stopped and haven't reached 3 cycles
           if (!animationStopped.current && cycleCount < 3) {
-            pulseWithColorChange();
+            // Fade out before next cycle
+            Animated.timing(breathingTextOpacity, {
+              toValue: 0,
+              duration: 800,
+              useNativeDriver: true,
+            }).start(() => {
+              if (!animationStopped.current) {
+                pulseWithColorChange();
+              }
+            });
           } else if (cycleCount >= 3) {
             // After 3 cycles, hide breathing text and show CTAs
-            setBreathingText('');
-            setTimeout(() => setShowCTAs(true), 500);
+            Animated.timing(breathingTextOpacity, {
+              toValue: 0,
+              duration: 1000,
+              useNativeDriver: true,
+            }).start(() => {
+              setBreathingText('');
+              setTimeout(() => setShowCTAs(true), 500);
+            });
           }
         });
       });
