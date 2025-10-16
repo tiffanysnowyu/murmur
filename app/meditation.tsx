@@ -119,6 +119,7 @@ export default function MeditationScreen() {
   const [showFlower, setShowFlower] = useState(false);
   const [showPinkFlower, setShowPinkFlower] = useState(false);
   const [showCTAs, setShowCTAs] = useState(false);
+  const [breathingText, setBreathingText] = useState<'Inhale' | 'Exhale' | ''>('');
   const blueFlowerOpacity = useRef(new Animated.Value(0)).current;
   const pinkFlowerOpacity = useRef(new Animated.Value(0)).current;
   const flowerScale = useRef(new Animated.Value(1)).current;
@@ -151,7 +152,8 @@ export default function MeditationScreen() {
       
       cycleCount++;
       
-      // Expand and transition to pink
+      // Set "Inhale" text and expand (flower expands as you inhale)
+      setBreathingText('Inhale');
       Animated.parallel([
         Animated.timing(flowerScale, {
           toValue: 1.25, // Scale to 357px (286 * 1.25)
@@ -170,8 +172,9 @@ export default function MeditationScreen() {
         }),
       ]).start(() => {
         if (animationStopped.current) return;
-        
-        // Contract and transition back to blue
+
+        // Set "Exhale" text and contract (flower contracts as you exhale)
+        setBreathingText('Exhale');
         Animated.parallel([
           Animated.timing(flowerScale, {
             toValue: 1,
@@ -189,11 +192,12 @@ export default function MeditationScreen() {
             useNativeDriver: true,
           }),
         ]).start(() => {
-          // Continue the loop if not stopped and haven't reached 5 cycles
+          // Continue the loop if not stopped and haven't reached 3 cycles
           if (!animationStopped.current && cycleCount < 3) {
             pulseWithColorChange();
           } else if (cycleCount >= 3) {
-            // After 3 cycles, show CTAs
+            // After 3 cycles, hide breathing text and show CTAs
+            setBreathingText('');
             setTimeout(() => setShowCTAs(true), 500);
           }
         });
@@ -216,7 +220,7 @@ export default function MeditationScreen() {
     setPhase('flower')
   }
 
-  const handleDoItAgain = () => {    
+  const handleDoItAgain = () => {
     blueFlowerOpacity.setValue(0);
     pinkFlowerOpacity.setValue(0);
     flowerScale.setValue(1);
@@ -225,6 +229,7 @@ export default function MeditationScreen() {
     setShowFlower(false);
     setShowPinkFlower(false);
     setShowCTAs(false);
+    setBreathingText('');
     setPhase('intro')
     setIntroPhaseNum(0)
   };
@@ -307,18 +312,25 @@ export default function MeditationScreen() {
         {phase == 'flower' && showPinkFlower && (
           <Animated.View style={[
             styles.flowerContainer,
-            { 
+            {
               opacity: pinkFlowerOpacity,
               transform: [{ scale: flowerScale }],
               position: 'absolute'
             }
           ]}>
-            <Image 
-              source={require('../assets/images/flower_pink.png')} 
+            <Image
+              source={require('../assets/images/flower_pink.png')}
               style={styles.flowerImage}
               resizeMode="contain"
             />
           </Animated.View>
+        )}
+
+        {/* Breathing Text */}
+        {phase == 'flower' && breathingText && (
+          <Text style={styles.breathingText}>
+            {breathingText}
+          </Text>
         )}
       </View>
 
@@ -394,5 +406,18 @@ const styles = StyleSheet.create({
     left: 24,
     right: 24,
     alignItems: 'center',
+  },
+  breathingText: {
+    position: 'absolute',
+    bottom: 80,
+    left: 24,
+    right: 24,
+    fontSize: 32,
+    fontFamily: 'SF Pro Display',
+    fontWeight: '600', // Semibold
+    color: '#B0B0B8',
+    textAlign: 'center',
+    lineHeight: 48, // 150% of 32px
+    letterSpacing: -0.352, // -1.1% of 32px
   },
 });
