@@ -7,7 +7,7 @@ export const MainScreen = ({ children, backgroundColor = "#FFFFFF" }: {
 }) => {
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor }]}>
-      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24 }}>{children}</View>
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 64 }}>{children}</View>
     </SafeAreaView>
   )
 }

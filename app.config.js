@@ -11,7 +11,7 @@ module.exports = {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
-      buildNumber: '10', // Increase this by 1 for each new app release to the app store it must be bigger than the last release number
+      buildNumber: '11', // Increase this by 1 for each new app release to the app store it must be bigger than the last release number
       supportsTablet: false, // Set to false to exclude iPad from supported devices
       bundleIdentifier: 'com.anonymous.murmurapp',
       icon: './assets/images/icon.png',

@@ -233,11 +233,32 @@ export default function ResponsePage() {
           </Text>
         );
       } else if (section.type === 'text') {
-        return (
-          <Text key={index} style={styles.summaryOverviewText}>
-            {section.content}
-          </Text>
-        );
+        // Check if this is a list (bullet points)
+        if (section.isList) {
+          const listItems = section.content.split('\n');
+          return (
+            <View key={index} style={{ marginBottom: 16 }}>
+              {listItems.map((item, itemIndex) => {
+                // Remove the bullet point character and clean up
+                const cleanItem = item.replace(/^[•\-\*]\s/, '').trim();
+                return (
+                  <View key={itemIndex} style={[styles.bulletPointContainer, { marginBottom: 16 }]}>
+                    <Text style={[styles.summaryOverviewText, { marginRight: 12, marginBottom: 0 }]}>-</Text>
+                    <Text style={[styles.summaryOverviewText, { flex: 1, marginBottom: 0 }]}>
+                      {cleanItem}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          );
+        } else {
+          return (
+            <Text key={index} style={styles.summaryOverviewText}>
+              {section.content}
+            </Text>
+          );
+        }
       }
       return null;
     });
@@ -470,7 +491,8 @@ CALMING REQUIREMENT:
 Every response about potentially scary events MUST include:
 - Opening reassurance about timeline/probability
 - A "Why you don't need to worry" section with 3+ specific points
-- Statistical context comparing to accepted daily risks
+- Statistical context comparing to accepted daily risks with SPECIFIC examples (e.g., "more likely to be struck by lightning", "smaller chance than winning the lottery")
+- Address ALL anxiety-inducing events mentioned anywhere in your response (including secondary risks like tsunamis when discussing earthquakes)
 - Emphasis that no immediate action is needed
 - Closing reminder that the user is safe
 
@@ -509,10 +531,12 @@ Dynamically structure your response based on what would be most helpful. Conside
 - **For broad claims**: Consider if they might refer to specific programs/instances rather than everything
 - **Acknowledge partial truths**: If some aspect might be true while the broader claim is false, explain the nuance
 
-**Perspective and context** (include when a true claim might be overwhelming):
+**Perspective and context** (ALWAYS REQUIRED for any potentially anxiety-inducing content):
+- MUST include specific probability comparisons using concrete examples (e.g., "The chances are smaller than being struck by lightning", "You're more likely to win the lottery twice")
+- Address ALL potentially scary events mentioned in your response, not just the main claim
 - Historical context showing how we've successfully managed similar situations
 - How millions of people safely navigate this every day
-- Don't create a section for this unless it truly helps reduce anxiety
+- For any secondary risks mentioned (like tsunamis when discussing earthquakes), provide separate reassurance
 
 **Practical actions** (include when there are clear, simple steps):
 - Specific, positive actions they can take
@@ -521,6 +545,14 @@ Dynamically structure your response based on what would be most helpful. Conside
 **Sources** - Include 2-4 credible sources for key health/safety claims
 
 **Bottom line** - End with reassurance and empowerment.
+
+MOBILE READING OPTIMIZATION:
+Follow this ideal pattern for mobile readability:
+1. Start with a paragraph for context or emotional tone
+2. Follow with a short bullet list for clarity (2-4 key points)
+3. Gentle transition back to prose for conclusion/reassurance
+
+Keep responses concise and scannable. Use shorter paragraphs (2-3 sentences max). This paragraph-bullets-paragraph flow creates excellent mobile reading rhythm.
 
 CRITICAL FORMATTING REQUIREMENT:
 You MUST format your entire response as a JSON object with this exact structure:
@@ -537,7 +569,15 @@ You MUST format your entire response as a JSON object with this exact structure:
   ]
 }
 
-Use "subtitle" type for section headers and "text" type for paragraph content. Do not include any text outside this JSON structure. Do not use markdown formatting or asterisks - the app will handle styling based on the type field.`;
+Use "subtitle" type for section headers and "text" type for paragraph content. Do not include any text outside this JSON structure. Do not use markdown formatting or asterisks - the app will handle styling based on the type field.
+
+CRITICAL TEXT FORMATTING RULES:
+- NEVER end sentences with trailing periods followed by excessive spacing (e.g., "This is concerning...")
+- NEVER use ellipses (...) unless absolutely necessary for natural speech flow
+- NEVER create random line breaks or paragraph breaks mid-sentence
+- Complete all sentences with proper punctuation
+- Ensure all paragraphs flow naturally without abrupt cutoffs
+- Do not use numbered lists (1., 2., 3., etc.). Use bullet points (-) only when listing items and when they enhance readability and visual appeal.`;
     }
   };
 
@@ -946,6 +986,7 @@ You MUST format your entire response as a JSON object with this exact structure:
 }
 
 Use "subtitle" type for section headers and "text" type for paragraph content. Do not include any text outside this JSON structure. Do not use markdown formatting or asterisks - the app will handle styling based on the type field.
+IMPORTANT: Do not use numbered lists (1., 2., 3., etc.). Use bullet points (•) only when listing items.
 
 Be conversational, understanding, and constructive. Avoid dismissing their concerns. Instead, help them think through the issue more thoroughly and leave them feeling more at peace with concrete, specific reassurances.`;
 
