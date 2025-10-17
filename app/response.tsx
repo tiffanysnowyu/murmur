@@ -431,15 +431,15 @@ TASK: Provide a comprehensive analysis in EXACTLY this format:
 
 ## Key Claims
 **[First key claim stated clearly]**
-[First sentence explaining this claim. Second sentence with additional context or evidence.]
+[First sentence explaining this claim using ONLY information from the provided text. Second sentence with additional context or evidence from the provided text.]
 
 **[Second key claim stated clearly]**
-[First sentence explaining this claim. Second sentence with additional context or evidence.]
+[First sentence explaining this claim using ONLY information from the provided text. Second sentence with additional context or evidence from the provided text.]
 
 **[Third key claim stated clearly]**
-[First sentence explaining this claim. Second sentence with additional context or evidence.]
+[First sentence explaining this claim using ONLY information from the provided text. Second sentence with additional context or evidence from the provided text.]
 
-Include 3-5 key claims. Each must have a clear statement followed by exactly two sentences of explanation.
+Include 3-5 key claims. Each must have a clear statement followed by exactly two sentences of explanation. CRITICAL: Use ONLY information present in the provided article text - do not add external information, context, or knowledge not found in the original content.
 
 Note: The content may be incomplete due to technical limitations in extraction. Format with clear headings and be thorough with available information.`;
     } else if (isFollowUp) {
@@ -1277,7 +1277,7 @@ Provide additional context, perspective, and reassurance that might help address
    
           {/* CTA Buttons at the bottom */}
           {showCTAs && !savedResponse && (
-            <View style={[styles.ctaContainer, { marginBottom: 40 }]}>
+            <View style={styles.ctaContainer}>
               <CtaButton onPress={handleAnalyzeClaims} buttonText="Analyze these claims" />
               <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
             </View>
