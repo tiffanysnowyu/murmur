@@ -55,6 +55,10 @@ export default function ResponsePage() {
   const [expandedClaims, setExpandedClaims] = useState<Set<number>>(new Set());
   const [showSummaryTitle, setShowSummaryTitle] = useState(true);
   const [showCTAs, setShowCTAs] = useState(false);
+
+  // Animation values for floating CTAs
+  const ctaOpacity = useRef(new Animated.Value(0)).current;
+  const ctaTranslateY = useRef(new Animated.Value(20)).current;
   const [parsedSummary, setParsedSummary] = useState<{
     article: string;
     overview: string;
@@ -272,6 +276,37 @@ export default function ResponsePage() {
       newExpanded.add(index);
     }
     setExpandedClaims(newExpanded);
+  };
+
+  // Function to animate CTAs
+  const animateCTAs = (show: boolean) => {
+    if (show) {
+      Animated.parallel([
+        Animated.timing(ctaOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ctaTranslateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(ctaOpacity, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ctaTranslateY, {
+          toValue: 20,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
   };
 
   // Save insight to file
@@ -902,6 +937,16 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     }
   }, [inputText, currentMode, savedResponse]);
 
+  // Handle initial CTA state for short content
+  useEffect(() => {
+    if (response && !loading) {
+      // Only show CTAs initially if we're certain the content is too short to scroll
+      // Let the scroll handler determine when to show CTAs based on actual measurements
+      setShowCTAs(false);
+      animateCTAs(false);
+    }
+  }, [response, loading]);
+
   const handleRetry = () => {
     if (inputText && typeof inputText === 'string') {
       setError('');
@@ -1133,11 +1178,25 @@ Provide additional context, perspective, and reassurance that might help address
 
         <ScrollView
           style={styles.summaryContent}
+          contentContainerStyle={{ paddingBottom: 206 }}
           showsVerticalScrollIndicator={false}
           onScroll={(event) => {
-            const scrollY = event.nativeEvent.contentOffset.y;
+            const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+            const scrollY = contentOffset.y;
+
+            // Hide title after scrolling 20px
             setShowSummaryTitle(scrollY < 20);
-            setShowCTAs(scrollY > 300);
+
+            // Show CTAs when near end of content (within 60px) or if content is too short to scroll
+            const paddingToBottom = 60;
+            const isNearEnd = scrollY + layoutMeasurement.height >= contentSize.height - paddingToBottom;
+            const canScroll = contentSize.height > layoutMeasurement.height;
+            const shouldShowCTAs = isNearEnd || !canScroll;
+
+            if (shouldShowCTAs !== showCTAs) {
+              setShowCTAs(shouldShowCTAs);
+              animateCTAs(shouldShowCTAs);
+            }
           }}
           scrollEventThrottle={16}
         >
@@ -1275,15 +1334,23 @@ Provide additional context, perspective, and reassurance that might help address
           )} */}
 
    
-          {/* CTA Buttons at the bottom */}
+        </ScrollView>
+
+        {/* Floating CTA Buttons at the bottom */}
+        <Animated.View style={[
+          styles.floatingCtaContainer,
+          {
+            opacity: ctaOpacity,
+            transform: [{ translateY: ctaTranslateY }],
+          }
+        ]}>
           {showCTAs && !savedResponse && (
-            <View style={styles.ctaContainer}>
+            <>
               <CtaButton onPress={handleAnalyzeClaims} buttonText="Analyze these claims" />
               <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
-            </View>
+            </>
           )}
-
-        </ScrollView>
+        </Animated.View>
       </MainScreen>
     );
   }
@@ -1388,11 +1455,25 @@ Provide additional context, perspective, and reassurance that might help address
 
       <ScrollView
         style={styles.summaryContent}
+        contentContainerStyle={{ paddingBottom: 128 }}
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
-          const scrollY = event.nativeEvent.contentOffset.y;
+          const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+          const scrollY = contentOffset.y;
+
+          // Hide title after scrolling 20px
           setShowSummaryTitle(scrollY < 20);
-          setShowCTAs(scrollY > 300);
+
+          // Show CTAs when near end of content (within 60px) or if content is too short to scroll
+          const paddingToBottom = 60;
+          const isNearEnd = scrollY + layoutMeasurement.height >= contentSize.height - paddingToBottom;
+          const canScroll = contentSize.height > layoutMeasurement.height;
+          const shouldShowCTAs = isNearEnd || !canScroll;
+
+          if (shouldShowCTAs !== showCTAs) {
+            setShowCTAs(shouldShowCTAs);
+            animateCTAs(shouldShowCTAs);
+          }
         }}
         scrollEventThrottle={16}
       >
@@ -1647,22 +1728,29 @@ Provide additional context, perspective, and reassurance that might help address
           <Text style={styles.noContentText}>No content provided for analysis. Please go back and enter some content.</Text>
         )}
 
-        {/* CTA Button at the bottom */}
-        {showCTAs && !savedResponse && (
-          currentMode === 'analyze' ? (
-            <View style={styles.ctaContainer}>
-              <View style={styles.ctaButton}>
-                <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue to deep breathing" colorStyle="primary" />
-              </View>
-              <View style={styles.ctaButton}>
-                <CtaButton onPress={() => router.dismissAll()} buttonText="Skip for now" colorStyle="secondary" />
-              </View>
-            </View>
-          ) : (
-            <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue" />
-          )
-        )}
       </ScrollView>
+
+      {/* Floating CTA Button at the bottom */}
+      <Animated.View style={[
+        styles.floatingCtaContainer,
+        {
+          opacity: ctaOpacity,
+          transform: [{ translateY: ctaTranslateY }],
+        }
+      ]}>
+        {showCTAs && !savedResponse && (
+          <>
+            {currentMode === 'analyze' ? (
+              <>
+                <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue to deep breathing" colorStyle="primary" />
+                <CtaButton onPress={() => router.dismissAll()} buttonText="Skip for now" colorStyle="secondary" />
+              </>
+            ) : (
+              <CtaButton onPress={() => router.push('/meditation')} buttonText="Continue" />
+            )}
+          </>
+        )}
+      </Animated.View>
 
       <Modal
         visible={showSavedModal}
@@ -1736,7 +1824,7 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   keyClaimsSection: {
-    marginBottom: 78,
+    marginBottom: 0,
   },
   summarySectionTitle: {
     fontSize: 24,
@@ -1923,6 +2011,16 @@ const styles = StyleSheet.create({
   ctaContainer: {
     paddingVertical: 0,
     gap: 16,
+  },
+  floatingCtaContainer: {
+    position: 'absolute',
+    bottom: 32,
+    left: 24,
+    right: 24,
+    paddingVertical: 0,
+    gap: 16,
+    backgroundColor: 'transparent',
+    paddingTop: 78, // Ensure 78px space above CTAs
   },
   ctaButton: {
     width: '100%',

@@ -13,7 +13,7 @@ import {
   ImageSourcePropType,
 } from 'react-native';
 import { Link } from 'expo-router';
-import { Video } from 'expo-av';
+import { Video, ResizeMode } from 'expo-av';
 
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -142,7 +142,7 @@ export default function AnimatedWave() {
         shouldPlay={true}
         isLooping={true}
         isMuted={true}
-        resizeMode="contain"
+        resizeMode={ResizeMode.CONTAIN}
         useNativeControls={false}
       />
 

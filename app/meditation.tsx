@@ -40,8 +40,8 @@ const IntroScreen = ({
   const timeoutRef = useRef<NodeJS.Timeout | number | null>(null);
 
   useEffect(() => {
-    // Reset subtitle opacity when subtitle changes
-    subtitleOpacity.setValue(0);
+    // // Reset subtitle opacity when subtitle changes
+    // subtitleOpacity.setValue(0);
 
     const startSubtitleAnimation = () => {
       // Start subtitle fade-in
@@ -81,7 +81,8 @@ const IntroScreen = ({
       titleOpacity.stopAnimation();
       subtitleOpacity.stopAnimation();
     };
-  }, [subtitle, titleOpacity, subtitleOpacity, titleFadeInDuration, subtitleFadeInDuration, waitDuration, screenFinished, shouldFadeTitle]);
+    // the below list used to have subtitle in it (if the subtitleOpacity.setValue(0); line above is uncommented)
+  }, [titleOpacity, subtitleOpacity, titleFadeInDuration, subtitleFadeInDuration, waitDuration, screenFinished, shouldFadeTitle]);
 
   const handleSkipIntro = () => {
     // Cancel all animations and timeouts
@@ -99,8 +100,12 @@ const IntroScreen = ({
   return (
     <>
       <View style={styles.textContainer}>
-        {(title === 'Clear your mind' || title === 'Clear your heart' || title === 'Get ready') ? (
+        <Animated.Text style={[styles.mainTitle, { opacity: titleOpacity }]}>
+          {title}
+        </Animated.Text>
+        {/* {(title === 'Clear your mind' || title === 'Clear your heart' || title === 'Get ready') ? (
           <Animated.Image
+            key={title}
             source={
               title === 'Clear your mind' ? require('../assets/images/Clear your mind.png') :
               title === 'Clear your heart' ? require('../assets/images/Clear your heart.png') :
@@ -113,7 +118,7 @@ const IntroScreen = ({
           <Animated.Text style={[styles.mainTitle, { opacity: titleOpacity }]}>
             {title}
           </Animated.Text>
-        )}
+        )} */}
         <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
           {subtitle}
         </Animated.Text>
@@ -228,26 +233,11 @@ export default function MeditationScreen() {
         ]).start(() => {
           // Continue the loop if not stopped and haven't reached 3 cycles
           if (!animationStopped.current && cycleCount < 3) {
-            // Fade out before next cycle
-            Animated.timing(breathingTextOpacity, {
-              toValue: 0,
-              duration: 800,
-              useNativeDriver: true,
-            }).start(() => {
-              if (!animationStopped.current) {
-                pulseWithColorChange();
-              }
-            });
+            pulseWithColorChange();
           } else if (cycleCount >= 3) {
             // After 3 cycles, hide breathing text and show CTAs
-            Animated.timing(breathingTextOpacity, {
-              toValue: 0,
-              duration: 1000,
-              useNativeDriver: true,
-            }).start(() => {
-              setBreathingText('');
-              setTimeout(() => setShowCTAs(true), 500);
-            });
+            setBreathingText('');
+            setTimeout(() => setShowCTAs(true), 500);
           }
         });
       });
@@ -304,6 +294,7 @@ export default function MeditationScreen() {
     };
   }, [phase])
 
+  // To change intro phase timings only have to modify the values here
   const introPhases = [
     {title: 'Clear your mind', subtitle: 'Inhale for 4s', titleFadeInDuration: 3000, subtitleFadeInDuration: 2000, waitDuration: 4000, shouldFadeTitle: true},
     {title: 'Clear your mind', subtitle: 'Exhale for 6s', titleFadeInDuration: 1000, subtitleFadeInDuration: 2000, waitDuration: 6000, shouldFadeTitle: false},
@@ -322,7 +313,7 @@ export default function MeditationScreen() {
 
         {phase == 'intro' && (
           <IntroScreen
-            key={introPhases[introPhaseNum].title}
+            key={introPhaseNum}
             title={introPhases[introPhaseNum].title}
             subtitle={introPhases[introPhaseNum].subtitle}
             titleFadeInDuration={introPhases[introPhaseNum].titleFadeInDuration}
@@ -445,7 +436,7 @@ const styles = StyleSheet.create({
   },
   ctaContainer: {
     position: 'absolute',
-    bottom: 40,
+    bottom: 32,
     left: 24,
     right: 24,
     alignItems: 'center',
@@ -464,7 +455,7 @@ const styles = StyleSheet.create({
   },
   breathingText: {
     position: 'absolute',
-    bottom: 80,
+    bottom: 114,
     left: 24,
     right: 24,
     fontSize: 32,
