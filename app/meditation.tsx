@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { MainScreen, CtaButton } from '@/components/Common';
+import Svg, { Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 
 
 interface IntroScreenProps {
@@ -100,25 +101,27 @@ const IntroScreen = ({
   return (
     <>
       <View style={styles.textContainer}>
-        <Animated.Text style={[styles.mainTitle, { opacity: titleOpacity }]}>
-          {title}
-        </Animated.Text>
-        {/* {(title === 'Clear your mind' || title === 'Clear your heart' || title === 'Get ready') ? (
-          <Animated.Image
-            key={title}
-            source={
-              title === 'Clear your mind' ? require('../assets/images/Clear your mind.png') :
-              title === 'Clear your heart' ? require('../assets/images/Clear your heart.png') :
-              require('../assets/images/Get ready.png')
-            }
-            style={[styles.titleImage, { opacity: titleOpacity }]}
-            resizeMode="contain"
-          />
-        ) : (
-          <Animated.Text style={[styles.mainTitle, { opacity: titleOpacity }]}>
-            {title}
-          </Animated.Text>
-        )} */}
+        <Animated.View style={[styles.titleContainer, { opacity: titleOpacity }]}>
+          <Svg height="40" width="280" style={styles.gradientSvg}>
+            <Defs>
+              <LinearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                <Stop offset="0%" stopColor="#B6DCD1" />
+                <Stop offset="100%" stopColor="#248E9C" />
+              </LinearGradient>
+            </Defs>
+            <SvgText
+              x="140"
+              y="28"
+              fontSize="24"
+              fontFamily="SF Pro Display"
+              fontWeight="600"
+              fill="url(#textGrad)"
+              textAnchor="middle"
+            >
+              {title}
+            </SvgText>
+          </Svg>
+        </Animated.View>
         <Animated.Text style={[styles.subtitle, { opacity: subtitleOpacity }]}>
           {subtitle}
         </Animated.Text>
@@ -436,6 +439,31 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: 72,
+  },
+  gradientTextContainer: {
+    position: 'relative',
+    alignItems: 'center',
+  },
+  gradientText: {
+    fontSize: 24,
+    fontFamily: 'SF Pro Display',
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  gradientTextBase: {
+    color: '#FF0000', // Red base
+  },
+  gradientTextOverlay: {
+    position: 'absolute',
+    color: '#0000FF', // Blue overlay
+    opacity: 0.7,
+    top: 0,
+    left: 0,
+    right: 0,
+  },
   mainTitle: {
     fontSize: 24,
     fontFamily: 'SF Pro Display',
@@ -487,7 +515,7 @@ const styles = StyleSheet.create({
   },
   breathingText: {
     position: 'absolute',
-    bottom: 114,
+    bottom: 160,
     left: 24,
     right: 24,
     fontSize: 24,
