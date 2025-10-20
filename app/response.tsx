@@ -283,7 +283,7 @@ export default function ResponsePage() {
         if (section.isList) {
           const listItems = section.content.split('\n');
           return (
-            <View key={index} style={{ marginBottom: 16 }}>
+            <View key={index} style={{ marginBottom: index === groupedSections.length - 1 ? -32 : 16 }}>
               {listItems.map((item, itemIndex) => {
                 // Remove the bullet point character and clean up
                 const cleanItem = item.replace(/^[•\-\*]\s/, '').trim();
@@ -1388,7 +1388,7 @@ Provide additional context, perspective, and reassurance that might help address
             transform: [{ translateY: ctaTranslateY }],
           }
         ]}>
-          {showCTAs && !savedResponse && !loading && (
+          {showCTAs && !savedResponse && !loading && !stillUneasyLoading && (
             <>
               <CtaButton onPress={handleAnalyzeClaims} buttonText="Analyze these claims" />
               <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
@@ -1723,7 +1723,7 @@ Provide additional context, perspective, and reassurance that might help address
         {!loading && !error && 
           <View style={[styles.summarySection, { marginBottom: 78 }]}>
             <View style={styles.bottomLineDivider} />
-            <Pressable onPress={fetchStillUneasyResponse}>
+            <Pressable onPress={fetchStillUneasyResponse} style={{ zIndex: 999 }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={[styles.stillUneasyButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
             </Pressable>
             
@@ -1781,8 +1781,8 @@ Provide additional context, perspective, and reassurance that might help address
           opacity: ctaOpacity,
           transform: [{ translateY: ctaTranslateY }],
         }
-      ]}>
-        {showCTAs && !savedResponse && !loading && (
+      ]} pointerEvents={showCTAs && !savedResponse && !loading && !stillUneasyLoading ? 'auto' : 'none'}>
+        {showCTAs && !savedResponse && !loading && !stillUneasyLoading && (
           <>
             {currentMode === 'analyze' ? (
               <>
@@ -1969,7 +1969,7 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     lineHeight: 27, // 150% of 18px
     letterSpacing: -0.198,
-    marginBottom: 24,
+    marginBottom: 16,
     flexWrap: 'wrap',
     textAlign: 'left',
     // borderWidth: 5,
