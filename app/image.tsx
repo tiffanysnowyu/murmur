@@ -366,7 +366,7 @@ export default function ImagePage() {
           </View>
           
           <Image source={require('../assets/images/icon_info.png')} style={styles.infoIcon} />
-          <Text style={styles.infoText}>Best results: upload a clean screenshot (sharp, unedited).</Text>
+          <Text style={styles.infoText}>Preview is cropped for display. The full image will be used for analysis.</Text>
         </View>
       )}
 
@@ -420,18 +420,20 @@ export default function ImagePage() {
       </View>
 
       {selectedImage && !isProcessing && imageExtractedText && (
-        <CtaButton 
-          onPress={() => router.push({
-            pathname: '/text',
-            params: {
-              initialText: imageExtractedText,
-              mode: 'analyze',
-              cameFromImageScreen: 'true',
-            }
-          })}
-          buttonText="Continue" 
-          colorStyle="primary" 
-        />
+        <View style={styles.ctaContainer}>
+          <CtaButton
+            onPress={() => router.push({
+              pathname: '/text',
+              params: {
+                initialText: imageExtractedText,
+                mode: 'analyze',
+                cameFromImageScreen: 'true',
+              }
+            })}
+            buttonText="Continue"
+            colorStyle="primary"
+          />
+        </View>
       )}
     </MainScreen>
   );
@@ -601,5 +603,11 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     lineHeight: 27, // 150% of 18px
     letterSpacing: -0.198,
+  },
+  ctaContainer: {
+    position: 'absolute',
+    bottom: 32,
+    left: 24,
+    right: 24,
   },
 });

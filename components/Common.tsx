@@ -7,7 +7,7 @@ export const MainScreen = ({ children, backgroundColor = "#FFFFFF" }: {
 }) => {
   return (
     <SafeAreaView style={[styles.screen, { backgroundColor }]}>
-      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 32 }}>{children}</View>
+      <View style={{ flex: 1, paddingHorizontal: 24, paddingTop: 24, paddingBottom: 0 }}>{children}</View>
     </SafeAreaView>
   )
 }
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   backButton: {
-    paddingBottom: 48,
+    paddingBottom: 40,
     flexDirection: 'row',
     alignItems: 'center',
     width: 128,

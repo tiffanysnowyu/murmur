@@ -1499,7 +1499,7 @@ Provide additional context, perspective, and reassurance that might help address
 
       <ScrollView
         style={styles.summaryContent}
-        contentContainerStyle={{ paddingBottom: 156 }} // 156px - 78px CTA paddingTop = 78px space between "Still uneasy?" and CTAs
+        contentContainerStyle={{ paddingBottom: 164 }} // Creates exactly 78px space between "Still uneasy?" and CTAs
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
           const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
@@ -1827,7 +1827,7 @@ const styles = StyleSheet.create({
   
   // Summary mode styles
   summaryHeaderPinned: {
-    paddingBottom: 16,
+    paddingBottom: 0,
   },
   summaryArea: {
     flexDirection: "row",
