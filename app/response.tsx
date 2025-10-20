@@ -1757,7 +1757,7 @@ Provide additional context, perspective, and reassurance that might help address
             )}
 
             {stillUneasyResponse && (
-              <View style={styles.stillUneasyContainer}>
+              <View style={[styles.stillUneasyContainer, { marginBottom: -16 }]}>
                 {parsedStillUneasyResponse && parsedStillUneasyResponse.sections ? (
                   renderJsonSections(parsedStillUneasyResponse.sections)
                 ) : (
