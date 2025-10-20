@@ -1876,7 +1876,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: TEXT_PRIMARY,
     marginBottom: 24,
-    marginTop: 48,
+    marginTop: 40,
   },
   summaryArticleContainer: {
     overflow: 'hidden',
@@ -1902,13 +1902,13 @@ const styles = StyleSheet.create({
   summaryDivider: {
     height: 1,
     backgroundColor: DIVIDER_COLOR,
-    marginTop: 48,
+    marginTop: 40,
   },
   bottomLineDivider: {
     width: 264,
     height: 1,
     backgroundColor: '#D1D1D6',
-    marginTop: 16, // In addition to the 16px underneath summaryOverviewText
+    marginTop: 32, 
     marginBottom: 32,
   },
   stillUneasyButton: {
@@ -1969,7 +1969,7 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     lineHeight: 27, // 150% of 18px
     letterSpacing: -0.198,
-    marginBottom: 16,
+    // marginBottom: 16,
     flexWrap: 'wrap',
     textAlign: 'left',
     // borderWidth: 5,
