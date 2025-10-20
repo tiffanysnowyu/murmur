@@ -12,6 +12,7 @@ import {
   Image,
   Animated,
   Easing,
+  TextInput,
 } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { insightsStorage } from '../utils/insightsStorage';
@@ -1143,9 +1144,16 @@ Provide additional context, perspective, and reassurance that might help address
           <View style={styles.summarySection}>
             <Text style={styles.summarySectionTitle}>Article</Text>
             <View style={styles.summaryArticleContainer}>
-              <Text style={styles.summaryArticleText} numberOfLines={showFullArticle ? undefined : 3}>
-                {inputText}
-              </Text>
+              <View style={{ pointerEvents: 'none' }}>
+                <TextInput
+                  style={styles.summaryArticleText}
+                  value={inputText}
+                  editable={false}
+                  scrollEnabled={false}
+                  multiline={true}
+                  numberOfLines={showFullArticle ? undefined : 3}
+                />
+              </View>
             </View>
             {!showFullArticle && (
               <Pressable onPress={() => setShowFullArticle(true)}>
@@ -1248,12 +1256,16 @@ Provide additional context, perspective, and reassurance that might help address
           <View style={styles.summarySection}>
             <Text style={styles.summarySectionTitle}>Article</Text>
             <View style={styles.summaryArticleContainer}>
-              <Text
-                style={styles.summaryArticleText}
-                numberOfLines={showFullArticle ? undefined : 3}
-              >
-                {inputText}
-              </Text>
+              <View style={{ pointerEvents: 'none' }}>
+                <TextInput
+                  style={styles.summaryArticleText}
+                  value={inputText}
+                  editable={false}
+                  scrollEnabled={false}
+                  multiline={true}
+                  numberOfLines={showFullArticle ? undefined : 3}
+                />
+              </View>
             </View>
             {!showFullArticle && (
               <Pressable onPress={() => setShowFullArticle(true)}>
@@ -1420,9 +1432,16 @@ Provide additional context, perspective, and reassurance that might help address
           <View style={styles.summarySection}>
             <Text style={styles.summarySectionTitle}>Article</Text>
             <View style={styles.summaryArticleContainer}>
-              <Text style={styles.summaryArticleText} numberOfLines={showFullArticle ? undefined : 3}>
-                {inputText}
-              </Text>
+              <View style={{ pointerEvents: 'none' }}>
+                <TextInput
+                  style={styles.summaryArticleText}
+                  value={inputText}
+                  editable={false}
+                  scrollEnabled={false}
+                  multiline={true}
+                  numberOfLines={showFullArticle ? undefined : 3}
+                />
+              </View>
             </View>
             {!showFullArticle && (
               <Pressable onPress={() => setShowFullArticle(true)}>
@@ -1533,12 +1552,16 @@ Provide additional context, perspective, and reassurance that might help address
           <View style={styles.summarySection}>
             <Text style={styles.summarySectionTitle}>Claim</Text>
             <View style={styles.summaryArticleContainer}>
-              <Text 
-                style={styles.summaryArticleText}
-                numberOfLines={showFullArticle ? undefined : 3}
-              >
-                {inputText}
-              </Text>
+              <View style={{ pointerEvents: 'none' }}>
+                <TextInput
+                  style={styles.summaryArticleText}
+                  value={inputText}
+                  editable={false}
+                  scrollEnabled={false}
+                  multiline={true}
+                  numberOfLines={showFullArticle ? undefined : 3}
+                />
+              </View>
             </View>
             {!showFullArticle && (
               <Pressable onPress={() => setShowFullArticle(true)}>

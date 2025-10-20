@@ -453,10 +453,10 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
     gap: 16,
   },
-  title: { 
+  title: {
     fontSize: 32,
     fontFamily: "SF Pro Display",
-    fontWeight: "600", 
+    fontWeight: "600",
     color: TEXT_PRIMARY,
   },
   subtitle: { 

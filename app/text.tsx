@@ -283,6 +283,9 @@ export default function TextPage() {
               placeholderTextColor="#D1D1D6"
               value={text}
               onChangeText={setText}
+              returnKeyType="done"
+              blurOnSubmit={true}
+              scrollEnabled={false}
             />
           </ScrollView>
         </KeyboardAvoidingView>

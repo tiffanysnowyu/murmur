@@ -102,10 +102,10 @@ const styles = StyleSheet.create({
   header: {
     gap: 16, 
   },
-  title: { 
+  title: {
     fontSize: 32,
     fontFamily: "SF Pro Display",
-    fontWeight: "600", 
+    fontWeight: "600",
     color: "#1A1A1A",
   },
   subtitle: { 
