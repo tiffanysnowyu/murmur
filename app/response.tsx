@@ -1305,9 +1305,13 @@ Provide additional context, perspective, and reassurance that might help address
                 <Text style={styles.summarySectionTitle}>Key Claims</Text>
               
                 {parsedSummary.keyClaims.map((claim, index) => (
-                  <Pressable 
+                  <Pressable
                     key={index}
-                    style={styles.claimContainer}
+                    style={[
+                      styles.claimContainer,
+                      // Remove bottom margin for last claim when expanded to prevent extra spacing above CTAs
+                      index === parsedSummary.keyClaims.length - 1 && expandedClaims.has(index) && { marginBottom: -24 }
+                    ]}
                     onPress={() => toggleClaim(index)}
                   >
                     <View style={styles.claimHeader}>
@@ -1656,9 +1660,13 @@ Provide additional context, perspective, and reassurance that might help address
             <Text style={styles.summarySectionTitle}>Key Claims</Text>
             
             {parsedAnalysis.keyClaims.map((claim, index) => (
-              <Pressable 
+              <Pressable
                 key={index}
-                style={styles.claimContainer}
+                style={[
+                  styles.claimContainer,
+                  // Remove bottom margin for last claim when expanded to prevent extra spacing above CTAs
+                  index === parsedAnalysis.keyClaims.length - 1 && expandedClaims.has(index) && { marginBottom: -24 }
+                ]}
                 onPress={() => toggleClaim(index)}
               >
                 <View style={styles.claimHeader}>
