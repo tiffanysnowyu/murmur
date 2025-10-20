@@ -144,6 +144,7 @@ export default function MeditationScreen() {
   const pinkFlowerOpacity = useRef(new Animated.Value(0)).current;
   const flowerScale = useRef(new Animated.Value(1)).current;
   const breathingTextOpacity = useRef(new Animated.Value(0)).current;
+  const ctaOpacity = useRef(new Animated.Value(0)).current;
   
   // Keep reference to pulse animation to stop it
   const pulseAnimationRef = useRef<{ stop: () => void } | null>(null);
@@ -174,12 +175,29 @@ export default function MeditationScreen() {
       cycleCount++;
       
       // Set "Inhale" text and expand (flower expands as you inhale)
-      setBreathingText('Inhale');
-      Animated.timing(breathingTextOpacity, {
-        toValue: 1,
-        duration: 1000,
-        useNativeDriver: true,
-      }).start();
+      if (cycleCount === 1) {
+        // First cycle - just fade in slowly without fade out
+        setBreathingText('Inhale');
+        Animated.timing(breathingTextOpacity, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }).start();
+      } else {
+        // Subsequent cycles - fade out, change text, then fade in
+        Animated.timing(breathingTextOpacity, {
+          toValue: 0,
+          duration: 800,
+          useNativeDriver: true,
+        }).start(() => {
+          setBreathingText('Inhale');
+          Animated.timing(breathingTextOpacity, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }).start();
+        });
+      }
 
       Animated.parallel([
         Animated.timing(flowerScale, {
@@ -235,9 +253,22 @@ export default function MeditationScreen() {
           if (!animationStopped.current && cycleCount < 3) {
             pulseWithColorChange();
           } else if (cycleCount >= 3) {
-            // After 3 cycles, hide breathing text and show CTAs
-            setBreathingText('');
-            setTimeout(() => setShowCTAs(true), 500);
+            // After 3 cycles, fade out breathing text and show CTAs
+            Animated.timing(breathingTextOpacity, {
+              toValue: 0,
+              duration: 1000,
+              useNativeDriver: true,
+            }).start(() => {
+              setBreathingText('');
+              setTimeout(() => {
+                setShowCTAs(true);
+                Animated.timing(ctaOpacity, {
+                  toValue: 1,
+                  duration: 300,
+                  useNativeDriver: true,
+                }).start();
+              }, 500);
+            });
           }
         });
       });
@@ -263,6 +294,7 @@ export default function MeditationScreen() {
     blueFlowerOpacity.setValue(0);
     pinkFlowerOpacity.setValue(0);
     flowerScale.setValue(1);
+    ctaOpacity.setValue(0);
 
     // Reset all states and animations
     setShowFlower(false);
@@ -376,14 +408,14 @@ export default function MeditationScreen() {
 
       {/* CTAs at bottom */}
       {showCTAs && (
-        <View style={styles.ctaContainer}>
+        <Animated.View style={[styles.ctaContainer, { opacity: ctaOpacity }]}>
           <View style={styles.ctaButton}>
             <CtaButton onPress={handleDone} buttonText="Done" colorStyle="primary" />
           </View>
           <View style={styles.ctaButton}>
             <CtaButton onPress={handleDoItAgain} buttonText="Do it again" colorStyle="secondary" />
           </View>
-        </View>
+        </Animated.View>
       )}
     </MainScreen>
   );

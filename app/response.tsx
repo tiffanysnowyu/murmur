@@ -133,7 +133,33 @@ export default function ResponsePage() {
     const systemPrompt = `Your job is to correct text that is given to you to match a specified JSON schema. Do not
     change the content of the text. Just make the string provided parsable as JSON and use keys that match the provided schema.`
 
-    const userPrompt = `The following string needs to be JSON parseable and match this schema: ${ANALYZE_JSON_SCHEMA}. Correct this string: ${responseText}`
+    const userPrompt = `
+      You are a JSON repairer/validator.
+
+      TASK:
+      Given (1) a schema and (2) a possibly invalid JSON-like string, OUTPUT a single valid JSON object that conforms to the schema.
+
+      SCHEMA:
+      ${ANALYZE_JSON_SCHEMA}
+
+      INPUT:
+      <<<
+      ${responseText}
+      >>>
+
+      STRICT RULES:
+      - Output ONLY the corrected JSON object. No explanations, no notes, no markdown, no code fences.
+      - Must be valid JSON (UTF-8), with double-quoted keys/strings, no comments, no trailing commas.
+      - Conform to the schema's types. Coerce obvious types (e.g., "42" -> 42). If a value can’t be coerced unambiguously, set it to null or omit the optional field (follow the schema).
+      - Do NOT invent facts. Use empty arrays/objects or nulls when data is missing, per schema.
+      - Use ISO 8601 for dates/times.
+      - Keep keys limited to the schema. Drop extras.
+      - Return a MINIFIED single-line JSON object.
+
+      ON FAILURE:
+      If you cannot produce a schema-conformant object, return exactly:
+      {"error":"UNREPAIRABLE","reason":"<short reason>"}
+    `
 
     const response = await callClaudeAPI(systemPrompt, userPrompt)
     return response
@@ -1046,18 +1072,7 @@ FORMATTING AND CONTENT REQUIREMENTS:
 
 CRITICAL FORMATTING REQUIREMENT:
 You MUST format your entire response as a JSON object with this exact structure:
-{
-  "sections": [
-    {
-      "type": "subtitle",
-      "content": "Your Subtitle Here"
-    },
-    {
-      "type": "text",
-      "content": "Your paragraph text here..."
-    }
-  ]
-}
+${ANALYZE_JSON_SCHEMA}
 
 Use "subtitle" type for section headers and "text" type for paragraph content. Do not include any text outside this JSON structure. Do not use markdown formatting or asterisks - the app will handle styling based on the type field.
 IMPORTANT: Do not use numbered lists (1., 2., 3., etc.). Use bullet points (•) only when listing items.
@@ -1484,7 +1499,7 @@ Provide additional context, perspective, and reassurance that might help address
 
       <ScrollView
         style={styles.summaryContent}
-        contentContainerStyle={{ paddingBottom: 128 }}
+        contentContainerStyle={{ paddingBottom: 156 }} // 156px - 78px CTA paddingTop = 78px space between "Still uneasy?" and CTAs
         showsVerticalScrollIndicator={false}
         onScroll={(event) => {
           const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
@@ -1709,7 +1724,7 @@ Provide additional context, perspective, and reassurance that might help address
           <View style={[styles.summarySection, { marginBottom: 78 }]}>
             <View style={styles.bottomLineDivider} />
             <Pressable onPress={fetchStillUneasyResponse}>
-              <Text style={[styles.moreAnalysisButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
+              <Text style={[styles.stillUneasyButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
             </Pressable>
             
             {stillUneasyLoading && (
@@ -1895,6 +1910,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#D1D1D6',
     marginTop: 16, // In addition to the 16px underneath summaryOverviewText
     marginBottom: 32,
+  },
+  stillUneasyButton: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#7A42F4',
+    textAlign: 'left',
+    // borderWidth: 5,
+    // borderColor: '#7A42F4',
   },
   stillUneasyLoadingContainer: {
     flexDirection: 'row',
@@ -2174,12 +2197,6 @@ const styles = StyleSheet.create({
   modalButton: { backgroundColor: '#32535F', paddingHorizontal: 24, paddingVertical: 12, borderRadius: 8 },
   modalButtonText: { color: 'white', fontSize: 16, fontWeight: '600' },
 
-  moreAnalysisButton: {
-    fontSize: 16,
-    fontWeight: '500',
-    color: '#7A42F4',
-    textAlign: 'left',
-  },
   summarySubtitle: {
     fontSize: 18,
     fontFamily: 'SF Pro Display',
