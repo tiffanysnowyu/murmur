@@ -128,41 +128,57 @@ export default function ResponsePage() {
     setParsedSummary({ article, overview, keyClaims });
   };
 
-  const parseAnalyzeResponse = (responseText: string) => {
+
+  const tryToCorrectJson = async (responseText: string): Promise<string> => {
+    const systemPrompt = `Your job is to correct text that is given to you to match a specified JSON schema. Do not
+    change the content of the text. Just make the string provided parsable as JSON and use keys that match the provided schema.`
+
+    const userPrompt = `The following string needs to be JSON parseable and match this schema: ${ANALYZE_JSON_SCHEMA}. Correct this string: ${responseText}`
+
+    const response = await callClaudeAPI(systemPrompt, userPrompt)
+    return response
+  }
+
+  const parseAnalyzeResponse = async (responseText: string) => {
+    let jsonResponse = null
+    let secondTryResponse = ''
     try {
-      const jsonResponse = JSON.parse(responseText);
-
-      if (jsonResponse.sections && Array.isArray(jsonResponse.sections)) {
-        // Store the parsed JSON structure
-        setParsedMainResponse(jsonResponse);
-
-        // Also create overview for backward compatibility
-        const overview = jsonResponse.sections
-          .map((section: any) => section.content)
-          .join('\n\n');
-
-        return { overview, keyClaims: [], bottomLine: '' };
-      } else {
-        // Fallback to plain text
-        setParsedMainResponse(null);
-        return { overview: responseText, keyClaims: [], bottomLine: '' };
-      }
+      jsonResponse = JSON.parse(responseText);
     } catch (error) {
-      console.error('Failed to parse JSON response:', error);
-      setParsedMainResponse(null);
-
-      // Fallback to original parsing if JSON parsing fails
-      responseText = responseText.replace(/^[^a-zA-Z0-9]+/, '').trim();
-
-      let splitByBottomLine = responseText.split('Bottom line')
-      if (splitByBottomLine.length < 2) {
-        splitByBottomLine = responseText.split('Bottom Line')
+      console.error('Failed to parse JSON response on first try:', error, 'response:', responseText);
+      
+      try {
+        // Ask Claude to correct the JSON to the correct format
+        secondTryResponse = await tryToCorrectJson(responseText)
+        jsonResponse = JSON.parse(secondTryResponse);
+      } catch (error) {
+        console.error('Failed to parse JSON response on second try:', error, 'response:', secondTryResponse);
+        jsonResponse = null
       }
-      let overview = splitByBottomLine[0].replace(':', '').trim()
-      let bottomLine = splitByBottomLine.length > 1 ? splitByBottomLine[1].replace(':', '').trim() : ''
-
-      return { overview, keyClaims: [], bottomLine };
     }
+
+    // If unable to parse the json after 2 tries, just throw an error
+    // This error will bubble up to the caller which should display an "Internal server error" to the user
+    if (!jsonResponse) {
+      throw new Error(`Failed to parse JSON response on both tries. First response ${responseText}. Second response ${secondTryResponse}`);
+    }
+
+    if (jsonResponse.sections && Array.isArray(jsonResponse.sections)) {
+      // Store the parsed JSON structure
+      setParsedMainResponse(jsonResponse);
+
+      // Also create overview for backward compatibility
+      const overview = jsonResponse.sections
+        .map((section: any) => section.content)
+        .join('\n\n');
+
+      return { overview, keyClaims: [], bottomLine: '' };
+    } else {
+      // Fallback to plain text
+      setParsedMainResponse(null);
+      return { overview: responseText, keyClaims: [], bottomLine: '' };
+    }
+
   };
 
   const parseStillUneasyResponse = (responseText: string) => {
@@ -431,7 +447,23 @@ export default function ResponsePage() {
     }
   };
 
+
+  const ANALYZE_JSON_SCHEMA = `
+{
+  "sections": [
+    {
+      "type": "subtitle",
+      "content": "Your Subtitle Here"
+    },
+    {
+      "type": "text",
+      "content": "Your paragraph text here..."
+    }
+  ]
+}`
+
   const getSystemPrompt = (mode: string, isFollowUp: boolean = false) => {
+
     if (mode === 'summarize') {
       return `You are an expert content analyzer. You will be provided with article content that has been extracted from a web page.
 
@@ -591,18 +623,7 @@ Keep responses concise and scannable. Use shorter paragraphs (2-3 sentences max)
 
 CRITICAL FORMATTING REQUIREMENT:
 You MUST format your entire response as a JSON object with this exact structure:
-{
-  "sections": [
-    {
-      "type": "subtitle",
-      "content": "Your Subtitle Here"
-    },
-    {
-      "type": "text",
-      "content": "Your paragraph text here..."
-    }
-  ]
-}
+${ANALYZE_JSON_SCHEMA}
 
 Use "subtitle" type for section headers and "text" type for paragraph content. Do not include any text outside this JSON structure. Do not use markdown formatting or asterisks - the app will handle styling based on the type field.
 
@@ -683,7 +704,8 @@ CRITICAL TEXT FORMATTING RULES:
             const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 5000));
             sourceResult = (await Promise.race([sourcePromise, timeout])) as any;
             setFoundSources(sourceResult.sources);
-          } catch {
+          } catch (error) {
+            console.log('Got error', error)
           }
 
           let searchResults: any[] = [];
@@ -737,7 +759,7 @@ Preview: ${source.snippet}`
               parseSummaryResponse(reply);
             } else {
               // Parse analyze response for structured display
-              const parsed = parseAnalyzeResponse(reply);
+              const parsed = await parseAnalyzeResponse(reply);
               setParsedAnalysis(parsed);
             } 
             setAnalysisStep('');
@@ -788,7 +810,7 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
               parseSummaryResponse(reply);
             } else {
               // Parse analyze response for structured display
-              const parsed = parseAnalyzeResponse(reply);
+              const parsed = await parseAnalyzeResponse(reply);
               setParsedAnalysis(parsed);
             }
             setAnalysisStep('');
@@ -913,6 +935,8 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
     // If we have already analyzed content, don't do it again
     if (calledExternalModel.current) return;
 
+
+
     // If we have a saved response, use it instead of calling API
     if (savedResponse && typeof savedResponse === 'string') {
       setResponse(savedResponse);
@@ -922,8 +946,13 @@ If this is about a law/policy, include bill numbers, scope, timelines, exception
       if (analysisMode === 'summarize') {
         parseSummaryResponse(savedResponse);
       } else {
-        const parsed = parseAnalyzeResponse(savedResponse);
-        setParsedAnalysis(parsed);
+        // const parsed = parseAnalyzeResponse(savedResponse);
+        // setParsedAnalysis(parsed);
+        const getParsed = async () => {
+          const parsed = await parseAnalyzeResponse(savedResponse);
+          setParsedAnalysis(parsed);
+        }
+        getParsed()
       }
       
       calledExternalModel.current = true;
@@ -1558,7 +1587,7 @@ Provide additional context, perspective, and reassurance that might help address
             </View>
           )}
 
-          {response && !loading && (
+          {response && !loading && !error && (
             <View>
               {parsedMainResponse && parsedMainResponse.sections ? (
                 renderJsonSections(parsedMainResponse.sections)
@@ -1676,7 +1705,7 @@ Provide additional context, perspective, and reassurance that might help address
           </View>
         )}
 
-        {!loading && 
+        {!loading && !error && 
           <View style={[styles.summarySection, { marginBottom: 78 }]}>
             <View style={styles.bottomLineDivider} />
             <Pressable onPress={fetchStillUneasyResponse}>
