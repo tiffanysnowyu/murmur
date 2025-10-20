@@ -89,6 +89,14 @@ export default function ResponsePage() {
     }
   };
 
+  // Hide CTAs when content expands
+  useEffect(() => {
+    if (showFullArticle || expandedClaims.size > 0) {
+      setShowCTAs(false);
+      animateCTAs(false);
+    }
+  }, [showFullArticle, expandedClaims.size]);
+
   // Helper function to detect legal/policy claims
   const isLegalPolicyClaim = (t: string): boolean => {
     const keywords = ['law', 'policy', 'regulation', 'bill', 'water', 'legal', 'act', 'legislation'];
@@ -1239,8 +1247,8 @@ Provide additional context, perspective, and reassurance that might help address
             // Hide title after scrolling 20px
             setShowSummaryTitle(scrollY < 20);
 
-            // Show CTAs when near end of content (within 60px) or if content is too short to scroll
-            const paddingToBottom = 60;
+            // Show CTAs when near end of content (within 120px) or if content is too short to scroll
+            const paddingToBottom = 120;
             const isNearEnd = scrollY + layoutMeasurement.height >= contentSize.height - paddingToBottom;
             const canScroll = contentSize.height > layoutMeasurement.height;
             const shouldShowCTAs = isNearEnd || !canScroll;
