@@ -26,6 +26,11 @@ export default function TextPage() {
   const summarizeScale = useRef(new Animated.Value(1)).current;
   const analyzeScale = useRef(new Animated.Value(1)).current;
 
+  // CTA scroll-to-reveal state
+  const [showCTA, setShowCTA] = useState(false);
+  const ctaOpacity = useRef(new Animated.Value(0)).current;
+  const ctaTranslateY = useRef(new Animated.Value(20)).current;
+
   useEffect(() => {
     if (initialText && typeof initialText === 'string') {
       setText(initialText);
@@ -34,6 +39,18 @@ export default function TextPage() {
       setMode(initialMode as 'analyze' | 'summarize');
     }
   }, [initialText, initialMode]);
+
+  // Handle initial CTA state - show immediately for short content
+  useEffect(() => {
+    if (text.trim()) {
+      // For short content, show CTA immediately; for long content, it will be handled by scroll logic
+      setShowCTA(true);
+      animateCTA(true);
+    } else {
+      setShowCTA(false);
+      animateCTA(false);
+    }
+  }, [text]);
 
   const handleContinueButton = () => {
     if (!text.trim()) {
@@ -114,6 +131,37 @@ export default function TextPage() {
     }).start();
   };
 
+  // CTA animation function
+  const animateCTA = (show: boolean) => {
+    if (show) {
+      Animated.parallel([
+        Animated.timing(ctaOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ctaTranslateY, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      Animated.parallel([
+        Animated.timing(ctaOpacity, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(ctaTranslateY, {
+          toValue: 20,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  };
+
   // Mode selection screen
   if (!mode) {
     return (
@@ -180,11 +228,37 @@ export default function TextPage() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 0}
         >
-          <ScrollView 
+          <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 0 }}
+            contentContainerStyle={{ flexGrow: 0, paddingBottom: 78 }}
             keyboardShouldPersistTaps="never"
             showsVerticalScrollIndicator={false}
+            onScroll={(event) => {
+              const { contentOffset, layoutMeasurement, contentSize } = event.nativeEvent;
+              const scrollY = contentOffset.y;
+
+              if (text.trim()) {
+                const canScroll = contentSize.height > layoutMeasurement.height;
+                const contentIsLong = contentSize.height > layoutMeasurement.height * 1.2; // 20% longer than viewport
+
+                let shouldShowCTA;
+                if (!contentIsLong) {
+                  // Short content - show CTA immediately
+                  shouldShowCTA = true;
+                } else {
+                  // Long content - use scroll-to-reveal behavior
+                  const paddingToBottom = 78;
+                  const isNearEnd = scrollY + layoutMeasurement.height >= contentSize.height - paddingToBottom;
+                  shouldShowCTA = isNearEnd || !canScroll;
+                }
+
+                if (shouldShowCTA !== showCTA) {
+                  setShowCTA(shouldShowCTA);
+                  animateCTA(shouldShowCTA);
+                }
+              }
+            }}
+            scrollEventThrottle={16}
           >
             {/* Title and description - NO BACK BUTTON HERE */}
             <View style={styles.inputHeader}>
@@ -213,9 +287,17 @@ export default function TextPage() {
           </ScrollView>
         </KeyboardAvoidingView>
 
-        {/* Submit button - show on both modes when text is entered */}
+        {/* Submit button - show on both modes when text is entered and scroll to reveal */}
         {text.trim() && (
-          <CtaButton onPress={handleContinueButton} buttonText="Continue" />
+          <Animated.View style={[
+            styles.floatingCtaContainer,
+            {
+              opacity: ctaOpacity,
+              transform: [{ translateY: ctaTranslateY }],
+            }
+          ]}>
+            <CtaButton onPress={handleContinueButton} buttonText="Continue" />
+          </Animated.View>
         )}
       </MainScreen>
   );
@@ -311,5 +393,11 @@ const styles = StyleSheet.create({
     fontFamily: "SF Pro Display",
     color: "#1A1A1A",
     paddingBottom: 72,
+  },
+  floatingCtaContainer: {
+    position: 'absolute',
+    bottom: 32,
+    left: 24,
+    right: 24,
   },
 });

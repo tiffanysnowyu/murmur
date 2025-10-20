@@ -1248,7 +1248,7 @@ Provide additional context, perspective, and reassurance that might help address
           <View style={styles.summarySection}>
             <Text style={styles.summarySectionTitle}>Article</Text>
             <View style={styles.summaryArticleContainer}>
-              <Text 
+              <Text
                 style={styles.summaryArticleText}
                 numberOfLines={showFullArticle ? undefined : 3}
               >
