@@ -91,11 +91,11 @@ export default function ResponsePage() {
 
   // Hide CTAs when content expands
   useEffect(() => {
-    if (showFullArticle || expandedClaims.size > 0) {
+    if (showFullArticle || expandedClaims.size > 0 || stillUneasyResponse) {
       setShowCTAs(false);
       animateCTAs(false);
     }
-  }, [showFullArticle, expandedClaims.size]);
+  }, [showFullArticle, expandedClaims.size, stillUneasyResponse]);
 
   // Helper function to detect legal/policy claims
   const isLegalPolicyClaim = (t: string): boolean => {
@@ -309,7 +309,11 @@ export default function ResponsePage() {
           );
         } else {
           return (
-            <Text key={index} style={styles.summaryOverviewText}>
+            <Text key={index} style={[
+              styles.summaryOverviewText,
+              // Reduce marginBottom from 16px to 12px for last text element to maintain proper spacing above CTAs
+              index === groupedSections.length - 1 && { marginBottom: 12 }
+            ]}>
               {section.content}
             </Text>
           );
@@ -1759,10 +1763,10 @@ Provide additional context, perspective, and reassurance that might help address
           </View>
         )}
 
-        {!loading && !error && 
+        {!loading && !error &&
           <View style={[styles.summarySection, { marginBottom: 78 }]}>
             <View style={styles.bottomLineDivider} />
-            <Pressable onPress={fetchStillUneasyResponse} style={{ zIndex: 999 }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+            <Pressable onPress={fetchStillUneasyResponse} style={{ zIndex: 9999 }} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
               <Text style={[styles.stillUneasyButton, { color: '#7A42F4' }]}>Still uneasy?</Text>
             </Pressable>
             
@@ -1820,7 +1824,7 @@ Provide additional context, perspective, and reassurance that might help address
           opacity: ctaOpacity,
           transform: [{ translateY: ctaTranslateY }],
         }
-      ]} pointerEvents={showCTAs && !savedResponse && !loading && !stillUneasyLoading ? 'auto' : 'none'}>
+      ]}>
         {showCTAs && !savedResponse && !loading && !stillUneasyLoading && (
           <>
             {currentMode === 'analyze' ? (
@@ -1927,6 +1931,8 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     lineHeight: 27, // 150% of 18px
     letterSpacing: -0.198,
+    flexWrap: 'wrap',
+    textAlign: 'left',
   },
   summaryMoreButton: {
     color: '#248E9C',
@@ -1947,7 +1953,7 @@ const styles = StyleSheet.create({
     width: 264,
     height: 1,
     backgroundColor: '#D1D1D6',
-    marginTop: 32, 
+    marginTop: 32-16, 
     marginBottom: 32,
   },
   stillUneasyButton: {
@@ -2008,7 +2014,7 @@ const styles = StyleSheet.create({
     color: '#1A1A1A',
     lineHeight: 27, // 150% of 18px
     letterSpacing: -0.198,
-    // marginBottom: 16,
+    marginBottom: 16,
     flexWrap: 'wrap',
     textAlign: 'left',
     // borderWidth: 5,
@@ -2111,7 +2117,7 @@ const styles = StyleSheet.create({
     paddingVertical: 0,
     gap: 16,
     backgroundColor: 'transparent',
-    paddingTop: 78, // Ensure 78px space above CTAs
+    marginTop: 78, // Space above CTAs without blocking touches
   },
   ctaButton: {
     width: '100%',
