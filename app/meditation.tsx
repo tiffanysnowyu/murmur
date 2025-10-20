@@ -37,7 +37,7 @@ const IntroScreen = ({
 }: IntroScreenProps) => {
 
   const titleOpacity = useRef(new Animated.Value(shouldFadeTitle ? 0 : 1)).current;
-  const subtitleOpacity = useRef(new Animated.Value(0)).current;
+  const subtitleOpacity = useRef(new Animated.Value(subtitleFadeInDuration === 0 ? 1 : 0)).current;
   const timeoutRef = useRef<NodeJS.Timeout | number | null>(null);
 
   useEffect(() => {
@@ -45,17 +45,24 @@ const IntroScreen = ({
     // subtitleOpacity.setValue(0);
 
     const startSubtitleAnimation = () => {
-      // Start subtitle fade-in
-      Animated.timing(subtitleOpacity, {
-        toValue: 1,
-        duration: subtitleFadeInDuration,
-        useNativeDriver: true,
-      }).start(() => {
-        // After subtitle fades in, wait for waitDuration then call screenFinished
+      if (subtitleFadeInDuration === 0) {
+        // Skip animation, go straight to wait
         timeoutRef.current = setTimeout(() => {
           screenFinished();
         }, waitDuration);
-      });
+      } else {
+        // Start subtitle fade-in
+        Animated.timing(subtitleOpacity, {
+          toValue: 1,
+          duration: subtitleFadeInDuration,
+          useNativeDriver: true,
+        }).start(() => {
+          // After subtitle fades in, wait for waitDuration then call screenFinished
+          timeoutRef.current = setTimeout(() => {
+            screenFinished();
+          }, waitDuration);
+        });
+      }
     };
 
     if (shouldFadeTitle) {
@@ -331,10 +338,30 @@ export default function MeditationScreen() {
 
   // To change intro phase timings only have to modify the values here
   const introPhases = [
-    {title: 'Clear your mind', subtitle: 'Inhale for 4s', titleFadeInDuration: 3000, subtitleFadeInDuration: 2000, waitDuration: 4000, shouldFadeTitle: true},
-    {title: 'Clear your mind', subtitle: 'Exhale for 6s', titleFadeInDuration: 1000, subtitleFadeInDuration: 2000, waitDuration: 6000, shouldFadeTitle: false},
-    {title: 'Clear your heart', subtitle: 'Inhale for 4s', titleFadeInDuration: 3000, subtitleFadeInDuration: 2000, waitDuration: 4000, shouldFadeTitle: true},
-    {title: 'Clear your heart', subtitle: 'Exhale for 6s', titleFadeInDuration: 1000, subtitleFadeInDuration: 2000, waitDuration: 6000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Inhale for 4s', titleFadeInDuration: 3000, subtitleFadeInDuration: 1000, waitDuration: 1000, shouldFadeTitle: true},
+    {title: 'Clear your mind', subtitle: 'Inhale for 3s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Inhale for 2s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Inhale for 1s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Inhale for 0s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Exhale for 6s', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Exhale for 5s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Exhale for 4s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Exhale for 3s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Exhale for 2s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Exhale for 1s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your mind', subtitle: 'Exhale for 0s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Inhale for 4s', titleFadeInDuration: 3000, subtitleFadeInDuration: 1000, waitDuration: 1000, shouldFadeTitle: true},
+    {title: 'Clear your heart', subtitle: 'Inhale for 3s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Inhale for 2s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Inhale for 1s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Inhale for 0s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Exhale for 6s', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Exhale for 5s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Exhale for 4s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Exhale for 3s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Exhale for 2s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Exhale for 1s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
+    {title: 'Clear your heart', subtitle: 'Exhale for 0s', titleFadeInDuration: 0, subtitleFadeInDuration: 0, waitDuration: 1000, shouldFadeTitle: false},
     {title: 'Get ready', subtitle: "You'll be taking three breaths in...", titleFadeInDuration: 3000, subtitleFadeInDuration: 2000, waitDuration: 1000, shouldFadeTitle: true},
     {title: 'Get ready', subtitle: '3', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 0, shouldFadeTitle: false},
     {title: 'Get ready', subtitle: '2', titleFadeInDuration: 0, subtitleFadeInDuration: 1000, waitDuration: 0, shouldFadeTitle: false},
