@@ -1388,7 +1388,7 @@ Provide additional context, perspective, and reassurance that might help address
             transform: [{ translateY: ctaTranslateY }],
           }
         ]}>
-          {showCTAs && !savedResponse && (
+          {showCTAs && !savedResponse && !loading && (
             <>
               <CtaButton onPress={handleAnalyzeClaims} buttonText="Analyze these claims" />
               <CtaButton onPress={() => router.dismissAll()} buttonText="Done" colorStyle="secondary" />
@@ -1782,7 +1782,7 @@ Provide additional context, perspective, and reassurance that might help address
           transform: [{ translateY: ctaTranslateY }],
         }
       ]}>
-        {showCTAs && !savedResponse && (
+        {showCTAs && !savedResponse && !loading && (
           <>
             {currentMode === 'analyze' ? (
               <>

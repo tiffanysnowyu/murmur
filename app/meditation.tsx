@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   mainTitle: {
-    fontSize: 32,
+    fontSize: 24,
     fontFamily: 'SF Pro Display',
     fontWeight: '600',
     color: '#4A90A4',
@@ -490,12 +490,12 @@ const styles = StyleSheet.create({
     bottom: 114,
     left: 24,
     right: 24,
-    fontSize: 32,
+    fontSize: 24,
     fontFamily: 'SF Pro Display',
     fontWeight: '600', // Semibold
     color: '#B0B0B8',
     textAlign: 'center',
-    lineHeight: 48, // 150% of 32px
-    letterSpacing: -0.352, // -1.1% of 32px
+    lineHeight: 36, // 150% of 24px
+    letterSpacing: -0.264, // -1.1% of 24px
   },
 });
