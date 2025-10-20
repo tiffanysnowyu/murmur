@@ -230,7 +230,7 @@ export default function TextPage() {
         >
           <ScrollView
             style={{ flex: 1 }}
-            contentContainerStyle={{ flexGrow: 0, paddingBottom: 78 }}
+            contentContainerStyle={{ flexGrow: 0, paddingBottom: 94 }} // Adjusted to achieve 78px space between content and CTA
             keyboardShouldPersistTaps="never"
             showsVerticalScrollIndicator={false}
             onScroll={(event) => {

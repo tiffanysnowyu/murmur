@@ -288,7 +288,7 @@ export default function ResponsePage() {
                 // Remove the bullet point character and clean up
                 const cleanItem = item.replace(/^[•\-\*]\s/, '').trim();
                 return (
-                  <View key={itemIndex} style={[styles.bulletPointContainer, { marginBottom: 16 }]}>
+                  <View key={itemIndex} style={[styles.bulletPointContainer, { marginBottom: 8 }]}>
                     <Text style={[styles.summaryOverviewText, { marginRight: 12, marginBottom: 0 }]}>-</Text>
                     <Text style={[styles.summaryOverviewText, { flex: 1, marginBottom: 0 }]}>
                       {cleanItem}
