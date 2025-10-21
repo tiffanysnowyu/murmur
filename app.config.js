@@ -4,7 +4,7 @@ module.exports = {
   expo: {
     name: 'Murmur',
     slug: 'murmur',
-    version: '1.0.2', // Increase this for new app releases. It can be increased in any way.
+    version: '1.0.3', // Increase this for new app releases. It can be increased in any way.
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'murmur',
