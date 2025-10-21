@@ -346,11 +346,11 @@ const styles = StyleSheet.create({
   pillPressed: { 
     backgroundColor: FILL,
   },
-  pillTitle: { 
-    fontSize: 20, 
+  pillTitle: {
+    fontSize: 20,
     fontFamily: "SF Pro Display",
-    fontWeight: "500", 
-    color: TEXT_PRIMARY, 
+    fontWeight: "500",
+    color: TEXT_SECONDARY,
     marginBottom: 4,
     textAlign: "center",
     lineHeight: 36,

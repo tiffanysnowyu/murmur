@@ -489,11 +489,11 @@ const styles = StyleSheet.create({
     height: 24,
     paddingBottom: 8,
   },
-  pillTitle: { 
-    fontSize: 20, 
+  pillTitle: {
+    fontSize: 20,
     fontFamily: "SF Pro Display",
-    fontWeight: "500", 
-    color: TEXT_SECONDARY, 
+    fontWeight: "500",
+    color: TEXT_SECONDARY,
     textAlign: "center",
     lineHeight: 36,
     letterSpacing: -0.264,
